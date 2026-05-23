@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { BasketItem } from '../../components/BasketItem';
 import type { ShoppingItemRow } from '../../types/db';
 
@@ -25,9 +26,7 @@ describe('BasketItem', () => {
     const nameEl = getByText('Chicken thighs');
     expect(nameEl).toBeTruthy();
     // strikethrough is applied via style
-    expect(nameEl.props.style).toMatchObject(
-      expect.arrayContaining([expect.objectContaining({ textDecorationLine: 'line-through' })])
-    );
+    expect(StyleSheet.flatten(nameEl.props.style)).toMatchObject({ textDecorationLine: 'line-through' });
   });
 
   it('renders category label below name', () => {

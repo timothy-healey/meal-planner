@@ -12,6 +12,7 @@ interface Props {
   onToggle: () => void;
 }
 
+// Only rendered for checked items — unchecked items use ShoppingItem
 export function BasketItem({ item, onToggle }: Props) {
   return (
     <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
