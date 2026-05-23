@@ -101,6 +101,12 @@ export function useBackup(onRestore?: () => void) {
         ...insertRows('shopping_items', backup.shopping_items ?? [], ['id','plan_id','category',
           'category_order','item_order','name','qty','estimated_price','is_oneoff','note',
           'is_checked','actual_price','store']),
+        ...insertRows('price_history', backup.price_history ?? [], ['id','barcode','item_name','store','price','qty','date','plan_id']),
+        ...insertRows('barcode_nutrition', backup.barcode_nutrition ?? [], ['barcode','brand_name','item_name','cal_per_100g','protein_per_100g','carbs_per_100g','fat_per_100g','scanned_at']),
+        ...insertRows('barcode_stores', backup.barcode_stores ?? [], ['barcode','store','first_seen']),
+        ...insertRows('stores', backup.stores ?? [], ['id','chain','branch','created_at']),
+        ...insertRows('store_aisles', backup.store_aisles ?? [], ['id','store_id','aisle_label','sort_order']),
+        ...insertRows('item_aisle_map', backup.item_aisle_map ?? [], ['id','store_id','barcode','item_name','aisle_id','updated_at']),
       ];
 
       for (const [sql, params] of inserts) {
