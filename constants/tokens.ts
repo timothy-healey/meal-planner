@@ -6,8 +6,8 @@
 export const colors = {
   // Brand
   green:      '#1C453C', // hero: headers, item names, checkmarks, active tab
-  terracotta: '#744234', // category labels, quantities, overspend state
-  orange:     '#E87B3A', // prices, budget, calories, progress fill
+  terracotta: '#744234', // category labels, quantities
+  orange:     '#E87B3A', // prices, budget total, calories
 
   // Surfaces
   cream: '#F4F5EB', // screen background, card surfaces
@@ -27,10 +27,9 @@ export const colors = {
   // Structural
   divider:       '#e9eadc', // list dividers, tab bar border
   checkboxBorder:'#ced0c1', // unchecked checkbox border
-  progressSpent: '#3a8070', // green mid-tone for spent progress fill
 
   // Overlays
-  headerPill: 'rgba(0,0,0,0.25)', // budget pill background on header
+  headerPill: 'rgba(0,0,0,0.25)', // budget/count pill background on header
 } as const;
 
 export type Color = keyof typeof colors;

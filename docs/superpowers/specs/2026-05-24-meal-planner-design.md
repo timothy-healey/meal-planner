@@ -27,7 +27,7 @@ A personal Android app for Tim's weekly meal planning workflow. Fully offline. N
 | File system | `expo-file-system` — read imported JSON / write backup |
 | Sharing | `expo-sharing` — share backup file via Android share sheet |
 | Clipboard | `expo-clipboard` — copy recipe as plain text |
-| Fonts | `@expo-google-fonts/jost` + `@expo-google-fonts/mulish` |
+| Fonts | `@expo-google-fonts/plus-jakarta-sans` |
 | Network | None — fully offline |
 
 ---
@@ -41,13 +41,11 @@ All colours, typography, spacing, radii, and shadows are defined in **`constants
 | Token | Hex | Role |
 |---|---|---|
 | `green` | `#1C453C` | Screen headers, item names, checkmarks, active tab, step numbers |
-| `terracotta` | `#744234` | Category labels, quantities, overspend state |
-| `orange` | `#E87B3A` | Prices, budget remaining, progress bar, calorie figures |
+| `terracotta` | `#744234` | Category labels, quantities |
+| `orange` | `#E87B3A` | Prices, budget total, calorie figures |
 | `cream` | `#F4F5EB` | Screen background, card surfaces, header text |
 | `onGreenSubtle` | `#c4d5d0` | Header supporting text (on green background) |
 | `divider` | `#e9eadc` | List item dividers, tab bar border |
-
-**Overspend state:** label changes from "Remaining" → "Over by", amount and progress bar shift to terracotta. No red — a nudge, not an alarm.
 
 ### Typography
 
@@ -85,7 +83,7 @@ Three bottom tabs plus a Settings screen (not a tab).
 [ 🛒 Shop ] [ 🍳 Recipes ] [ 📅 Plan ]   ⚙ (top-right of Plan tab)
 ```
 
-Tab bar sits on `#F4F5EB`, active tab label in `#1C453C`, inactive in `#bbb`.
+Tab bar sits on `#F4F5EB`, active tab label in `#1C453C`, inactive in `#bbb`. Each tab icon needs an `accessibilityLabel` (e.g. `"Shop"`, `"Recipes"`, `"Plan"`) — emoji announce as their description in screen readers, not their function.
 
 Default tab on launch: **Shop**. If no plan is loaded, the Shop tab shows the empty state with an import button — no special redirect needed.
 
@@ -96,36 +94,43 @@ Default tab on launch: **Shop**. If no plan is loaded, the Shop tab shows the em
 
 This consolidates all data management in one place and keeps the Plan header clean.
 
+**Future extensibility:** The 3-tab structure fits v1 well. As features like price history, barcode scanning, and store management are added, the navigation pattern should be reconsidered before a fourth tab is added — Android bottom nav supports up to 5 items but the IA needs deliberate review at each step. A navigation drawer or a "More" surface may be preferable to a crowded tab bar.
+
 ---
 
 ## Screen 1 — Shopping List
 
 **Header (green band):**
-- Title: "Shopping List" (Jost 800, cream)
-- Sub: "Week of DD MMM" (Mulish 600, `#c4d5d0`)
-- Budget pill: "Remaining $XX.XX" (left) + "Ticked N / T" (right), both cream on semi-transparent dark background
-- Two-tone progress bar: green fill = spent portion, orange fill = remaining portion
-- Footer labels: "$XX.XX spent" (green-white) · "$XX.XX left" (orange)
-
-**Overspend variant of header:**
-- "Remaining" → "Over by", amount stays cream
-- Progress bar fills fully to solid terracotta
-- Footer right label: "$X.XX over" in terracotta
+- Title: "Shopping List" (`extrabold`, cream)
+- Sub: "Week of DD MMM" (`semibold`, `onGreenSubtle`)
+- Budget pill: "Budget $XX.XX" (left) + "Ticked N / T" (right), both cream on semi-transparent dark background
+- Progress bar: green fill grows left-to-right as items are ticked (completion indicator, not a spend tracker)
+- Footer labels: "N items left" (`onGreenSubtle`) — simple count, no financial state change
 
 **Body (cream):**
-- Items grouped by `shopping_list.categories[].name`
-- Category header: 5px terracotta dot + all-caps Jost label in terracotta
-- Each item row:
-  - Checkbox (20×20, rounded-5): unchecked = `#ced0c1` border; checked = green fill + cream ✓
-  - Name: Jost 700, `#1C453C`; strikethrough + 40% opacity when checked
-  - Detail: `{qty} · ` in terracotta, `${price}` in orange (Mulish 600)
-  - Note (if present): italic, `#aaa`, 9px below detail
-- `is_oneoff` categories rendered last with a subtle "(check pantry first)" note beside the category label
+- Items grouped by `category` from `shopping_items`, sorted by `category_order`
+- Category header: 5px terracotta dot + all-caps `semibold` label in terracotta
+  - **Long-press** a category header to enter reorder mode — drag handles appear on all category headers. Drag to reorder. Order is saved to `AsyncStorage` as `category_order_prefs: { [category_name]: number }` and applied on every plan load when category names match.
+  - `is_oneoff` categories always sort last, regardless of user order. A small `textNote`-coloured "(check pantry first)" label appears beside the header text on each `is_oneoff` row.
+- **Each item row** (entire row is the tap target — not just the checkbox):
+  - Checkbox (20×20, `radius.xs`): unchecked = `checkboxBorder` border; checked = `green` fill + cream ✓
+  - Name: `bold`, `textPrimary`
+  - Detail: `{qty} · ` in terracotta, `${price}` in orange (`semibold`)
+  - Note (if present): `textNote` colour, `regular` weight, `size.2xs`, displayed below detail (no italic — Plus Jakarta Sans has no italic)
+  - Tapping moves the item to the **In Basket** section (see below) with a short slide-down animation
+
+**In Basket section (bottom of list):**
+- Appears below all category groups once the first item is ticked
+- Section header: 5px terracotta dot + "IN BASKET" label (same style as category headers)
+- Items shown in order they were ticked, with strikethrough + 40% opacity
+- Each row also shows the original category name in `textNote` colour below the item name
+- Tapping any row in this section unchecks it and returns it to its original category position (slide-up animation)
+- No "uncheck all" button — individual uncheck is sufficient
 
 **State persistence:**
-- Checkbox states stored in `AsyncStorage` under key `shopping_checked`
-- Key per item: `${categoryIndex}_${itemIndex}` (stable for a given plan)
-- Reset to all-unchecked when a new plan is imported
+- `is_checked` stored in `shopping_items` SQLite table (not AsyncStorage) — updated on each tap
+- Original `category` and `item_order` fields are never modified, so uncheck always knows where to restore
+- Reset to all-unchecked when a new plan is imported (bulk `UPDATE shopping_items SET is_checked = 0`)
 
 ---
 
@@ -135,8 +140,8 @@ This consolidates all data management in one place and keeps the Plan header cle
 
 **Top of screen:**
 - Sunday Batch Plan banner (green card, full bleed within padding):
-  - Title: "Sunday Batch Plan" (Jost 800, cream)
-  - Sub: "N steps · starts HH:MM" (`#c4d5d0`)
+  - Title: "Sunday Batch Plan" (`extrabold`, cream)
+  - Sub: "N steps · starts HH:MM" (`onGreenSubtle`)
   - 🥘 emoji right-aligned
   - Tapping opens the Batch Plan detail (see below)
 
@@ -144,8 +149,8 @@ This consolidates all data management in one place and keeps the Plan header cle
 - Grouped by `meal_type`: Dinner → Lunch → Breakfast
 - Category header: 5px terracotta dot + all-caps label
 - Recipe card (white, subtle shadow, rounded-10):
-  - Name: Jost 700, `#1C453C` (full width, wraps naturally — no cook method tag)
-  - Stats row: `{cal} cal` in orange · `{protein}g protein` in grey · `{time}` in light grey
+  - Name: `bold`, `textPrimary` (full width, wraps naturally — no cook method tag)
+  - Stats row: `{cal} cal` in orange · `{protein}g protein` in `textSecondary` · `{time}` in `textTertiary`
   - Time displayed as: if `cook_minutes >= 60` → `{n}h`, else `{prep + cook} min`
   - Tapping navigates to Recipe Detail
 
@@ -154,21 +159,21 @@ This consolidates all data management in one place and keeps the Plan header cle
 ## Screen 3 — Recipe Detail
 
 **Header (slim green band):**
-- Back link: "← Recipes" (Mulish 600, `#c4d5d0`, 11px)
-- Recipe title: Jost 800, cream, 20px, full width — wraps to 2 lines max
+- Back link: `‹ Recipes` (`bold`, `onGreenSubtle`, `size.sm`) — minimum 44×44dp touch target achieved with horizontal + vertical padding around the text, not by enlarging the text itself
+- Recipe title: `extrabold`, cream, `size.2xl`, full width — wraps to 2 lines max
 
 **Body (cream):**
 
 **Stat strip** (4 white pills, equal width):
-- Cal (orange value), Protein, Serves, Cook — label in grey 9px, value in Jost 800 14px
+- Cal (orange value), Protein, Serves, Cook — label in `textSecondary` `size.2xs`, value in `extrabold` `size.2xl`
 
 **Ingredients section:**
 - Terracotta dot + "INGREDIENTS" label
-- Each row: ingredient name (Mulish 600, green) | amount (Mulish 700, orange) — right-aligned
+- Each row: ingredient name (`semibold`, `textPrimary`) | amount (`bold`, orange) — right-aligned
 - Dividers between rows
 
 **Method section:**
-- Terracotta dot + "METHOD" label, inline with a **"📋 Copy recipe"** button (small green pill, Jost 700 9px, cream text)
+- Terracotta dot + "METHOD" label, inline with a **"📋 Copy recipe"** button (small green pill, `bold` `size.2xs`, cream text)
 - Steps as numbered list: green circle (18px) with step number in cream, step text beside it
 - Last step circle uses orange instead of green (signals completion)
 
@@ -194,10 +199,12 @@ Uses `expo-clipboard` `setStringAsync()`. No confirmation modal — a brief inli
 
 Reached by tapping the batch plan banner on the Recipes screen. Back link returns to Recipes.
 
-- Slim green header: "← Recipes" + "Sunday Batch Plan"
+- Slim green header: `‹ Recipes` (same back link spec as Recipe Detail) + "Sunday Batch Plan"
 - Body (cream): timed steps list
-  - Each row: time (Jost 700, terracotta, left) | task description (Mulish 600, green, right/flex)
+  - Each row: time (`bold`, terracotta, left) | task description (`semibold`, `textPrimary`, right/flex)
   - Dividers between rows
+
+**Static reference only (v1):** The schedule is informational — no live timer, no elapsed-time tracking, no alerts. "Starts HH:MM" is the intended start time Tim sets when generating the plan, not a triggered countdown. Notifications and live step tracking are v2 features.
 
 ---
 
@@ -206,19 +213,19 @@ Reached by tapping the batch plan banner on the Recipes screen. Back link return
 **No screen header.** Cream background from status bar down.
 
 **Top row:**
-- Week range: "DD–DD MMM" (Jost 700, terracotta, uppercase, 11px)
-- Sub: "{n} cal target" (Mulish 600, grey, 10px)
-- Import button (right-aligned): white pill with 📂 + "Import" (Jost 700, green, 9px), subtle shadow
+- Week range: "DD–DD MMM" (`bold`, terracotta, uppercase, `size.sm`)
+- Sub: "{n} cal target" (`semibold`, `textSecondary`, `size.xs`)
+- Import button (right-aligned): white pill with 📂 + "Import" (`bold`, green, `size.2xs`), subtle shadow
 
 **Today card (green):**
-- Day name (Jost 800, cream, 15px) + orange "TODAY" badge
-- B / L / D rows: bold white letter + `#c4d5d0` meal name
-- Footer: cal (orange) · protein (green-white) separated by border-top
+- Day name (`extrabold`, cream, `size.lg`) + orange "TODAY" badge
+- B / L / D rows: `bold` cream letter + `onGreenSubtle` meal name
+- Footer: cal (orange) · protein (`onGreenSubtle`) separated by border-top
 
 **Other days (white cards, stacked with 1px gap):**
 - Top card: rounded top corners; bottom card: rounded bottom corners; middle: 3px radius
-- Day name (Jost 700, green) | cal (orange) + protein (grey) right-aligned
-- B / L / D on one line: terracotta bold letter + grey meal name, space-separated
+- Day name (`bold`, `textPrimary`) | cal (orange) + protein (`textSecondary`) right-aligned
+- B / L / D on one line: terracotta `bold` letter + `textSecondary` meal name, space-separated
 - Tapping a day with a `batch_ref` meal navigates to that recipe detail
 
 **"Today" logic:** `new Date().getDay()` returns 0 (Sun) – 6 (Sat), which maps directly to `meal_plan[dayIndex]`. Highlight that card. If today falls outside the plan week, no card is highlighted.
@@ -271,17 +278,22 @@ shopping_items (
   id               TEXT PRIMARY KEY,
   plan_id          TEXT NOT NULL REFERENCES weekly_plans(id),
   category         TEXT NOT NULL,
-  category_order   INTEGER NOT NULL,
-  item_order       INTEGER NOT NULL,
+  category_order   INTEGER NOT NULL,      -- set on import from JSON array index; never modified by the app
+  item_order       INTEGER NOT NULL,      -- position within category; used to restore item after uncheck
   name             TEXT NOT NULL,
   qty              TEXT NOT NULL,
   estimated_price  REAL NOT NULL,
   is_oneoff        INTEGER DEFAULT 0,
   note             TEXT,
-  is_checked       INTEGER DEFAULT 0,
+  is_checked       INTEGER DEFAULT 0,    -- 1 = in basket; 0 = remaining
   actual_price     REAL,                  -- null until price feature (v2)
   store            TEXT                   -- null until price feature (v2)
 )
+
+-- User category order preferences (overrides import order; persisted in AsyncStorage as JSON)
+-- Key: "category_order_prefs"
+-- Value: { [category_name: string]: number }
+-- Applied on plan load when category names match. is_oneoff categories always sort last.
 ```
 
 ### Future Tables (schema defined in v1 migration, populated later)
@@ -318,6 +330,37 @@ price_history (
   date        TEXT NOT NULL,
   plan_id     TEXT REFERENCES weekly_plans(id)
 )
+
+-- Physical store locations (e.g. "Woolworths Northgate" vs "Woolworths Marryatville")
+stores (
+  id          TEXT PRIMARY KEY,          -- e.g. "woolworths_northgate"
+  chain       TEXT NOT NULL,             -- "Woolworths", "Coles"
+  branch      TEXT NOT NULL,             -- "Northgate", "Marryatville"
+  created_at  TEXT NOT NULL
+)
+
+-- User-defined aisle layout within a store (walking order through the shop)
+store_aisles (
+  id          TEXT PRIMARY KEY,
+  store_id    TEXT NOT NULL REFERENCES stores(id),
+  aisle_label TEXT NOT NULL,             -- "Aisle 3", "Produce", "Freezer", "Deli"
+  sort_order  INTEGER NOT NULL           -- user-defined walk sequence (drag-to-reorder)
+)
+
+-- Item-to-aisle mapping per store; keyed by barcode (precise) or item_name (fuzzy fallback)
+-- When a store is active during a shop, the shopping list sorts by store_aisles.sort_order
+-- using this table to resolve each item's aisle. Unmapped items group at the end.
+item_aisle_map (
+  id          TEXT PRIMARY KEY,
+  store_id    TEXT NOT NULL REFERENCES stores(id),
+  barcode     TEXT,                      -- null if not scanned
+  item_name   TEXT NOT NULL,             -- shopping list item name (fallback key)
+  aisle_id    TEXT NOT NULL REFERENCES store_aisles(id),
+  updated_at  TEXT NOT NULL
+)
+-- Note: when aisle tracking is active, it supersedes the manual category_order_prefs.
+-- The v1 category reorder feature (AsyncStorage prefs) is the precursor to this.
+-- Migration path: map existing category names to store_aisles on first store setup.
 ```
 
 ### Import Pipeline (weekly plan JSON → SQLite)
@@ -352,7 +395,10 @@ Accessed via the ⚙ Settings screen (see Navigation section).
   "shopping_items": [...],
   "price_history": [...],
   "barcode_nutrition": [...],
-  "barcode_stores": [...]
+  "barcode_stores": [...],
+  "stores": [...],
+  "store_aisles": [...],
+  "item_aisle_map": [...]
 }
 ```
 
