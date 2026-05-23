@@ -24,7 +24,7 @@ export function ShoppingItem({ item, onToggle }: Props) {
         style={styles.row}
       >
         <View importantForAccessibility="no-hide-descendants">
-          <Checkbox checked={item.is_checked === 1} />
+          <Checkbox checked={false} />
         </View>
         <View style={styles.content}>
           <AppText weight="bold" color="textPrimary" size="md">{item.name}</AppText>
