@@ -103,14 +103,22 @@ This consolidates all data management in one place and keeps the Plan header cle
 **Header (green band):**
 - Title: "Shopping List" (`extrabold`, cream)
 - Sub: "Week of DD MMM" (`semibold`, `onGreenSubtle`)
-- Budget pill: "Budget $XX.XX" (left) + "Ticked N / T" (right), both cream on semi-transparent dark background
+- Budget pill: "Budget $XX.XX" (left) + "✓ N / T" (right), both cream on semi-transparent dark background
 - Progress bar: green fill grows left-to-right as items are ticked (completion indicator, not a spend tracker)
 - Footer labels: "N items left" (`onGreenSubtle`) — simple count, no financial state change
+- **↕ Reorder button** (top-right of header, outside the scrollable list body): small cream icon, 44×44dp touch target. Tapping opens the **Category Order sheet** (see below).
+
+**Category Order sheet:**
+- Full-screen overlay or bottom sheet (Expo Router modal)
+- Shows only the category names as a draggable list — one row per category, `≡` drag handle on the left, category name on the right
+- `is_oneoff` categories appear at the bottom, greyed out, with a lock icon — not draggable
+- Two buttons at the bottom: **Done** (saves order to `AsyncStorage` as `category_order_prefs: { [category_name]: number }`) and **Reset** (restores the last saved order, or the import order if no preference has been saved yet)
+- Order is not written to AsyncStorage until Done is tapped — Cancel/back discards changes
+- On return to the shopping list, the list re-sorts to the new order immediately
 
 **Body (cream):**
-- Items grouped by `category` from `shopping_items`, sorted by `category_order`
-- Category header: 5px terracotta dot + all-caps `semibold` label in terracotta
-  - **Long-press** a category header to enter reorder mode — drag handles appear on all category headers. Drag to reorder. Order is saved to `AsyncStorage` as `category_order_prefs: { [category_name]: number }` and applied on every plan load when category names match.
+- Items grouped by `category` from `shopping_items`, sorted by `category_order_prefs` (AsyncStorage) when names match, otherwise by import order
+- Category header: 5px terracotta dot + all-caps `semibold` label in terracotta. No drag handles or long-press in the main list — reordering is only available via the ↕ header button.
   - `is_oneoff` categories always sort last, regardless of user order. A small `textNote`-coloured "(check pantry first)" label appears beside the header text on each `is_oneoff` row.
 - **Each item row** (entire row is the tap target — not just the checkbox):
   - Checkbox (20×20, `radius.xs`): unchecked = `checkboxBorder` border; checked = `green` fill + cream ✓
@@ -121,11 +129,13 @@ This consolidates all data management in one place and keeps the Plan header cle
 
 **In Basket section (bottom of list):**
 - Appears below all category groups once the first item is ticked
-- Section header: 5px terracotta dot + "IN BASKET" label (same style as category headers)
+- Section header: green `✓` icon (instead of terracotta dot) + "IN BASKET (N)" label in `green` — visually distinct from category headers
+- Below the header, one line of hint text: "Tap any item to put it back" (`textNote`, `size.2xs`) — visible always, not just on first use
+- The section is **collapsible**: tapping the header row collapses/expands the item list. Expanded by default. When collapsed, the header shows the count: "IN BASKET (N)". Since the section is always at the bottom of the list, collapse is a convenience not a necessity.
 - Items shown in order they were ticked, with strikethrough + 40% opacity
-- Each row also shows the original category name in `textNote` colour below the item name
-- Tapping any row in this section unchecks it and returns it to its original category position (slide-up animation)
-- No "uncheck all" button — individual uncheck is sufficient
+- Each row also shows the original category name in `textNote` colour below the item name (`size.2xs`, e.g. "Meat & Seafood")
+- Tapping any row unchecks it and returns it to its original category position (slide-up animation)
+- For accessibility: each In Basket row should have `accessibilityState={{ checked: true }}` and `accessibilityHint="Double-tap to uncheck and return to list"`
 
 **State persistence:**
 - `is_checked` stored in `shopping_items` SQLite table (not AsyncStorage) — updated on each tap
@@ -373,8 +383,8 @@ The monolithic `meal_plan.json` format is preserved for Claude generation. On im
 4. **Upsert recipes** into `recipes` table — new recipes are added, existing IDs are updated. Favourites flag is preserved on conflict.
 5. **Insert weekly plan** row into `weekly_plans` — set `is_active = 1`, clear previous active plan
 6. **Insert shopping items** — delete previous items for this `plan_id` if re-importing, then bulk insert
-7. Navigate to Shop tab, show brief "Plan loaded!" inline confirmation
-8. On failure: show inline error message (no modal)
+7. Navigate to Shop tab, show brief inline confirmation: "Plan loaded — N items, M recipes" (counts from the just-imported data)
+8. On failure: show inline error message naming the specific problem (e.g. "Missing `shopping_list` key" or "Unrecognised schema_version") with a "Try again" link — no modal
 
 ### Backup & Restore
 
