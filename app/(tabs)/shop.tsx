@@ -130,7 +130,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cream,
   },
   headerContent: {
-    paddingHorizontal: spacing[4],
     paddingBottom: spacing[4],
     gap: spacing[2],
   },
