@@ -21,9 +21,12 @@ A personal Android app for Tim's weekly meal planning workflow. Fully offline. N
 | Framework | Expo (React Native) + TypeScript |
 | Routing | Expo Router (file-based, `app/` directory) |
 | Navigation | Bottom tabs via Expo Router `(tabs)` layout |
-| Persistence | AsyncStorage (plan JSON + checkbox state) |
+| Database | `expo-sqlite` — all plan/recipe/shopping data |
+| App state | `AsyncStorage` — lightweight settings only (active plan ID, etc.) |
 | File import | `expo-document-picker` |
-| Clipboard | `expo-clipboard` |
+| File system | `expo-file-system` — read imported JSON / write backup |
+| Sharing | `expo-sharing` — share backup file via Android share sheet |
+| Clipboard | `expo-clipboard` — copy recipe as plain text |
 | Fonts | `@expo-google-fonts/jost` + `@expo-google-fonts/mulish` |
 | Network | None — fully offline |
 
@@ -53,13 +56,22 @@ A personal Android app for Tim's weekly meal planning workflow. Fully offline. N
 
 ## Navigation
 
-Three bottom tabs. Tab bar sits on `#F4F5EB`, active tab label in `#1C453C`, inactive in `#bbb`.
+Three bottom tabs plus a Settings screen (not a tab).
 
 ```
-[ 🛒 Shop ] [ 🍳 Recipes ] [ 📅 Plan ]
+[ 🛒 Shop ] [ 🍳 Recipes ] [ 📅 Plan ]   ⚙ (top-right of Plan tab)
 ```
+
+Tab bar sits on `#F4F5EB`, active tab label in `#1C453C`, inactive in `#bbb`.
 
 Default tab on launch: **Shop**. If no plan is loaded, the Shop tab shows the empty state with an import button — no special redirect needed.
+
+**⚙ Settings screen** (Expo Router modal, accessible from Plan tab header):
+- Import new weekly plan (JSON)
+- Export all data (backup)
+- Restore from backup
+
+This consolidates all data management in one place and keeps the Plan header clean.
 
 ---
 
@@ -192,24 +204,145 @@ Reached by tapping the batch plan banner on the Recipes screen. Back link return
 
 ## Data Architecture
 
-```
-AsyncStorage keys:
-  meal_plan_data     → full MealPlan JSON string (null if not imported)
-  shopping_checked   → JSON string of { "${catIdx}_${itemIdx}": boolean }
+### Storage
+
+All plan, recipe, and shopping data lives in **SQLite** (`expo-sqlite`). `AsyncStorage` is used only for lightweight app state (active plan ID, last import date).
+
+SQLite is chosen over AsyncStorage because the roadmap requires querying (price history, recipe library search, barcode lookups) — key-value storage won't scale to those features.
+
+### Core Tables (v1)
+
+```sql
+-- Recipes accumulate across weeks — not deleted on new plan import
+recipes (
+  id                  TEXT PRIMARY KEY,   -- e.g. "beef_stew"
+  title               TEXT NOT NULL,
+  meal_type           TEXT NOT NULL,      -- breakfast | lunch | dinner | snack
+  servings            INTEGER NOT NULL,
+  calories_per_serve  INTEGER NOT NULL,
+  protein_per_serve_g INTEGER NOT NULL,
+  cook_method         TEXT NOT NULL,
+  prep_minutes        INTEGER NOT NULL,
+  cook_minutes        INTEGER NOT NULL,
+  ingredients_json    TEXT NOT NULL,      -- JSON: Ingredient[]
+  method_steps_json   TEXT NOT NULL,      -- JSON: string[]
+  is_favourite        INTEGER DEFAULT 0,  -- bool; 0 = false
+  source              TEXT DEFAULT 'imported', -- imported | user
+  created_at          TEXT NOT NULL
+)
+
+-- One row per imported week
+weekly_plans (
+  id               TEXT PRIMARY KEY,      -- week_starting date string
+  week_starting    TEXT NOT NULL,
+  is_active        INTEGER DEFAULT 0,     -- bool; only one active at a time
+  meta_json        TEXT NOT NULL,         -- JSON: Meta
+  strategy_json    TEXT NOT NULL,         -- JSON: Strategy
+  days_json        TEXT NOT NULL,         -- JSON: DayPlan[]
+  batch_plan_json  TEXT NOT NULL,         -- JSON: BatchStep[]
+  created_at       TEXT NOT NULL
+)
+
+-- Flat list of shopping items per plan; is_checked is the live checkbox state
+shopping_items (
+  id               TEXT PRIMARY KEY,
+  plan_id          TEXT NOT NULL REFERENCES weekly_plans(id),
+  category         TEXT NOT NULL,
+  category_order   INTEGER NOT NULL,
+  item_order       INTEGER NOT NULL,
+  name             TEXT NOT NULL,
+  qty              TEXT NOT NULL,
+  estimated_price  REAL NOT NULL,
+  is_oneoff        INTEGER DEFAULT 0,
+  note             TEXT,
+  is_checked       INTEGER DEFAULT 0,
+  actual_price     REAL,                  -- null until price feature (v2)
+  store            TEXT                   -- null until price feature (v2)
+)
 ```
 
-**App startup:**
-1. Load `meal_plan_data` from AsyncStorage
-2. If null → show empty state on all tabs with "Import your meal plan to get started" + 📂 button
-3. If present → parse and hydrate all screens
+### Future Tables (schema defined in v1 migration, populated later)
 
-**Import flow:**
-1. User taps 📂 Import on Plan tab
-2. `expo-document-picker` opens, filtered to `application/json`
-3. Read file via `expo-file-system`
-4. Parse JSON → validate (check `schema_version`, required top-level keys)
-5. On success: write to `meal_plan_data`, clear `shopping_checked`, navigate to Shop tab, show brief "Plan loaded!" inline confirmation
-6. On failure: show inline error below the import button ("Couldn't read that file — make sure it's a valid meal plan JSON")
+```sql
+-- One row per (barcode, store) pair — populated on first scan at that store
+barcode_stores (
+  barcode     TEXT NOT NULL,
+  store       TEXT NOT NULL,
+  first_seen  TEXT NOT NULL,
+  PRIMARY KEY (barcode, store)
+)
+
+-- Product nutrition data keyed by barcode
+barcode_nutrition (
+  barcode          TEXT PRIMARY KEY,
+  brand_name       TEXT,                  -- "Macro", "Woolworths Select"
+  item_name        TEXT NOT NULL,         -- "Free Range Chicken Thighs"
+  cal_per_100g     REAL NOT NULL,
+  protein_per_100g REAL NOT NULL,
+  carbs_per_100g   REAL NOT NULL,
+  fat_per_100g     REAL NOT NULL,
+  scanned_at       TEXT NOT NULL
+)
+
+-- Price recorded each time an item is ticked off during a shop
+price_history (
+  id          TEXT PRIMARY KEY,
+  barcode     TEXT REFERENCES barcode_nutrition(barcode),  -- null if not scanned
+  item_name   TEXT NOT NULL,             -- canonical shopping list name (fallback key)
+  store       TEXT NOT NULL,
+  price       REAL NOT NULL,
+  qty         TEXT NOT NULL,             -- "1.2kg", "500g" — for per-unit math
+  date        TEXT NOT NULL,
+  plan_id     TEXT REFERENCES weekly_plans(id)
+)
+```
+
+### Import Pipeline (weekly plan JSON → SQLite)
+
+The monolithic `meal_plan.json` format is preserved for Claude generation. On import it is dissembled into the three core tables:
+
+1. `expo-document-picker` opens filtered to `.json`
+2. Read via `expo-file-system`, parse JSON
+3. Validate: check `schema_version`, required top-level keys
+4. **Upsert recipes** into `recipes` table — new recipes are added, existing IDs are updated. Favourites flag is preserved on conflict.
+5. **Insert weekly plan** row into `weekly_plans` — set `is_active = 1`, clear previous active plan
+6. **Insert shopping items** — delete previous items for this `plan_id` if re-importing, then bulk insert
+7. Navigate to Shop tab, show brief "Plan loaded!" inline confirmation
+8. On failure: show inline error message (no modal)
+
+### Backup & Restore
+
+Accessed via the ⚙ Settings screen (see Navigation section).
+
+**Export backup:**
+1. Serialise all SQLite tables to JSON
+2. Write to a timestamped file: `meal-planner-backup-YYYY-MM-DD.json`
+3. Open Android share sheet via `expo-sharing` — user sends to Drive, Files, Telegram self-message, etc.
+
+**Backup format:**
+```json
+{
+  "backup_version": "1.0",
+  "exported_at": "2026-05-24T10:00:00Z",
+  "recipes": [...],
+  "weekly_plans": [...],
+  "shopping_items": [...],
+  "price_history": [...],
+  "barcode_nutrition": [...],
+  "barcode_stores": [...]
+}
+```
+
+**Restore backup:**
+1. `expo-document-picker` → pick backup JSON
+2. Parse + validate `backup_version`
+3. Confirm with inline prompt: "This will replace all your data. Continue?" (inline — no modal)
+4. Drop + recreate all tables, bulk insert from backup
+5. Navigate to Shop tab
+
+**Key distinction:**
+- _Import weekly plan_ — additive to recipe library, replaces active shopping list only
+- _Restore backup_ — full replace of all data
 
 ---
 
