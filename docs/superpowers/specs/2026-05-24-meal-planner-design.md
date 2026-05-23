@@ -32,25 +32,48 @@ A personal Android app for Tim's weekly meal planning workflow. Fully offline. N
 
 ---
 
-## Colour System
+## Design Tokens
+
+All colours, typography, spacing, radii, and shadows are defined in **`constants/tokens.ts`** — the single source of truth. Never hard-code values in components; always import from tokens.
+
+### Colour
 
 | Token | Hex | Role |
 |---|---|---|
-| Green (hero) | `#1C453C` | Screen headers, item names, checkmarks, active tab, step numbers |
-| Terracotta | `#744234` | Category labels, quantities, overspend state |
-| Orange | `#E87B3A` | Prices, budget remaining, progress bar, calorie figures |
-| Cream | `#F4F5EB` | Screen background, card surfaces, header text |
-| Green-white | `#c4d5d0` | Header supporting text (on green background) |
-| Off-divider | `#e9eadc` | List item dividers, tab bar border |
+| `green` | `#1C453C` | Screen headers, item names, checkmarks, active tab, step numbers |
+| `terracotta` | `#744234` | Category labels, quantities, overspend state |
+| `orange` | `#E87B3A` | Prices, budget remaining, progress bar, calorie figures |
+| `cream` | `#F4F5EB` | Screen background, card surfaces, header text |
+| `onGreenSubtle` | `#c4d5d0` | Header supporting text (on green background) |
+| `divider` | `#e9eadc` | List item dividers, tab bar border |
 
 **Overspend state:** label changes from "Remaining" → "Over by", amount and progress bar shift to terracotta. No red — a nudge, not an alarm.
 
----
+### Typography
 
-## Typography
+**Font:** Plus Jakarta Sans (single family — `@expo-google-fonts/plus-jakarta-sans`). Five weights loaded: 400, 500, 600, 700, 800.
 
-- **Headings / labels / numbers:** Jost (800 for titles, 700 for labels, 600 for sub-labels)
-- **Body / item names / notes:** Mulish (700 for names, 600 for details, 400 for italic notes)
+**No italic variant.** Notes and captions use `textNote` colour (`#888`) at regular weight instead of italic.
+
+| Token | dp | Role |
+|---|---|---|
+| `2xs` | 9 | Category labels, budget pills, tab labels |
+| `xs` | 10 | Header sub-text ("Week of DD MMM") |
+| `sm` | 11 | Back links, item detail, recipe stats |
+| `md` | 13 | Recipe card names, body |
+| `lg` | 15 | Plan day names |
+| `xl` | 17 | Screen titles |
+| `2xl` | 20 | Recipe detail title, stat strip values |
+
+**Weights:** `extrabold` (800) for screen titles; `bold` (700) for item names, card names; `semibold` (600) for labels and detail text; `medium` (500) for supporting text; `regular` (400) for notes.
+
+### Spacing
+
+4dp base unit. Scale: 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40.
+
+### Border radius
+
+`xs` 4 · `sm` 5 · `md` 10 · `lg` 16 · `xl` 20 · `full` 9999.
 
 ---
 
@@ -391,8 +414,7 @@ hooks/
   useMealPlan.ts      ← load/import plan from AsyncStorage
   useShoppingState.ts ← checkbox persistence
 constants/
-  colours.ts          ← colour tokens
-  fonts.ts
+  tokens.ts           ← all design tokens (colours, typography, spacing, radii, shadows)
 assets/
   fonts/
 ```
