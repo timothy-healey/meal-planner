@@ -1,0 +1,971 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "Weekly Meal Plan & Shopping List",
+    "week_starting": "2026-05-24",
+    "currency": "AUD",
+    "store": "Woolworths",
+    "region": "Adelaide, South Australia",
+    "weekly_budget": 140,
+    "cooking_style": "Crock-pot batch cooking, Sunday prep",
+    "dinners_per_batch": 6,
+    "notes": "Macros are per-day estimates. Prices in AUD. Two crockpot batches Sunday cover 6 dinners; eat out 1-2 nights."
+  },
+  "daily_targets": [
+    {
+      "day": "Sunday",
+      "calories": 2000,
+      "protein_g": 140,
+      "note": "Batch cook day"
+    },
+    {
+      "day": "Monday",
+      "calories": 2000,
+      "protein_g": 140,
+      "note": "Work day"
+    },
+    {
+      "day": "Tuesday",
+      "calories": 2000,
+      "protein_g": 140,
+      "note": "Work day"
+    },
+    {
+      "day": "Wednesday",
+      "calories": 2000,
+      "protein_g": 140,
+      "note": "Work day"
+    },
+    {
+      "day": "Thursday",
+      "calories": 2000,
+      "protein_g": 140,
+      "note": "Work day"
+    },
+    {
+      "day": "Friday",
+      "calories": 2200,
+      "protein_g": 140,
+      "note": "Higher day — likely eating out"
+    },
+    {
+      "day": "Saturday",
+      "calories": 2200,
+      "protein_g": 140,
+      "note": "Higher day — likely eating out"
+    }
+  ],
+  "strategy": {
+    "breakfast": "Overnight oats (Mon-Fri) prepped Sunday night in 5 jars. Protein Up&Go as backup or alongside.",
+    "lunch": "Beef burritos (3 days) + chicken Caesar wraps (3 days). Prepped Sunday.",
+    "dinner": "Two crock-pot batches Sunday: beef stew + honey soy chicken with roast veg. 3 portions each.",
+    "snacks": "Greek yoghurt, kiwi, berries, boiled eggs, Protein Up&Go.",
+    "weekend": "Higher calorie days — extra crockpot serve, larger breakfast, or eat out.",
+    "drinks": "Pepsi Max / Coke No Sugar included in shop. Water + black coffee otherwise."
+  },
+  "meal_plan": [
+    {
+      "day": "Sunday",
+      "calories": 2000,
+      "protein_g": 147,
+      "meals": {
+        "breakfast": {
+          "name": "Protein overnight oats",
+          "calories": 450,
+          "protein_g": 32,
+          "serving_size": "1 jar (~350g)",
+          "components": [
+            "oats",
+            "Greek yoghurt",
+            "milk",
+            "chia",
+            "protein powder",
+            "berries"
+          ]
+        },
+        "lunch": {
+          "name": "Beef burrito",
+          "calories": 620,
+          "protein_g": 42,
+          "serving_size": "1 burrito",
+          "components": [
+            "beef mince",
+            "kidney beans",
+            "corn",
+            "capsicum",
+            "cheese",
+            "wrap"
+          ]
+        },
+        "dinner": {
+          "name": "Slow-cooked beef & vegetable stew",
+          "calories": 650,
+          "protein_g": 48,
+          "serving_size": "~450g",
+          "batch_ref": "beef_stew",
+          "portion": 1
+        },
+        "snacks": {
+          "items": [
+            "Greek yoghurt + kiwi",
+            "boiled egg"
+          ],
+          "calories": 280,
+          "protein_g": 25
+        }
+      }
+    },
+    {
+      "day": "Monday",
+      "calories": 2000,
+      "protein_g": 152,
+      "meals": {
+        "breakfast": {
+          "name": "Protein overnight oats + Up&Go",
+          "calories": 620,
+          "protein_g": 52,
+          "serving_size": "1 jar + 1 Up&Go",
+          "components": [
+            "oats",
+            "Greek yoghurt",
+            "milk",
+            "chia",
+            "protein powder",
+            "berries",
+            "Protein Up&Go"
+          ]
+        },
+        "lunch": {
+          "name": "Beef burrito",
+          "calories": 620,
+          "protein_g": 42,
+          "serving_size": "1 burrito"
+        },
+        "dinner": {
+          "name": "Honey soy chicken thighs + roasted veg",
+          "calories": 620,
+          "protein_g": 55,
+          "serving_size": "~400g",
+          "batch_ref": "honey_soy_chicken",
+          "portion": 1
+        },
+        "snacks": {
+          "items": [
+            "Kiwi",
+            "Up&Go (if not at breakfast)"
+          ],
+          "calories": 140,
+          "protein_g": 10
+        }
+      }
+    },
+    {
+      "day": "Tuesday",
+      "calories": 2000,
+      "protein_g": 147,
+      "meals": {
+        "breakfast": {
+          "name": "Protein overnight oats",
+          "calories": 450,
+          "protein_g": 32,
+          "serving_size": "1 jar (~350g)"
+        },
+        "lunch": {
+          "name": "Chicken Caesar wrap",
+          "calories": 600,
+          "protein_g": 45,
+          "serving_size": "1 wrap",
+          "components": [
+            "pulled chicken thigh",
+            "cos lettuce",
+            "parmesan",
+            "Caesar dressing",
+            "wrap"
+          ]
+        },
+        "dinner": {
+          "name": "Slow-cooked beef & vegetable stew",
+          "calories": 650,
+          "protein_g": 48,
+          "serving_size": "~450g",
+          "batch_ref": "beef_stew",
+          "portion": 2
+        },
+        "snacks": {
+          "items": [
+            "Greek yoghurt + berries",
+            "boiled egg"
+          ],
+          "calories": 280,
+          "protein_g": 25
+        }
+      }
+    },
+    {
+      "day": "Wednesday",
+      "calories": 2000,
+      "protein_g": 152,
+      "meals": {
+        "breakfast": {
+          "name": "Protein overnight oats + Up&Go",
+          "calories": 620,
+          "protein_g": 52,
+          "serving_size": "1 jar + 1 Up&Go"
+        },
+        "lunch": {
+          "name": "Beef burrito",
+          "calories": 620,
+          "protein_g": 42,
+          "serving_size": "1 burrito"
+        },
+        "dinner": {
+          "name": "Honey soy chicken thighs + roasted veg",
+          "calories": 620,
+          "protein_g": 55,
+          "serving_size": "~400g",
+          "batch_ref": "honey_soy_chicken",
+          "portion": 2
+        },
+        "snacks": {
+          "items": [
+            "Kiwi",
+            "Up&Go"
+          ],
+          "calories": 140,
+          "protein_g": 10
+        }
+      }
+    },
+    {
+      "day": "Thursday",
+      "calories": 2000,
+      "protein_g": 147,
+      "meals": {
+        "breakfast": {
+          "name": "Protein overnight oats",
+          "calories": 450,
+          "protein_g": 32,
+          "serving_size": "1 jar (~350g)"
+        },
+        "lunch": {
+          "name": "Chicken Caesar wrap",
+          "calories": 600,
+          "protein_g": 45,
+          "serving_size": "1 wrap"
+        },
+        "dinner": {
+          "name": "Slow-cooked beef & vegetable stew",
+          "calories": 650,
+          "protein_g": 48,
+          "serving_size": "~450g",
+          "batch_ref": "beef_stew",
+          "portion": 3
+        },
+        "snacks": {
+          "items": [
+            "Greek yoghurt + berries",
+            "boiled egg"
+          ],
+          "calories": 280,
+          "protein_g": 25
+        }
+      }
+    },
+    {
+      "day": "Friday",
+      "calories": 2200,
+      "protein_g": 152,
+      "meals": {
+        "breakfast": {
+          "name": "Protein overnight oats + Up&Go",
+          "calories": 620,
+          "protein_g": 52,
+          "serving_size": "1 jar + 1 Up&Go"
+        },
+        "lunch": {
+          "name": "Chicken Caesar wrap",
+          "calories": 600,
+          "protein_g": 45,
+          "serving_size": "1 wrap"
+        },
+        "dinner": {
+          "name": "Honey soy chicken + roasted veg OR eat out",
+          "calories": 620,
+          "protein_g": 55,
+          "serving_size": "~400g",
+          "batch_ref": "honey_soy_chicken",
+          "portion": 3,
+          "flexible": true
+        },
+        "snacks": {
+          "items": [
+            "Kiwi",
+            "Up&Go",
+            "extra yoghurt"
+          ],
+          "calories": 360,
+          "protein_g": 10
+        }
+      }
+    },
+    {
+      "day": "Saturday",
+      "calories": 2200,
+      "protein_g": 140,
+      "meals": {
+        "breakfast": {
+          "name": "Cooked breakfast — eggs, mushrooms, spinach, leftover veg",
+          "calories": 550,
+          "protein_g": 35,
+          "serving_size": "3 eggs + sides"
+        },
+        "lunch": {
+          "name": "Flexible — leftovers OR eat out",
+          "calories": 650,
+          "protein_g": 35,
+          "serving_size": "1 meal",
+          "flexible": true
+        },
+        "dinner": {
+          "name": "Eat out OR extra crockpot serve if frozen",
+          "calories": 700,
+          "protein_g": 50,
+          "serving_size": "1 meal",
+          "flexible": true
+        },
+        "snacks": {
+          "items": [
+            "Kiwi",
+            "Berries",
+            "Up&Go"
+          ],
+          "calories": 280,
+          "protein_g": 20
+        }
+      }
+    }
+  ],
+  "sunday_batch_plan": [
+    {
+      "time": "08:00",
+      "task": "Start crock-pot Batch 1 (beef stew). Cooks low for 8 hours — set and forget."
+    },
+    {
+      "time": "08:30",
+      "task": "Prep 5 jars of overnight oats. Fridge."
+    },
+    {
+      "time": "12:00",
+      "task": "Cook off reserved chicken thigh for Caesar wraps + burrito mince on stovetop."
+    },
+    {
+      "time": "12:30",
+      "task": "Assemble 3 beef burritos. Wrap in foil. Fridge or freeze."
+    },
+    {
+      "time": "15:00",
+      "task": "Start crock-pot Batch 2 (honey soy chicken thighs) — 3-4 hours on low. Roast veg in oven during last 45 min."
+    },
+    {
+      "time": "18:00",
+      "task": "Portion both batches into 3 containers each. Fridge what you eat first half of week, freeze the rest."
+    },
+    {
+      "time": "18:30",
+      "task": "Pre-assemble 3 Caesar wraps (or store components separately for fresher result)."
+    }
+  ],
+  "recipes": [
+    {
+      "id": "beef_stew",
+      "image_slug": "beef_stew",
+      "title": "Slow-Cooked Beef & Vegetable Stew",
+      "servings": 3,
+      "meal_type": "dinner",
+      "protein_per_serve_g": 48,
+      "calories_per_serve": 650,
+      "cook_method": "crockpot",
+      "prep_minutes": 15,
+      "cook_minutes": 480,
+      "ingredients": [
+        {
+          "item": "Beef chuck or gravy beef, cubed",
+          "amount": "900g"
+        },
+        {
+          "item": "Brown onion, diced",
+          "amount": "1"
+        },
+        {
+          "item": "Garlic cloves, crushed",
+          "amount": "3"
+        },
+        {
+          "item": "Carrots, chunky",
+          "amount": "4"
+        },
+        {
+          "item": "Medium potatoes, chunky",
+          "amount": "4"
+        },
+        {
+          "item": "Frozen peas (added last 30 min)",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Tin diced tomatoes",
+          "amount": "400g"
+        },
+        {
+          "item": "Beef stock",
+          "amount": "500ml"
+        },
+        {
+          "item": "Tomato paste",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Paprika",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Dried thyme",
+          "amount": "1 tsp"
+        },
+        {
+          "item": "Worcestershire sauce",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Salt and pepper",
+          "amount": "to taste"
+        }
+      ],
+      "method": "Sear beef in batches (optional but recommended). Add everything except peas to crock-pot. Low 8 hours or high 4-5 hours. Stir peas through last 30 min. Portion into 3 containers."
+    },
+    {
+      "id": "honey_soy_chicken",
+      "image_slug": "honey_soy_chicken",
+      "title": "Honey Soy Crock-Pot Chicken Thighs + Roast Veg",
+      "servings": 3,
+      "meal_type": "dinner",
+      "protein_per_serve_g": 55,
+      "calories_per_serve": 620,
+      "cook_method": "crockpot + oven",
+      "prep_minutes": 15,
+      "cook_minutes": 240,
+      "ingredients": [
+        {
+          "item": "Boneless skinless chicken thigh fillets (reserve ~400g for wraps)",
+          "amount": "1.2kg pack, use ~800g"
+        },
+        {
+          "item": "Soy sauce",
+          "amount": "1/3 cup"
+        },
+        {
+          "item": "Honey",
+          "amount": "1/3 cup"
+        },
+        {
+          "item": "Garlic cloves, crushed",
+          "amount": "3"
+        },
+        {
+          "item": "Grated ginger (or 1 tsp dried)",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Rice vinegar or apple cider vinegar",
+          "amount": "1 tbsp"
+        },
+        {
+          "item": "Sesame oil (optional)",
+          "amount": "1 tsp"
+        },
+        {
+          "item": "Broccoli (for roast veg)",
+          "amount": "1 head"
+        },
+        {
+          "item": "Cauliflower (for roast veg)",
+          "amount": "1 head"
+        },
+        {
+          "item": "Capsicum (for roast veg)",
+          "amount": "1"
+        },
+        {
+          "item": "Zucchini (for roast veg)",
+          "amount": "1"
+        },
+        {
+          "item": "Olive oil + salt",
+          "amount": "to coat veg"
+        }
+      ],
+      "method": "Whisk sauce ingredients. Add chicken to crock-pot, pour sauce over. Low 4 hours or high 2-3 hours. Roast veg at 200°C with olive oil + salt for 25-30 min. Portion chicken with sauce + veg into 3 containers."
+    },
+    {
+      "id": "beef_burrito",
+      "image_slug": "beef_burrito",
+      "title": "Beef Burrito Filling",
+      "servings": 3,
+      "meal_type": "lunch",
+      "protein_per_serve_g": 42,
+      "calories_per_serve": 620,
+      "cook_method": "stovetop",
+      "prep_minutes": 10,
+      "cook_minutes": 15,
+      "ingredients": [
+        {
+          "item": "Beef mince",
+          "amount": "500g"
+        },
+        {
+          "item": "Small onion, diced",
+          "amount": "1"
+        },
+        {
+          "item": "Garlic cloves, crushed",
+          "amount": "2"
+        },
+        {
+          "item": "Mexican spice mix",
+          "amount": "1 tbsp"
+        },
+        {
+          "item": "Tin red kidney beans, drained",
+          "amount": "400g"
+        },
+        {
+          "item": "Corn kernels",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Red capsicum, diced",
+          "amount": "1"
+        },
+        {
+          "item": "Large wraps",
+          "amount": "3"
+        },
+        {
+          "item": "Grated tasty cheese",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Salsa or diced tomato",
+          "amount": "to serve"
+        }
+      ],
+      "method": "Brown mince with onion + garlic. Add spices, capsicum, beans, corn. Simmer 10 min until thick. Cool slightly. Divide between 3 wraps with cheese + salsa. Wrap tight in foil. Refrigerate up to 4 days."
+    },
+    {
+      "id": "chicken_caesar_wrap",
+      "image_slug": "chicken_caesar_wrap",
+      "title": "Chicken Caesar-Style Wraps",
+      "servings": 3,
+      "meal_type": "lunch",
+      "protein_per_serve_g": 45,
+      "calories_per_serve": 600,
+      "cook_method": "stovetop",
+      "prep_minutes": 5,
+      "cook_minutes": 10,
+      "ingredients": [
+        {
+          "item": "Chicken thigh reserved from 1.2kg pack (pan-seared, sliced)",
+          "amount": "~400g"
+        },
+        {
+          "item": "Large wraps",
+          "amount": "3"
+        },
+        {
+          "item": "Baby cos lettuce, shredded",
+          "amount": "1"
+        },
+        {
+          "item": "Grated parmesan",
+          "amount": "1/3 cup"
+        },
+        {
+          "item": "Light Caesar dressing",
+          "amount": "to taste"
+        },
+        {
+          "item": "Boiled eggs, sliced (optional)",
+          "amount": "3"
+        }
+      ],
+      "method": "Pan-sear chicken with salt + pepper, 4-5 min per side. Slice. Store components separately and assemble morning-of, OR pre-roll with dressing for grab-and-go (lettuce wilts slightly)."
+    },
+    {
+      "id": "overnight_oats",
+      "image_slug": "overnight_oats",
+      "title": "Protein Overnight Oats",
+      "servings": 5,
+      "meal_type": "breakfast",
+      "protein_per_serve_g": 32,
+      "calories_per_serve": 450,
+      "cook_method": "no-cook",
+      "prep_minutes": 10,
+      "cook_minutes": 0,
+      "ingredients": [
+        {
+          "item": "Rolled oats",
+          "amount": "2.5 cups (1/2 cup per jar)"
+        },
+        {
+          "item": "Milk",
+          "amount": "2.5 cups (1/2 cup per jar)"
+        },
+        {
+          "item": "Greek yoghurt",
+          "amount": "1.25 cups (1/4 cup per jar)"
+        },
+        {
+          "item": "Chia seeds",
+          "amount": "5 tbsp (1 tbsp per jar)"
+        },
+        {
+          "item": "Vanilla protein powder",
+          "amount": "5 scoops"
+        },
+        {
+          "item": "Honey or maple syrup",
+          "amount": "5 tsp"
+        },
+        {
+          "item": "Berries or kiwi to top",
+          "amount": "to taste"
+        }
+      ],
+      "method": "Per jar: combine oats, milk, yoghurt, chia, protein powder, sweetener. Stir well. Lid on. Fridge overnight. Lasts 4-5 days. Top with berries or sliced kiwi in the morning."
+    }
+  ],
+  "assumed_pantry": [
+    {
+      "item": "Salt",
+      "note": "Used in stew, roast veg, mince, eggs"
+    },
+    {
+      "item": "Black pepper",
+      "note": "Used throughout"
+    },
+    {
+      "item": "Olive oil",
+      "note": "For roast veg and pan-searing chicken"
+    },
+    {
+      "item": "Cooking oil",
+      "note": "For browning beef and mince"
+    },
+    {
+      "item": "Paprika",
+      "note": "For stew (2 tsp)"
+    },
+    {
+      "item": "Dried thyme",
+      "note": "For stew (1 tsp)"
+    },
+    {
+      "item": "Dried ginger",
+      "note": "Alternative to fresh ginger in honey soy sauce"
+    },
+    {
+      "item": "Sesame oil",
+      "note": "Optional, for honey soy sauce"
+    },
+    {
+      "item": "Maple syrup",
+      "note": "Alternative sweetener for overnight oats"
+    }
+  ],
+  "shopping_list": {
+    "priced_at": "2026-05-23",
+    "categories": [
+      {
+        "name": "Meat & Poultry",
+        "items": [
+          {
+            "item": "Beef chuck/gravy beef (for stew)",
+            "qty": "900g",
+            "price": 13.5,
+            "note": "Or whatever stewing cut is on special"
+          },
+          {
+            "item": "Beef mince (lean)",
+            "qty": "500g",
+            "price": 8.0,
+            "note": ""
+          },
+          {
+            "item": "Chicken thigh fillets (boneless, skinless)",
+            "qty": "1.2kg",
+            "price": 14.5,
+            "note": "Reserve ~400g unsauced for Caesar wraps"
+          }
+        ]
+      },
+      {
+        "name": "Fresh Produce",
+        "items": [
+          {
+            "item": "Brown onions",
+            "qty": "2",
+            "price": 1.2,
+            "note": ""
+          },
+          {
+            "item": "Garlic",
+            "qty": "1 bulb",
+            "price": 1.5,
+            "note": ""
+          },
+          {
+            "item": "Carrots",
+            "qty": "1kg",
+            "price": 2.0,
+            "note": ""
+          },
+          {
+            "item": "Potatoes (washed)",
+            "qty": "1.5kg",
+            "price": 4.5,
+            "note": ""
+          },
+          {
+            "item": "Broccoli",
+            "qty": "1 head",
+            "price": 3.5,
+            "note": ""
+          },
+          {
+            "item": "Cauliflower",
+            "qty": "1 head",
+            "price": 4.5,
+            "note": ""
+          },
+          {
+            "item": "Red capsicum",
+            "qty": "2",
+            "price": 4.0,
+            "note": ""
+          },
+          {
+            "item": "Zucchini",
+            "qty": "2",
+            "price": 3.0,
+            "note": ""
+          },
+          {
+            "item": "Baby cos lettuce",
+            "qty": "1 twin pack",
+            "price": 4.0,
+            "note": "For Caesar wraps"
+          },
+          {
+            "item": "Mushrooms",
+            "qty": "250g",
+            "price": 3.5,
+            "note": "Sat breakfast"
+          },
+          {
+            "item": "Baby spinach",
+            "qty": "120g bag",
+            "price": 3.5,
+            "note": ""
+          },
+          {
+            "item": "Kiwi fruit",
+            "qty": "6 pack",
+            "price": 4.5,
+            "note": ""
+          },
+          {
+            "item": "Mixed berries (frozen)",
+            "qty": "500g",
+            "price": 7.5,
+            "note": "Cheaper than fresh; for oats"
+          }
+        ]
+      },
+      {
+        "name": "Pantry (this week)",
+        "items": [
+          {
+            "item": "Tin diced tomatoes",
+            "qty": "1 x 400g",
+            "price": 1.2,
+            "note": ""
+          },
+          {
+            "item": "Tin red kidney beans",
+            "qty": "1 x 400g",
+            "price": 1.5,
+            "note": ""
+          },
+          {
+            "item": "Tin corn kernels",
+            "qty": "1 x 400g",
+            "price": 1.8,
+            "note": ""
+          },
+          {
+            "item": "Tomato paste",
+            "qty": "1 small tube",
+            "price": 1.8,
+            "note": ""
+          },
+          {
+            "item": "Beef stock (carton or cubes)",
+            "qty": "500ml",
+            "price": 2.5,
+            "note": ""
+          },
+          {
+            "item": "Mexican spice mix sachet",
+            "qty": "1",
+            "price": 1.5,
+            "note": ""
+          },
+          {
+            "item": "Large wraps (tortillas)",
+            "qty": "6 pack",
+            "price": 4.0,
+            "note": ""
+          },
+          {
+            "item": "Rolled oats",
+            "qty": "500g",
+            "price": 2.5,
+            "note": ""
+          }
+        ]
+      },
+      {
+        "name": "Dairy & Fridge",
+        "items": [
+          {
+            "item": "Milk",
+            "qty": "2L",
+            "price": 3.4,
+            "note": ""
+          },
+          {
+            "item": "Greek yoghurt (plain, high protein)",
+            "qty": "1kg tub",
+            "price": 7.0,
+            "note": "Chobani Fit or YoPro"
+          },
+          {
+            "item": "Eggs (free range)",
+            "qty": "12 pack",
+            "price": 6.5,
+            "note": ""
+          },
+          {
+            "item": "Tasty cheese",
+            "qty": "250g",
+            "price": 4.5,
+            "note": "For burritos"
+          },
+          {
+            "item": "Parmesan",
+            "qty": "120g",
+            "price": 5.5,
+            "note": ""
+          }
+        ]
+      },
+      {
+        "name": "Drinks",
+        "items": [
+          {
+            "item": "Pepsi Max or Coke No Sugar (multipack)",
+            "qty": "10 x 375ml cans",
+            "price": 10.0,
+            "note": "Look for half-price multipacks"
+          },
+          {
+            "item": "Protein Up&Go",
+            "qty": "6 pack",
+            "price": 9.0,
+            "note": "Often on special"
+          }
+        ]
+      },
+      {
+        "name": "Household",
+        "items": [
+          {
+            "item": "Toilet paper",
+            "qty": "12 pack",
+            "price": 9.0,
+            "note": "Buy on special"
+          }
+        ]
+      },
+      {
+        "name": "One-offs (check pantry first)",
+        "is_oneoff": true,
+        "items": [
+          {
+            "item": "Chia seeds",
+            "qty": "200g",
+            "price": 5.5,
+            "note": "Lasts 4-6 weeks"
+          },
+          {
+            "item": "Vanilla protein powder",
+            "qty": "~1kg tub",
+            "price": 38.0,
+            "note": "Lasts 4-6 weeks"
+          },
+          {
+            "item": "Soy sauce",
+            "qty": "1 bottle",
+            "price": 3.0,
+            "note": "Lasts months"
+          },
+          {
+            "item": "Honey",
+            "qty": "500g",
+            "price": 6.0,
+            "note": "Lasts months"
+          },
+          {
+            "item": "Rice/apple cider vinegar",
+            "qty": "1 bottle",
+            "price": 3.5,
+            "note": "Lasts months"
+          },
+          {
+            "item": "Light Caesar dressing",
+            "qty": "1 bottle",
+            "price": 4.0,
+            "note": "Lasts 4-6 weeks"
+          },
+          {
+            "item": "Worcestershire sauce",
+            "qty": "1 bottle",
+            "price": 3.5,
+            "note": "Optional"
+          },
+          {
+            "item": "Shampoo",
+            "qty": "1 bottle",
+            "price": 7.0,
+            "note": "Skip if you have enough"
+          }
+        ]
+      }
+    ]
+  },
+  "store_choice": {
+    "store": "Woolworths",
+    "reason": "Both Coles and Woolworths price within cents of each other on the core staples this week (chicken thigh, beef chuck, mince, dairy, pantry). No standout half-price special on a high-cost item swings the math. User preference for Woolworths wins.",
+    "tip": "If you see chicken thigh fillets at Coles under $11/kg when you go, swing past for that one item."
+  }
+}

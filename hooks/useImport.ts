@@ -24,9 +24,14 @@ export function useImport(onSuccess?: () => void) {
     if (result.canceled) { setStatus({ type: 'idle' }); return; }
 
     // 2. Read + parse
+    // Copy to local cache first — content:// URIs from the picker can't be read directly on Android
     let data: unknown;
     try {
-      const raw = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      const srcUri = result.assets[0].uri;
+      const destUri = FileSystem.cacheDirectory + 'meal_plan_import.json';
+      await FileSystem.copyAsync({ from: srcUri, to: destUri });
+      const raw = await FileSystem.readAsStringAsync(destUri);
+      FileSystem.deleteAsync(destUri, { idempotent: true });
       data = JSON.parse(raw);
     } catch {
       setStatus({ type: 'error', message: 'Could not read file — is it valid JSON?' });
