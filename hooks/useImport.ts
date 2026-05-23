@@ -61,7 +61,6 @@ export function useImport(onSuccess?: () => void) {
           `INSERT INTO recipes (id,title,meal_type,servings,calories_per_serve,protein_per_serve_g,
             cook_method,prep_minutes,cook_minutes,ingredients_json,method_steps_json,source,created_at)
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-           // is_favourite, source, and created_at intentionally excluded — preserve user state
            ON CONFLICT(id) DO UPDATE SET
              title=excluded.title, meal_type=excluded.meal_type, servings=excluded.servings,
              calories_per_serve=excluded.calories_per_serve,
