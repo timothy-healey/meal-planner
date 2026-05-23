@@ -8,7 +8,7 @@ import { Divider } from '../components/ui/Divider';
 import { Row } from '../components/ui/Row';
 import { useImport } from '../hooks/useImport';
 import { useBackup } from '../hooks/useBackup';
-import { colors, spacing } from '../constants/tokens';
+import { colors, spacing, radius } from '../constants/tokens';
 
 export default function SettingsScreen() {
   const { importPlan, status: importStatus } = useImport(() => router.back());
@@ -87,7 +87,7 @@ export default function SettingsScreen() {
             <View style={{
               gap: spacing[3],
               backgroundColor: colors.card,
-              borderRadius: 10,
+              borderRadius: radius.md,
               padding: spacing[4],
             }}>
               <AppText>
