@@ -23,7 +23,7 @@ export function ShoppingItem({ item, onToggle }: Props) {
         accessibilityLabel={item.name}
         style={styles.row}
       >
-        <View importantForAccessibility="no-hide-descendants">
+        <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden={true}>
           <Checkbox checked={false} />
         </View>
         <View style={styles.content}>
