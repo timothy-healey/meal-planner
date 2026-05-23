@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Meal Planner",
+    "slug": "meal-planner",
+    "scheme": "meal-planner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#1C453C"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        { "backgroundColor": "#1C453C", "image": "./assets/images/splash-icon.png" }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
