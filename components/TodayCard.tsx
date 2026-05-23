@@ -67,10 +67,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[3],
   },
   badge: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: colors.headerPill,
     paddingHorizontal: spacing[2],
     paddingVertical: 2,
-    borderRadius: 9999,
+    borderRadius: radius.full,
   },
   meals: {
     paddingHorizontal: spacing[4],
