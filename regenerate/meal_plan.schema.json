@@ -1,0 +1,495 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/meal-plan.schema.json",
+  "title": "Weekly Meal Plan",
+  "description": "Schema for weekly meal plan + shopping list. Pair with this schema when requesting regeneration to guarantee consistent structure.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "meta",
+    "daily_targets",
+    "strategy",
+    "meal_plan",
+    "sunday_batch_plan",
+    "recipes",
+    "assumed_pantry",
+    "shopping_list",
+    "store_choice"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version. Must match for app compatibility."
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "title",
+        "week_starting",
+        "currency",
+        "store",
+        "region",
+        "weekly_budget",
+        "cooking_style",
+        "dinners_per_batch",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "week_starting": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO date YYYY-MM-DD, Sunday of the plan week"
+        },
+        "currency": {
+          "type": "string",
+          "enum": [
+            "AUD",
+            "USD",
+            "GBP",
+            "NZD",
+            "EUR"
+          ]
+        },
+        "store": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "weekly_budget": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cooking_style": {
+          "type": "string"
+        },
+        "dinners_per_batch": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 14
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "daily_targets": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "required": [
+          "day",
+          "calories",
+          "protein_g",
+          "note"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "$ref": "#/$defs/day"
+          },
+          "calories": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "protein_g": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "required": [
+        "breakfast",
+        "lunch",
+        "dinner",
+        "snacks",
+        "weekend",
+        "drinks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "breakfast": {
+          "type": "string"
+        },
+        "lunch": {
+          "type": "string"
+        },
+        "dinner": {
+          "type": "string"
+        },
+        "snacks": {
+          "type": "string"
+        },
+        "weekend": {
+          "type": "string"
+        },
+        "drinks": {
+          "type": "string"
+        }
+      }
+    },
+    "meal_plan": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "required": [
+          "day",
+          "calories",
+          "protein_g",
+          "meals"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "$ref": "#/$defs/day"
+          },
+          "calories": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "protein_g": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "meals": {
+            "type": "object",
+            "required": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snacks"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "breakfast": {
+                "$ref": "#/$defs/meal"
+              },
+              "lunch": {
+                "$ref": "#/$defs/meal"
+              },
+              "dinner": {
+                "$ref": "#/$defs/meal"
+              },
+              "snacks": {
+                "$ref": "#/$defs/snack_meal"
+              }
+            }
+          }
+        }
+      }
+    },
+    "sunday_batch_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "time",
+          "task"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "time": {
+            "type": "string",
+            "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+          },
+          "task": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recipes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "image_slug",
+          "title",
+          "servings",
+          "meal_type",
+          "protein_per_serve_g",
+          "calories_per_serve",
+          "cook_method",
+          "prep_minutes",
+          "cook_minutes",
+          "ingredients",
+          "method"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "lowercase snake_case slug"
+          },
+          "image_slug": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "lowercase snake_case slug for asset folder"
+          },
+          "title": {
+            "type": "string"
+          },
+          "servings": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "protein_per_serve_g": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "calories_per_serve": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cook_method": {
+            "type": "string"
+          },
+          "prep_minutes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cook_minutes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ingredients": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "item",
+                "amount"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "item": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "method": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "assumed_pantry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "item",
+          "note"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "shopping_list": {
+      "type": "object",
+      "required": [
+        "priced_at",
+        "categories"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "priced_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "items"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "is_oneoff": {
+                "type": "boolean"
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "item",
+                    "qty",
+                    "price",
+                    "note"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "item": {
+                      "type": "string"
+                    },
+                    "qty": {
+                      "type": "string"
+                    },
+                    "price": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "store_choice": {
+      "type": "object",
+      "required": [
+        "store",
+        "reason",
+        "tip"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "store": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "tip": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "day": {
+      "type": "string",
+      "enum": [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ]
+    },
+    "meal": {
+      "type": "object",
+      "required": [
+        "name",
+        "calories",
+        "protein_g",
+        "serving_size"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "calories": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "protein_g": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "serving_size": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "batch_ref": {
+          "type": "string",
+          "description": "Must match a recipes[].id when present"
+        },
+        "portion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "flexible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "snack_meal": {
+      "type": "object",
+      "required": [
+        "items",
+        "calories",
+        "protein_g"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "calories": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "protein_g": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
