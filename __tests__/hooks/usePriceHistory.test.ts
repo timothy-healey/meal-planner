@@ -75,4 +75,13 @@ describe('usePriceHistory', () => {
     await waitFor(() => expect(result.current.points).toBeDefined());
     expect(typeof result.current.reload).toBe('function');
   });
+
+  it('queries only confirmed purchase rows', async () => {
+    const { result } = renderHook(() =>
+      usePriceHistory('Woolworths', 'Rolled Oats 1kg'),
+    );
+    await waitFor(() => expect(result.current.points).toEqual([]));
+    const sqlCalls = mockDb.getAllAsync.mock.calls.map((c: any[]) => c[0] as string);
+    expect(sqlCalls.some(s => /status = 'confirmed'/.test(s))).toBe(true);
+  });
 });

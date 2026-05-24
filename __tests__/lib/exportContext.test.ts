@@ -77,4 +77,11 @@ describe('buildClaudeContext', () => {
     expect(parsed.purchases[0].nutrition).toBeUndefined();
     expect(parsed.purchases[0].item).toBe('mystery herb');
   });
+
+  it('only exports confirmed purchases', async () => {
+    mockDb.getAllAsync.mockResolvedValue([]);
+    await buildClaudeContext(mockDb as any, 'plan-1');
+    const sqls = mockDb.getAllAsync.mock.calls.map((c: any[]) => c[0] as string);
+    expect(sqls.some(s => /status = 'confirmed'/.test(s))).toBe(true);
+  });
 });
