@@ -11,9 +11,10 @@ interface Props {
   isOneoff: boolean;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (item: ShoppingItemRow) => void;
 }
 
-export function CategorySection({ category, items, isOneoff, onToggle, onDelete }: Props) {
+export function CategorySection({ category, items, isOneoff, onToggle, onDelete, onEdit }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.headerPad}>
@@ -25,6 +26,7 @@ export function CategorySection({ category, items, isOneoff, onToggle, onDelete 
           item={item}
           onToggle={() => onToggle(item.id)}
           onDelete={() => onDelete(item.id)}
+          onEdit={() => onEdit(item)}
         />
       ))}
     </View>
