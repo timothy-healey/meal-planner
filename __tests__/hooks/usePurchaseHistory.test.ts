@@ -9,6 +9,7 @@ const mockDb = {
     if (sql.includes('barcode =')) return mockRows;
     return [];
   }),
+  getFirstAsync: jest.fn().mockResolvedValue({ id: 'store-1' }),
   runAsync: jest.fn().mockResolvedValue(undefined),
 };
 
@@ -20,7 +21,9 @@ describe('usePurchaseHistory', () => {
   beforeEach(() => {
     mockRows.length = 0;
     mockDb.getAllAsync.mockClear();
+    mockDb.getFirstAsync.mockClear();
     mockDb.runAsync.mockClear();
+    mockDb.getFirstAsync.mockResolvedValue({ id: 'store-1' });
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
       if (sql.includes('plan_id = ?')) return mockRows;
       if (sql.includes('LOWER(item_name)')) return mockRows;
@@ -60,7 +63,7 @@ describe('usePurchaseHistory', () => {
     });
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO purchase_history'),
-      expect.any(Array)
+      expect.arrayContaining(['store-1'])
     );
   });
 
