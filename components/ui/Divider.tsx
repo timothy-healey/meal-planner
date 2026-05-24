@@ -1,9 +1,14 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { colors } from '../../constants/tokens';
 
 export function Divider() {
-  return (
-    <View style={{ height: 1, backgroundColor: colors.divider }} />
-  );
+  return <View style={styles.divider} />;
 }
+
+const styles = StyleSheet.create({
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+});
