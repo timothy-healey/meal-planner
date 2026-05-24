@@ -12,31 +12,34 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
 import { colors, spacing, radius, font } from '../constants/tokens';
+import type { ShoppingItemRow } from '../types/db';
 
 const SHEET_HEIGHT = Dimensions.get('window').height * 0.72;
 
-interface AddItemData {
+export interface ItemFormData {
   name: string;
   qty: string;
   estimatedPrice: number;
   category: string;
+  note: string | null;
 }
 
 interface Props {
   visible: boolean;
   categories: string[];
-  onAdd: (data: AddItemData) => void;
+  onAdd: (data: ItemFormData) => void;
+  onSave?: (id: string, data: ItemFormData) => void;
   onClose: () => void;
+  initialItem?: ShoppingItemRow;
 }
 
-export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
+export function AddItemSheet({ visible, categories, onAdd, onSave, onClose, initialItem }: Props) {
   const translateY = useSharedValue(SHEET_HEIGHT);
   const scrimOpacity = useSharedValue(0);
 
@@ -44,13 +47,28 @@ export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
   const [qty, setQty] = useState('1');
   const [price, setPrice] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categories[0] ?? '');
+  const [note, setNote] = useState('');
+  const [noteExpanded, setNoteExpanded] = useState(false);
+
+  const isEditMode = !!initialItem;
 
   useEffect(() => {
     if (visible) {
-      setName('');
-      setQty('1');
-      setPrice('');
-      setSelectedCategory(categories[0] ?? '');
+      if (initialItem) {
+        setName(initialItem.name);
+        setQty(initialItem.qty);
+        setPrice(initialItem.estimated_price > 0 ? String(initialItem.estimated_price) : '');
+        setSelectedCategory(initialItem.category);
+        setNote(initialItem.note ?? '');
+        setNoteExpanded(!!initialItem.note);
+      } else {
+        setName('');
+        setQty('1');
+        setPrice('');
+        setSelectedCategory(categories[0] ?? '');
+        setNote('');
+        setNoteExpanded(false);
+      }
       scrimOpacity.value = withTiming(1, { duration: 180 });
       translateY.value = withTiming(0, { duration: 280 });
     }
@@ -63,14 +81,20 @@ export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
     });
   };
 
-  const handleAdd = () => {
+  const handleSubmit = () => {
     if (!name.trim() || !selectedCategory) return;
-    onAdd({
+    const data: ItemFormData = {
       name: name.trim(),
       qty: qty.trim() || '1',
       estimatedPrice: parseFloat(price.replace(/[^0-9.]/g, '')) || 0,
       category: selectedCategory,
-    });
+      note: note.trim() || null,
+    };
+    if (isEditMode && initialItem) {
+      onSave?.(initialItem.id, data);
+    } else {
+      onAdd(data);
+    }
     handleClose();
   };
 
@@ -84,7 +108,7 @@ export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
 
   if (!visible) return null;
 
-  const canAdd = name.trim().length > 0 && selectedCategory.length > 0;
+  const canSubmit = name.trim().length > 0 && selectedCategory.length > 0;
 
   return (
     <Modal
@@ -102,7 +126,9 @@ export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <AppText weight="extrabold" color="textPrimary" size="xl">Add item</AppText>
+            <AppText weight="extrabold" color="textPrimary" size="xl">
+              {isEditMode ? 'Edit item' : 'Add item'}
+            </AppText>
             <TouchableOpacity
               onPress={handleClose}
               style={styles.closeBtn}
@@ -128,7 +154,7 @@ export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
               placeholderTextColor={colors.textTertiary}
               value={name}
               onChangeText={setName}
-              autoFocus
+              autoFocus={!isEditMode}
               returnKeyType="next"
               accessibilityLabel="Item name"
             />
@@ -193,25 +219,54 @@ export function AddItemSheet({ visible, categories, onAdd, onClose }: Props) {
                       {cat}
                     </AppText>
                     {isSelected && (
-                      <AppText weight="bold" color="green" size="md">✓</AppText>
+                      <Ionicons name="checkmark" size={18} color={colors.green} />
                     )}
                   </TouchableOpacity>
                 );
               })
             )}
+
+            {noteExpanded ? (
+              <>
+                <AppText weight="semibold" color="terracotta" size="sm" style={[styles.label, styles.noteLabel]}>
+                  NOTE
+                </AppText>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. Free range"
+                  placeholderTextColor={colors.textTertiary}
+                  value={note}
+                  onChangeText={setNote}
+                  returnKeyType="done"
+                  accessibilityLabel="Note, optional"
+                />
+              </>
+            ) : (
+              <TouchableOpacity
+                style={styles.addNoteRow}
+                onPress={() => setNoteExpanded(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Add note"
+              >
+                <Ionicons name="add-circle-outline" size={16} color={colors.textSecondary} />
+                <AppText weight="semibold" color="textSecondary" size="sm">Add note</AppText>
+              </TouchableOpacity>
+            )}
           </ScrollView>
 
           <View style={styles.footer}>
             <TouchableOpacity
-              style={[styles.addBtn, !canAdd && styles.addBtnDisabled]}
-              onPress={handleAdd}
-              disabled={!canAdd}
+              style={[styles.addBtn, !canSubmit && styles.addBtnDisabled]}
+              onPress={handleSubmit}
+              disabled={!canSubmit}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Add to list"
-              accessibilityState={{ disabled: !canAdd }}
+              accessibilityLabel={isEditMode ? 'Save changes' : 'Add to list'}
+              accessibilityState={{ disabled: !canSubmit }}
             >
-              <AppText weight="extrabold" color="onGreen" size="md">+ Add to list</AppText>
+              <AppText weight="extrabold" color="onGreen" size="md">
+                {isEditMode ? 'Save changes' : '+ Add to list'}
+              </AppText>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -275,6 +330,9 @@ const styles = StyleSheet.create({
   categoryLabel: {
     marginTop: spacing[5],
   },
+  noteLabel: {
+    marginTop: spacing[5],
+  },
   input: {
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -310,6 +368,13 @@ const styles = StyleSheet.create({
   },
   noCategories: {
     paddingVertical: spacing[3],
+  },
+  addNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingVertical: spacing[3],
+    marginTop: spacing[2],
   },
   footer: {
     paddingHorizontal: spacing[5],
