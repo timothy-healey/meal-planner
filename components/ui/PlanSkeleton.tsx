@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, radius } from '../../constants/tokens';
 
@@ -17,8 +18,14 @@ function DayRowSkeleton() {
 }
 
 export function PlanSkeleton() {
+  const { top } = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { paddingTop: top }]}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading…"
+    >
       {/* Top row: week range + cal target */}
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
