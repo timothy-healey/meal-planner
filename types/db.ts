@@ -63,3 +63,16 @@ export interface StoreRow {
   branch: string;
   created_at: string;
 }
+
+export interface FoodNutritionRow {
+  id: string;
+  item_name: string;
+  brand: string | null;
+  product_name: string | null;
+  basis: 'per_100g' | 'per_100mL' | 'per_unit';
+  cal_per_basis: number | null;
+  protein_per_basis: number | null;
+  carbs_per_basis: number | null;
+  fat_per_basis: number | null;
+  updated_at: string;
+}
