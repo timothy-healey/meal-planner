@@ -21,7 +21,7 @@ export function TodayCard({ day }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <AppText weight="extrabold" color="onGreen" size="lg">{day.day}</AppText>
+        <AppText weight="extrabold" color="onGreen" size="xl">{day.day}</AppText>
         <View style={styles.badge}>
           <AppText weight="bold" color="orange" size="2xs">TODAY</AppText>
         </View>
@@ -34,8 +34,8 @@ export function TodayCard({ day }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <AppText weight="bold" color="orange" size="sm">{day.calories} cal</AppText>
-        <AppText weight="semibold" color="onGreenSubtle" size="sm">{day.protein_g}g protein</AppText>
+        <AppText weight="bold" color="orange" size="md">{day.calories} cal</AppText>
+        <AppText weight="semibold" color="onGreenSubtle" size="md">{day.protein_g}g protein</AppText>
       </View>
     </View>
   );
@@ -53,7 +53,7 @@ function MealRow({ letter, meal }: { letter: string; meal: string }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.green,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     marginHorizontal: spacing[4],
     marginTop: spacing[4],

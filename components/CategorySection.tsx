@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { ShoppingItem } from './ShoppingItem';
+import { SwipeableShoppingItem } from './SwipeableShoppingItem';
 import { CategoryHeader } from './ui/CategoryHeader';
 import { spacing } from '../constants/tokens';
 import type { ShoppingItemRow } from '../types/db';
@@ -10,14 +10,22 @@ interface Props {
   items: ShoppingItemRow[];
   isOneoff: boolean;
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export function CategorySection({ category, items, isOneoff, onToggle }: Props) {
+export function CategorySection({ category, items, isOneoff, onToggle, onDelete }: Props) {
   return (
     <View style={styles.container}>
-      <CategoryHeader label={category} isOneoff={isOneoff} />
+      <View style={styles.headerPad}>
+        <CategoryHeader label={category} isOneoff={isOneoff} />
+      </View>
       {items.map((item) => (
-        <ShoppingItem key={item.id} item={item} onToggle={() => onToggle(item.id)} />
+        <SwipeableShoppingItem
+          key={item.id}
+          item={item}
+          onToggle={() => onToggle(item.id)}
+          onDelete={() => onDelete(item.id)}
+        />
       ))}
     </View>
   );
@@ -26,5 +34,8 @@ export function CategorySection({ category, items, isOneoff, onToggle }: Props) 
 const styles = StyleSheet.create({
   container: {
     marginBottom: spacing[2],
+  },
+  headerPad: {
+    paddingHorizontal: spacing[4],
   },
 });

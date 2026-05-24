@@ -12,10 +12,10 @@ interface CategoryHeaderProps {
 export function CategoryHeader({ label, isOneoff = false }: CategoryHeaderProps) {
   return (
     <Row gap={2} style={{ paddingVertical: spacing[2] }}>
-      <View style={{ width: 5, height: 5, borderRadius: 5, backgroundColor: colors.terracotta }} />
+      <View style={{ width: 7, height: 7, borderRadius: 7, backgroundColor: colors.terracotta }} />
       <AppText
         weight="semibold"
-        size="2xs"
+        size="md"
         color="terracotta"
         style={{ letterSpacing: font.tracking.category }}
       >

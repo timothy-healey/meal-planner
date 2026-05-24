@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -10,6 +11,7 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import { Ionicons } from '@expo/vector-icons';
 import { DatabaseProvider } from '../providers/DatabaseProvider';
 
 SplashScreen.preventAutoHideAsync();
@@ -21,6 +23,7 @@ export default function RootLayout() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
+    ...Ionicons.font,
   });
 
   useEffect(() => {
@@ -30,6 +33,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
+    <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
         <Stack screenOptions={{ headerShown: false }}>
@@ -41,5 +45,6 @@ export default function RootLayout() {
         </Stack>
       </DatabaseProvider>
     </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

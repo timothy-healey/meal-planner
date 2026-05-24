@@ -21,7 +21,7 @@ export function RecipeCard({ recipe, onPress }: Props) {
       accessibilityRole="button"
       accessibilityLabel={recipe.title}
     >
-      <AppText weight="bold" color="textPrimary" size="md">{recipe.title}</AppText>
+      <AppText weight="bold" color="textPrimary" size="lg">{recipe.title}</AppText>
       <View style={styles.stats}>
         <AppText weight="semibold" color="orange" size="sm">
           {recipe.calories_per_serve} cal
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    padding: spacing[4],
+    padding: spacing[5],
     gap: spacing[2],
     ...shadow.card,
   },

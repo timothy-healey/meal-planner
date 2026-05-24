@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useDb } from '../providers/DatabaseProvider';
+import { generateId } from '../lib/uuid';
 import type { ShoppingItemRow } from '../types/db';
 
 export interface ShoppingItem extends ShoppingItemRow {
@@ -39,5 +40,36 @@ export function useShoppingItems(planId: string | null) {
     setItems((prev) => prev.map((i) => ({ ...i, isChecked: false, is_checked: 0 })));
   }, [planId, db]);
 
-  return { items, loading, toggleItem, resetAll };
+  const addItem = useCallback(async (data: {
+    name: string;
+    qty: string;
+    estimatedPrice: number;
+    category: string;
+  }) => {
+    if (!planId) return;
+    const catItems = items.filter((i) => i.category === data.category);
+    const existingCatItem = items.find((i) => i.category === data.category);
+    const categoryOrder = existingCatItem?.category_order ??
+      (items.length > 0 ? Math.max(...items.map((i) => i.category_order)) + 1 : 0);
+    const itemOrder = catItems.length > 0
+      ? Math.max(...catItems.map((i) => i.item_order)) + 1
+      : 0;
+    const id = generateId();
+    await db.runAsync(
+      `INSERT INTO shopping_items
+         (id, plan_id, category, category_order, item_order, name, qty,
+          estimated_price, is_oneoff, note, is_checked)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, 0)`,
+      [id, planId, data.category, categoryOrder, itemOrder,
+       data.name, data.qty, data.estimatedPrice]
+    );
+    await load();
+  }, [planId, items, db]);
+
+  const deleteItem = useCallback(async (itemId: string) => {
+    await db.runAsync('DELETE FROM shopping_items WHERE id = ?', [itemId]);
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
+  }, [db]);
+
+  return { items, loading, toggleItem, resetAll, addItem, deleteItem };
 }

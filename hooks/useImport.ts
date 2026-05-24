@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import { useDb } from '../providers/DatabaseProvider';
 import { validatePlan, ValidationError } from '../lib/import/validate';
 import { transformPlan } from '../lib/import/transform';
@@ -27,11 +27,11 @@ export function useImport(onSuccess?: () => void) {
     // Copy to local cache first — content:// URIs from the picker can't be read directly on Android
     let data: unknown;
     try {
-      const srcUri = result.assets[0].uri;
-      const destUri = FileSystem.cacheDirectory + 'meal_plan_import.json';
-      await FileSystem.copyAsync({ from: srcUri, to: destUri });
-      const raw = await FileSystem.readAsStringAsync(destUri);
-      FileSystem.deleteAsync(destUri, { idempotent: true });
+      const src = new File(result.assets[0].uri);
+      const dest = new File(Paths.cache, 'meal_plan_import.json');
+      await src.copy(dest, { overwrite: true });
+      const raw = await dest.text();
+      dest.delete();
       data = JSON.parse(raw);
     } catch {
       setStatus({ type: 'error', message: 'Could not read file — is it valid JSON?' });

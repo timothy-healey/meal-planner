@@ -8,9 +8,13 @@ interface ProgressBarProps {
 
 export function ProgressBar({ progress }: ProgressBarProps) {
   const clamped = Math.min(1, Math.max(0, progress));
+  const tickedPct = `${clamped * 100}%`;
   return (
-    <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}>
-      <View style={{ width: `${clamped * 100}%`, height: '100%', backgroundColor: colors.onGreen, opacity: 0.85 }} />
+    <View style={{ height: 4, borderRadius: 2, overflow: 'hidden', flexDirection: 'row' }}>
+      {clamped > 0 && (
+        <View style={{ width: tickedPct, height: '100%', backgroundColor: colors.onGreen }} />
+      )}
+      <View style={{ flex: 1, height: '100%', backgroundColor: colors.orange }} />
     </View>
   );
 }

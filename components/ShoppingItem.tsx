@@ -21,15 +21,23 @@ export function ShoppingItem({ item, onToggle }: Props) {
         accessibilityRole="checkbox"
         accessibilityState={{ checked: item.is_checked === 1 }}
         accessibilityLabel={item.name}
+        accessibilityHint={item.is_checked === 1 ? 'Double-tap to uncheck' : 'Double-tap to check off'}
         style={styles.row}
       >
         <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden={true}>
-          <Checkbox checked={false} />
+          <Checkbox checked={item.is_checked === 1} />
         </View>
         <View style={styles.content}>
-          <AppText weight="bold" color="textPrimary" size="md">{item.name}</AppText>
+          <AppText
+            weight="bold"
+            color={item.is_checked === 1 ? 'textTertiary' : 'textPrimary'}
+            size="lg"
+            style={item.is_checked === 1 ? { textDecorationLine: 'line-through' } : undefined}
+          >
+            {item.name}
+          </AppText>
           <View style={styles.detail}>
-            <AppText weight="semibold" color="terracotta" size="sm">{item.qty} ·</AppText>
+            <AppText weight="regular" color="textSecondary" size="sm">{item.qty} ·</AppText>
             <AppText weight="semibold" color="orange" size="sm">{formatPrice(item.estimated_price)}</AppText>
           </View>
           {item.note ? (
@@ -46,7 +54,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
     gap: spacing[3],
     backgroundColor: colors.card,

@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import DraggableFlatList, {
   RenderItemParams,
@@ -34,14 +35,21 @@ export default function CategoryOrderModal() {
   const regularCats = allCategories.filter((c) => !c.isOneoff);
   const oneoffCats = allCategories.filter((c) => c.isOneoff);
 
-  const sortedRegularNames = applySavedOrder(regularCats.map((c) => c.name));
-  const initialRegular = sortedRegularNames
-    .map((name) => regularCats.find((c) => c.name === name))
-    .filter(Boolean) as CategoryEntry[];
+  const [draggable, setDraggable] = useState<CategoryEntry[]>([]);
+  const savedRef = useRef<CategoryEntry[]>([]);
+  const initialized = useRef(false);
 
-  const [draggable, setDraggable] = useState<CategoryEntry[]>(initialRegular);
-  // Snapshot of last-saved order for Reset
-  const savedRef = useRef<CategoryEntry[]>(initialRegular);
+  useEffect(() => {
+    if (initialized.current || allCategories.length === 0) return;
+    const regular = allCategories.filter((c) => !c.isOneoff);
+    const sortedNames = applySavedOrder(regular.map((c) => c.name));
+    const sorted = sortedNames
+      .map((name) => regular.find((c) => c.name === name))
+      .filter(Boolean) as CategoryEntry[];
+    setDraggable(sorted);
+    savedRef.current = sorted;
+    initialized.current = true;
+  }, [allCategories, applySavedOrder]);
 
   const handleDone = async () => {
     const prefs: Record<string, number> = {};
@@ -91,7 +99,7 @@ export default function CategoryOrderModal() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView style={styles.root} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
           <AppText weight="extrabold" color="onGreen" size="xl">Reorder Categories</AppText>
@@ -137,7 +145,7 @@ export default function CategoryOrderModal() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.green,
   },
   header: {
     backgroundColor: colors.green,
@@ -195,13 +203,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   resetBtn: {
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
+    minHeight: 44,
+    justifyContent: 'center',
   },
   doneBtn: {
     backgroundColor: colors.green,
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[4],
     paddingHorizontal: spacing[6],
     borderRadius: radius.xl,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

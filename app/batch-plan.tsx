@@ -57,7 +57,7 @@ export default function BatchPlanScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.cream },
   headerContent: { paddingBottom: spacing[4], gap: spacing[2] },
-  backBtn: { paddingVertical: spacing[3], paddingRight: spacing[4], alignSelf: 'flex-start' },
+  backBtn: { paddingVertical: spacing[4], paddingRight: spacing[4], alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   body: { flex: 1 },
   bodyContent: { padding: spacing[4], paddingBottom: spacing[10] },
   card: { backgroundColor: colors.card, borderRadius: radius.md, overflow: 'hidden' },

@@ -5,6 +5,7 @@ import { colors, font } from '../../constants/tokens';
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName="plan"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.green,
@@ -20,6 +21,15 @@ export default function TabLayout() {
         },
       }}
     >
+      <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen
+        name="plan"
+        options={{
+          title: 'Plan',
+          tabBarAccessibilityLabel: 'Plan',
+          tabBarIcon: () => <Text style={{ fontSize: 18 }}>📅</Text>,
+        }}
+      />
       <Tabs.Screen
         name="shop"
         options={{
@@ -34,14 +44,6 @@ export default function TabLayout() {
           title: 'Recipes',
           tabBarAccessibilityLabel: 'Recipes',
           tabBarIcon: () => <Text style={{ fontSize: 18 }}>🍳</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="plan"
-        options={{
-          title: 'Plan',
-          tabBarAccessibilityLabel: 'Plan',
-          tabBarIcon: () => <Text style={{ fontSize: 18 }}>📅</Text>,
         }}
       />
     </Tabs>

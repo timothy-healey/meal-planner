@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { GreenHeader } from '../components/ui/GreenHeader';
 import { AppText } from '../components/ui/AppText';
@@ -31,7 +31,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.cream }}>
+    <View style={styles.container}>
       <GreenHeader>
         <Row justify="space-between" align="center">
           <AppText weight="extrabold" size="xl" color="onGreen">Settings</AppText>
@@ -39,9 +39,9 @@ export default function SettingsScreen() {
         </Row>
       </GreenHeader>
 
-      <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[5] }}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Import */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={styles.section}>
           <AppText weight="bold" size="lg">Import Plan</AppText>
           <AppText color="textSecondary">
             Replace the active shopping list with a new weekly plan JSON.
@@ -52,7 +52,7 @@ export default function SettingsScreen() {
             <AppText color="green">{importStatus.message}</AppText>
           )}
           {importStatus.type === 'error' && (
-            <View style={{ gap: spacing[1] }}>
+            <View style={styles.errorBlock}>
               <AppText color="terracotta">{importStatus.message}</AppText>
               <Pill label="Try again" onPress={importPlan} />
             </View>
@@ -62,7 +62,7 @@ export default function SettingsScreen() {
         <Divider />
 
         {/* Export */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={styles.section}>
           <AppText weight="bold" size="lg">Export Backup</AppText>
           <AppText color="textSecondary">
             Save all your data — recipes, plans, and shopping history — to a JSON file.
@@ -76,7 +76,7 @@ export default function SettingsScreen() {
         <Divider />
 
         {/* Restore */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={styles.section}>
           <AppText weight="bold" size="lg">Restore Backup</AppText>
           <AppText color="textSecondary">
             Replace all data from a backup file. Cannot be undone.
@@ -84,12 +84,7 @@ export default function SettingsScreen() {
           {!restorePreview ? (
             <Pill label="📥 Restore from backup" onPress={handleRestore} />
           ) : (
-            <View style={{
-              gap: spacing[3],
-              backgroundColor: colors.card,
-              borderRadius: radius.md,
-              padding: spacing[4],
-            }}>
+            <View style={styles.restorePreviewCard}>
               <AppText>
                 Backup from <AppText weight="bold">{restorePreview.exportedDate}</AppText>
                 {' · '}{restorePreview.summary}
@@ -109,3 +104,26 @@ export default function SettingsScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.cream,
+  },
+  scrollContent: {
+    padding: spacing[4],
+    gap: spacing[5],
+  },
+  section: {
+    gap: spacing[3],
+  },
+  errorBlock: {
+    gap: spacing[1],
+  },
+  restorePreviewCard: {
+    gap: spacing[3],
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: spacing[4],
+  },
+});

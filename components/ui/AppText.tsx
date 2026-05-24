@@ -23,6 +23,7 @@ export function AppText({
 }: AppTextProps) {
   return (
     <Text
+      maxFontSizeMultiplier={1.5}
       style={[
         {
           fontFamily: font.family[weight],

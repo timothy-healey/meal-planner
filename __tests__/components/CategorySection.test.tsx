@@ -26,7 +26,7 @@ describe('CategorySection', () => {
         category="Produce"
         items={[makeItem('a', 'Broccoli')]}
         isOneoff={false}
-        onToggle={jest.fn()}
+        onToggle={jest.fn()} onDelete={jest.fn()}
       />
     );
     expect(getByText('PRODUCE')).toBeTruthy();
@@ -35,7 +35,7 @@ describe('CategorySection', () => {
   it('renders all items', () => {
     const items = [makeItem('a', 'Broccoli'), makeItem('b', 'Spinach')];
     const { getByText } = render(
-      <CategorySection category="Produce" items={items} isOneoff={false} onToggle={jest.fn()} />
+      <CategorySection category="Produce" items={items} isOneoff={false} onToggle={jest.fn()} onDelete={jest.fn()} />
     );
     expect(getByText('Broccoli')).toBeTruthy();
     expect(getByText('Spinach')).toBeTruthy();
@@ -49,6 +49,7 @@ describe('CategorySection', () => {
         items={[makeItem('item_abc', 'Broccoli')]}
         isOneoff={false}
         onToggle={onToggle}
+        onDelete={jest.fn()}
       />
     );
     fireEvent.press(getByRole('checkbox'));
@@ -61,7 +62,7 @@ describe('CategorySection', () => {
         category="One-Off Items"
         items={[makeItem('a', 'Salt', 1)]}
         isOneoff={true}
-        onToggle={jest.fn()}
+        onToggle={jest.fn()} onDelete={jest.fn()}
       />
     );
     expect(getByText('(check pantry first)')).toBeTruthy();

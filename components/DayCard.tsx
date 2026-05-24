@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppText } from './ui/AppText';
-import { colors, spacing, radius } from '../constants/tokens';
+import { colors, spacing } from '../constants/tokens';
 
 interface DayData {
   day: string;
@@ -14,23 +14,14 @@ interface DayData {
 
 interface Props {
   day: DayData;
-  isFirst: boolean;
-  isLast: boolean;
   onPress?: () => void;
 }
 
-export function DayCard({ day, isFirst, isLast, onPress }: Props) {
-  const borderRadius = {
-    borderTopLeftRadius: isFirst ? radius.md : 3,
-    borderTopRightRadius: isFirst ? radius.md : 3,
-    borderBottomLeftRadius: isLast ? radius.md : 3,
-    borderBottomRightRadius: isLast ? radius.md : 3,
-  };
-
+export function DayCard({ day, onPress }: Props) {
   const inner = (
     <>
       <View style={styles.topRow}>
-        <AppText weight="bold" color="textPrimary" size="md">{day.day}</AppText>
+        <AppText weight="bold" color="textPrimary" size="xl">{day.day}</AppText>
         <View style={styles.stats}>
           <AppText weight="semibold" color="orange" size="sm">{day.calories} cal</AppText>
           <AppText weight="regular" color="textTertiary" size="sm"> · </AppText>
@@ -50,7 +41,7 @@ export function DayCard({ day, isFirst, isLast, onPress }: Props) {
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.8}
-        style={[styles.card, borderRadius]}
+        style={styles.card}
         accessibilityRole="button"
         accessibilityLabel={`${day.day}, tap to view recipe`}
       >
@@ -59,7 +50,7 @@ export function DayCard({ day, isFirst, isLast, onPress }: Props) {
     );
   }
 
-  return <View style={[styles.card, borderRadius]}>{inner}</View>;
+  return <View style={styles.card}>{inner}</View>;
 }
 
 function MealLabel({ letter, meal }: { letter: string; meal: string }) {
@@ -75,7 +66,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[4],
     gap: spacing[2],
     marginBottom: 1,
   },

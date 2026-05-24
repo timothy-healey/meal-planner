@@ -24,8 +24,8 @@ export function BatchPlanBanner({ steps, onPress }: Props) {
       accessibilityLabel="Sunday Batch Plan"
     >
       <View style={styles.textCol}>
-        <AppText weight="extrabold" color="onGreen" size="lg">Sunday Batch Plan</AppText>
-        <AppText weight="semibold" color="onGreenSubtle" size="sm">{subLabel}</AppText>
+        <AppText weight="extrabold" color="onGreen" size="xl">Sunday Batch Plan</AppText>
+        <AppText weight="semibold" color="onGreenSubtle" size="md">{subLabel}</AppText>
       </View>
       <AppText size="xl">🥘</AppText>
     </TouchableOpacity>

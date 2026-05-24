@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, ViewStyle, SafeAreaView } from 'react-native';
+import { View, ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../../constants/tokens';
 
 interface GreenHeaderProps {
@@ -10,7 +11,7 @@ interface GreenHeaderProps {
 export function GreenHeader({ children, style }: GreenHeaderProps) {
   return (
     <View style={{ backgroundColor: colors.green }}>
-      <SafeAreaView>
+      <SafeAreaView edges={['top']}>
         <View style={[{ paddingHorizontal: spacing[4], paddingBottom: spacing[3] }, style]}>
           {children}
         </View>
