@@ -8,12 +8,14 @@ export function useCategoryOrder() {
   const [prefs, setPrefs] = useState<Prefs>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     AsyncStorage.getItem(KEY).then((raw) => {
-      if (raw) setPrefs(JSON.parse(raw));
+      setPrefs(raw ? JSON.parse(raw) : {});
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => { reload(); }, [reload]);
 
   const saveOrder = useCallback(async (order: Prefs) => {
     await AsyncStorage.setItem(KEY, JSON.stringify(order));
@@ -30,5 +32,5 @@ export function useCategoryOrder() {
     [prefs]
   );
 
-  return { prefs, loading, saveOrder, applySavedOrder };
+  return { prefs, loading, saveOrder, applySavedOrder, reload };
 }

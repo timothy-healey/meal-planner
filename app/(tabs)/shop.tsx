@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -38,7 +38,7 @@ export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { plan } = usePlan();
   const { items, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
-  const { applySavedOrder } = useCategoryOrder();
+  const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
   const { addRecord, getLatestForItem } = usePurchaseHistory(plan?.row.id ?? null);
   const { mode, activeStore, savedStores, setMode } = useShoppingMode(plan?.row.id ?? null);
 
@@ -60,28 +60,51 @@ export default function ShopScreen() {
     return { opacity, maxHeight, overflow: 'hidden' };
   });
 
-  // Pick up scanner result when returning from barcode-scanner route
+  // Pick up scanner result and refresh category order when returning to this screen
   useFocusEffect(useCallback(() => {
+    reloadCategoryOrder();
     const result = takePendingScanResult();
     if (result) setPendingScan(result);
-  }, []));
+  }, [reloadCategoryOrder]));
 
-  const uncheckedItems = items.filter((i) => i.is_checked === 0);
-  const checkedItems = items.filter((i) => i.is_checked === 1);
-  const allCategories = [...new Set(items.map((i) => i.category))];
-  const allCategoryNames = [...new Set(uncheckedItems.map((i) => i.category))];
-  const isCategoryOneoff = (cat: string) =>
-    uncheckedItems.some((i) => i.category === cat && i.is_oneoff === 1);
-  const sortedNames = applySavedOrder(allCategoryNames);
-  const regularCategories = sortedNames.filter((c) => !isCategoryOneoff(c));
-  const oneoffCategories = sortedNames.filter((c) => isCategoryOneoff(c));
-  const orderedCategories = [...regularCategories, ...oneoffCategories];
-
-  const totalItems = items.length;
-  const checkedCount = checkedItems.length;
-  const totalBudget = items.reduce((sum, i) => sum + i.estimated_price, 0);
-  const progress = totalItems > 0 ? checkedCount / totalItems : 0;
-  const itemsLeft = totalItems - checkedCount;
+  const {
+    uncheckedItems,
+    checkedItems,
+    allCategories,
+    orderedCategories,
+    oneoffCategorySet,
+    totalItems,
+    checkedCount,
+    totalBudget,
+    progress,
+    itemsLeft,
+  } = useMemo(() => {
+    const unchecked = items.filter((i) => i.is_checked === 0);
+    const checked = items.filter((i) => i.is_checked === 1);
+    const allCats = [...new Set(items.map((i) => i.category))];
+    const uncheckedCatNames = [...new Set(unchecked.map((i) => i.category))];
+    const oneoffCats = new Set(
+      unchecked.filter((i) => i.is_oneoff === 1).map((i) => i.category)
+    );
+    const sorted = applySavedOrder(uncheckedCatNames);
+    const regular = sorted.filter((c) => !oneoffCats.has(c));
+    const oneoff = sorted.filter((c) => oneoffCats.has(c));
+    const total = items.length;
+    const checkedCnt = checked.length;
+    const budget = items.reduce((sum, i) => sum + i.estimated_price, 0);
+    return {
+      uncheckedItems: unchecked,
+      checkedItems: checked,
+      allCategories: allCats,
+      orderedCategories: [...regular, ...oneoff],
+      oneoffCategorySet: oneoffCats,
+      totalItems: total,
+      checkedCount: checkedCnt,
+      totalBudget: budget,
+      progress: total > 0 ? checkedCnt / total : 0,
+      itemsLeft: total - checkedCnt,
+    };
+  }, [items, applySavedOrder]);
 
   async function handleToggle(itemId: string) {
     const item = items.find((i) => i.id === itemId);
@@ -214,7 +237,7 @@ export default function ShopScreen() {
               key={cat}
               category={cat}
               items={catItems}
-              isOneoff={isCategoryOneoff(cat)}
+              isOneoff={oneoffCategorySet.has(cat)}
               onToggle={handleToggle}
               onDelete={deleteItem}
               onEdit={setEditingItem}
