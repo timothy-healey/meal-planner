@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
-import { useDb } from '../providers/DatabaseProvider';
+import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import { validatePlan, ValidationError } from '../lib/import/validate';
 import { transformPlan } from '../lib/import/transform';
 import type { MealPlan } from '../meal_plan.types';
@@ -14,6 +14,7 @@ export type ImportStatus =
 
 export function useImport(onSuccess?: () => void) {
   const db = useDb();
+  const { bumpPlanVersion } = usePlanVersion();
   const [status, setStatus] = useState<ImportStatus>({ type: 'idle' });
 
   const importPlan = useCallback(async () => {
@@ -103,6 +104,7 @@ export function useImport(onSuccess?: () => void) {
       }
 
       await db.runAsync('COMMIT');
+      bumpPlanVersion();
     } catch (e) {
       await db.runAsync('ROLLBACK');
       setStatus({ type: 'error', message: 'Database error — please try again' });

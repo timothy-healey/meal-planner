@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDb } from '../providers/DatabaseProvider';
+import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import type { WeeklyPlanRow } from '../types/db';
 import type { Meta, BatchStep, DayPlan, Strategy } from '../meal_plan.types';
 
@@ -13,6 +13,7 @@ export interface ActivePlan {
 
 export function usePlan() {
   const db = useDb();
+  const { planVersion } = usePlanVersion();
   const [plan, setPlan] = useState<ActivePlan | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +33,7 @@ export function usePlan() {
     setLoading(false);
   }
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); }, [planVersion]);
 
   return { plan, loading, refresh };
 }

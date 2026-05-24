@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDb } from '../providers/DatabaseProvider';
+import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import type { RecipeRow } from '../types/db';
 import type { Ingredient } from '../meal_plan.types';
 
@@ -29,13 +29,14 @@ function parseRecipe(row: RecipeRow): Recipe {
 
 export function useRecipes() {
   const db = useDb();
+  const { planVersion } = usePlanVersion();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     db.getAllAsync<RecipeRow>('SELECT * FROM recipes ORDER BY meal_type, title')
       .then((rows) => { setRecipes(rows.map(parseRecipe)); setLoading(false); });
-  }, []);
+  }, [planVersion]);
 
   async function getById(id: string): Promise<Recipe | null> {
     const row = await db.getFirstAsync<RecipeRow>('SELECT * FROM recipes WHERE id = ?', [id]);
