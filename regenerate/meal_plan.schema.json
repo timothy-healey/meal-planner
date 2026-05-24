@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.0",
+      "const": "1.1",
       "description": "Schema version. Must match for app compatibility."
     },
     "meta": {
@@ -231,7 +231,7 @@
           "prep_minutes",
           "cook_minutes",
           "ingredients",
-          "method"
+          "method_steps"
         ],
         "additionalProperties": false,
         "properties": {
@@ -300,8 +300,15 @@
               }
             }
           },
+          "method_steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "Ordered list of method steps for numbered display in the app"
+          },
           "method": {
-            "type": "string"
+            "type": "string",
+            "description": "Deprecated (v1.0). Use method_steps instead. Kept for backward-compat loading of old plans."
           }
         }
       }

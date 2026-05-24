@@ -60,7 +60,7 @@ export interface Meal {
   protein_g: number;
   serving_size: string;
   components?: string[];
-  batch_ref?: RecipeId;     // Links to recipes[].id for batch-cooked meals
+  batch_ref?: string;       // Links to recipes[].id for batch-cooked meals
   portion?: number;         // Which portion (1, 2, or 3) of the batch
   flexible?: boolean;       // True for "eat out OR..." meals
 }
@@ -77,18 +77,19 @@ export interface BatchStep {
 }
 
 export interface Recipe {
-  id: RecipeId;
+  id: string;
   image_slug: string;             // Stable slug for asset folder lookup
   title: string;
   servings: number;
-  meal_type: 'breakfast' | 'lunch' | 'dinner';
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   protein_per_serve_g: number;
   calories_per_serve: number;
   cook_method: string;
   prep_minutes: number;
   cook_minutes: number;
   ingredients: Ingredient[];
-  method: string;
+  method_steps: string[];
+  method?: string;                // Deprecated (v1.0). Kept for backward-compat loading of old plans.
 }
 
 export interface Ingredient {
@@ -125,7 +126,6 @@ export interface StoreChoice {
   tip: string;
 }
 
-// Discriminated unions for safer code
 export type Day =
   | 'Sunday'
   | 'Monday'
@@ -134,13 +134,6 @@ export type Day =
   | 'Thursday'
   | 'Friday'
   | 'Saturday';
-
-export type RecipeId =
-  | 'beef_stew'
-  | 'honey_soy_chicken'
-  | 'beef_burrito'
-  | 'chicken_caesar_wrap'
-  | 'overnight_oats';
 
 // Helper: compute weekly totals from the plan
 export function computeTotals(plan: MealPlan) {

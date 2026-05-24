@@ -2,7 +2,7 @@ import { transformPlan } from '../../../lib/import/transform';
 import type { MealPlan } from '../../../meal_plan.types';
 
 const PLAN: MealPlan = {
-  schema_version: '1.0',
+  schema_version: '1.1',
   meta: {
     title: 'Week 1',
     week_starting: '2026-05-24',
@@ -20,7 +20,7 @@ const PLAN: MealPlan = {
   sunday_batch_plan: [{ time: '08:00', task: 'Prep veg' }],
   recipes: [
     {
-      id: 'beef_stew' as any,
+      id: 'beef_stew',
       image_slug: 'beef_stew',
       title: 'Beef Stew',
       servings: 3,
@@ -31,7 +31,7 @@ const PLAN: MealPlan = {
       prep_minutes: 20,
       cook_minutes: 480,
       ingredients: [{ item: 'beef', amount: '800g' }],
-      method: 'Cook everything.',
+      method_steps: ['Prep everything.', 'Cook everything.'],
     },
   ],
   assumed_pantry: [],
