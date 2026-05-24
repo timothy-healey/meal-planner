@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, radius } from '../../constants/tokens';
 
@@ -30,17 +31,23 @@ function CategorySkeleton({ itemCount }: { itemCount: number }) {
 }
 
 export function ShopSkeleton() {
+  const { top } = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading…"
+    >
       {/* Green header skeleton */}
-      <View style={styles.header}>
-        <Skeleton width={180} height={28} borderRadius={4} />
-        <Skeleton width={120} height={11} borderRadius={3} style={styles.weekLabel} />
+      <View style={[styles.header, { paddingTop: spacing[4] + top }]}>
+        <Skeleton variant="dark" width={180} height={28} borderRadius={4} />
+        <Skeleton variant="dark" width={120} height={11} borderRadius={3} style={styles.weekLabel} />
         <View style={styles.pillsRow}>
-          <Skeleton width={90} height={24} borderRadius={radius.xl} />
-          <Skeleton width={90} height={24} borderRadius={radius.xl} />
+          <Skeleton variant="dark" width={90} height={24} borderRadius={radius.xl} />
+          <Skeleton variant="dark" width={90} height={24} borderRadius={radius.xl} />
         </View>
-        <Skeleton height={6} borderRadius={3} style={styles.progressBar} />
+        <Skeleton variant="dark" height={6} borderRadius={3} style={styles.progressBar} />
       </View>
 
       {/* Category sections */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, radius } from '../../constants/tokens';
 
@@ -30,8 +31,14 @@ function GroupSkeleton({ cardCount }: { cardCount: number }) {
 }
 
 export function RecipesSkeleton() {
+  const { top } = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { paddingTop: top + spacing[2] }]}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading…"
+    >
       <GroupSkeleton cardCount={3} />
       <GroupSkeleton cardCount={2} />
       <GroupSkeleton cardCount={2} />
@@ -43,7 +50,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.cream,
-    paddingTop: spacing[2],
   },
   group: {
     marginTop: spacing[4],

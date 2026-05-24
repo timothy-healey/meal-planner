@@ -15,9 +15,10 @@ interface SkeletonProps {
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;
+  variant?: 'light' | 'dark';
 }
 
-export function Skeleton({ width, height = 16, borderRadius = 4, style }: SkeletonProps) {
+export function Skeleton({ width, height = 16, borderRadius = 4, style, variant = 'light' }: SkeletonProps) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -28,11 +29,14 @@ export function Skeleton({ width, height = 16, borderRadius = 4, style }: Skelet
     );
   }, [progress]);
 
+  const fromColor = variant === 'dark' ? 'rgba(255,255,255,0.10)' : colors.divider;
+  const toColor = variant === 'dark' ? 'rgba(255,255,255,0.25)' : colors.cream;
+
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [colors.divider, colors.cream],
+      [fromColor, toColor],
     ),
   }));
 
