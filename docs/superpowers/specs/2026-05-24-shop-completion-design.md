@@ -1,5 +1,7 @@
 # Shop Completion — Pending Purchases & Receipt Screen
 
+> **Visual reference:** [2026-05-24-shop-completion-mockups.html](2026-05-24-shop-completion-mockups.html) — open in a browser. Implementation must match these mockups (header CTA layout, receipt-paper aesthetic, colours, dashed dividers, tabular-nums, etc.).
+
 ## Overview
 
 Today, checking an item off in Review mode immediately writes a row to `purchase_history`. Unchecking the item flips `is_checked` but leaves the row in place, so the purchase persists even if the user didn't actually buy it. Re-checking creates a second row.
@@ -156,7 +158,12 @@ New route `app/shop-receipt.tsx`, registered in `app/_layout.tsx` with `presenta
 
 ### Body — receipt-paper aesthetic
 
-Background: pale cream (`#fbfbf2`, slightly warmer than `colors.cream`).
+Background: pale cream (`#fbfbf2`, slightly warmer than `colors.cream`). Add two new tokens to `constants/tokens.ts`:
+
+- `colors.paper = '#fbfbf2'` — receipt background
+- `colors.paperDivider = '#b8b8a0'` — dashed divider colour
+
+Reference these in the receipt component rather than hard-coding hex.
 
 ```
                  COLES
