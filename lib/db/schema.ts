@@ -53,7 +53,8 @@ export const SCHEMA_SQL = `
     price           REAL,
     is_sale         INTEGER NOT NULL DEFAULT 0,
     barcode         TEXT,
-    purchased_at    TEXT NOT NULL
+    purchased_at    TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'confirmed'
   );
 
   CREATE INDEX IF NOT EXISTS idx_purchase_history_item_name

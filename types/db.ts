@@ -55,6 +55,7 @@ export interface PurchaseHistoryRow {
   is_sale: 0 | 1;
   barcode: string | null;
   purchased_at: string;
+  status: 'pending' | 'confirmed';
 }
 
 export interface PricePoint {
