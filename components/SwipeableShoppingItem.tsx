@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRef } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -62,10 +62,10 @@ export function SwipeableShoppingItem({ item, onToggle, onDelete, onEdit }: Prop
       friction={2}
       rightThreshold={60}
       renderRightActions={() => (
-        <>
+        <View style={styles.actions}>
           <DeleteAction onDelete={handleDelete} />
           <EditAction onEdit={handleEdit} />
-        </>
+        </View>
       )}
       overshootRight={false}
     >
@@ -75,6 +75,10 @@ export function SwipeableShoppingItem({ item, onToggle, onDelete, onEdit }: Prop
 }
 
 const styles = StyleSheet.create({
+  actions: {
+    width: 160,
+    flexDirection: "row",
+  },
   editAction: {
     width: 80,
     backgroundColor: colors.green,
