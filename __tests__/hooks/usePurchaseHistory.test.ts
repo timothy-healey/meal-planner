@@ -165,6 +165,7 @@ describe('usePurchaseHistory', () => {
       id: '2', plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
       brand: 'Coles', product_name: 'RSPCA', qty_amount: 500, qty_unit: 'g',
       price: 12, is_sale: 0, barcode: '9310172050024', purchased_at: '2026-05-12T10:00:00Z',
+      status: 'confirmed',
     };
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
       if (sql.includes('barcode =')) return [record];
@@ -174,5 +175,20 @@ describe('usePurchaseHistory', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     const found = await result.current.getLatestForBarcode('9310172050024');
     expect(found?.product_name).toBe('RSPCA');
+  });
+
+  it('deletePending issues a delete scoped to plan + item name + pending', async () => {
+    const { result } = renderHook(() => usePurchaseHistory('p1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => {
+      await result.current.deletePending('p1', 'Chicken');
+    });
+    const del = mockDb.runAsync.mock.calls.find(
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('DELETE FROM purchase_history')
+    );
+    expect(del?.[0]).toMatch(/plan_id = \?/);
+    expect(del?.[0]).toMatch(/LOWER\(item_name\) = LOWER\(\?\)/);
+    expect(del?.[0]).toMatch(/status = 'pending'/);
+    expect(del?.[1]).toEqual(['p1', 'Chicken']);
   });
 });

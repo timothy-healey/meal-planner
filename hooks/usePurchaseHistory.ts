@@ -97,5 +97,14 @@ export function usePurchaseHistory(planId: string | null) {
     return rows[0] ?? null;
   }, [db]);
 
-  return { records, loading, addRecord, getLatestForItem, getLatestForBarcode };
+  const deletePending = useCallback(async (planIdArg: string, itemName: string) => {
+    await db.runAsync(
+      `DELETE FROM purchase_history
+       WHERE plan_id = ? AND LOWER(item_name) = LOWER(?) AND status = 'pending'`,
+      [planIdArg, itemName],
+    );
+    await load();
+  }, [db, load]);
+
+  return { records, loading, addRecord, deletePending, getLatestForItem, getLatestForBarcode };
 }
