@@ -146,12 +146,59 @@ interface Props {
 }
 ```
 
-**Layout:**
-- Handle bar
-- Ingredient name (heading, `size="2xl"`, `weight="extrabold"`) with compact unit toggle inline to the right: `100g` / `100mL` / `unit` (three-segment control, same pill style as shop mode toggle)
-- Optional text inputs: BRAND, PRODUCT NAME (full width, same `input` style as `ReviewItemSheet`)
-- Numeric inputs row: CALORIES (full width), then PROTEIN / CARBS / FAT in a 3-column row
-- Done button (orange, full width, rounded)
+**Layout (from mockup — Option B: compact toggle inline next to name):**
+
+```
+┌─ heading row ──────────────────────────────────────────────────────┐
+│  Ingredient name  (extrabold, 2xl)    [100g | 100mL | unit]        │
+└────────────────────────────────────────────────────────────────────┘
+  BRAND input (full width)
+  PRODUCT NAME input (full width)
+  CALORIES input (full width)
+  ┌─ PROTEIN ──┐  ┌─ CARBS ─────┐  ┌─ FAT ───────┐
+  └────────────┘  └─────────────┘  └─────────────┘
+  [          Done           ]
+```
+
+Unit toggle exact style (from mockup — inline, right of name):
+```javascript
+// heading row
+nameRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: spacing[2],
+},
+
+// toggle track
+unitToggle: {
+  flexDirection: 'row',
+  backgroundColor: colors.divider,   // #e9eadc — light gray track
+  borderRadius: radius.full,
+  padding: 2,
+  gap: 2,
+  flexShrink: 0,
+},
+
+// active option
+unitOptActive: {
+  backgroundColor: colors.card,     // white pill
+  borderRadius: radius.full,
+  paddingHorizontal: spacing[2] + 1, // ~9px
+  paddingVertical: 5,
+  // shadow: elevation 1 on Android, shadowOpacity 0.12 iOS
+},
+
+// inactive option
+unitOpt: {
+  borderRadius: radius.full,
+  paddingHorizontal: spacing[2] + 1,
+  paddingVertical: 5,
+},
+// active text: weight="bold", size="2xs", color="green"
+// inactive text: weight="semibold", size="2xs", color="textTertiary"
+// labels: "100g", "100mL", "unit"
+```
 
 Pre-fills all fields from `existingEntry` when provided. Unit toggle defaults to `per_100g`.
 
@@ -170,6 +217,40 @@ nutrition?: { protein_g: number; carbs_g: number; fat_g: number } | null;
 onPress?: () => void;
 ```
 
+**Exact layout (from mockup):**
+
+```
+┌─ TouchableOpacity (row) paddingVertical: spacing[3], paddingHorizontal: spacing[4] ─┐
+│  ┌─ flex:1, gap: spacing[1] ──────────────────────────┐  ┌─ amount ─┐             │
+│  │  name  (semibold, md, textPrimary)                  │  │ orange   │             │
+│  │  [P 42g] [C 0g] [F 5g]   ← chips, marginTop:4      │  │  bold,md │             │
+│  └────────────────────────────────────────────────────┘  └──────────┘             │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Chip style (`StyleSheet`):
+```javascript
+macroChip: {
+  backgroundColor: '#e8f0ee',   // light green tint — not in tokens, use literal
+  borderRadius: 4,
+  paddingHorizontal: 6,
+  paddingVertical: 1,
+},
+// text inside chip: size="2xs", weight="semibold", color="textSecondary"
+// chip text format: "P 42g", "C 0g", "F 5g"
+
+chipRow: {
+  flexDirection: 'row',
+  gap: spacing[2],
+  marginTop: spacing[1],
+},
+
+hintText: {
+  // "tap to add nutrition" — size="2xs", color="textTertiary"
+  marginTop: spacing[1],
+},
+```
+
 ---
 
 ## Screen: `app/recipe/[id].tsx`
@@ -179,9 +260,48 @@ onPress?: () => void;
 2. Call `getLinksForRecipe(recipe.id)` → `links: Record<number, FoodNutritionRow>`
 3. Parse each ingredient's amount + apply rollup → compute `calculatedMacros` (or null if no links)
 
-**Header macro pills** (all in one pill row, matching existing style):
-- When `calculatedMacros` available: `{~?}487 kcal` · `{~?}P 52g` · `{~?}C 38g` · `{~?}F 12g` · `4 serves` · `30 min`
-- When no data: existing `calories_per_serve` + `protein_per_serve_g` only (no carbs/fat pills)
+**Recipe stats move from body to GreenHeader** (from mockup — Option A: all pills in one row on green background). The existing `inlineStats` row in the body is removed.
+
+GreenHeader gains a pill row below the title, using the same style as `shop.tsx` (`colors.headerPill`, `radius.full`, `spacing[3]`/`spacing[1]` padding):
+
+```javascript
+// in headerContent, below the title:
+<View style={styles.pillRow}>
+  <View style={styles.pill}>
+    <AppText weight="bold" size="2xs" color="onGreen">
+      {isPartial ? '~' : ''}{Math.round(macros.cal)} kcal
+    </AppText>
+  </View>
+  <View style={styles.pill}>
+    <AppText weight="bold" size="2xs" color="onGreen">P {Math.round(macros.protein_g)}g</AppText>
+  </View>
+  <View style={styles.pill}>
+    <AppText weight="bold" size="2xs" color="onGreen">C {Math.round(macros.carbs_g)}g</AppText>
+  </View>
+  <View style={styles.pill}>
+    <AppText weight="bold" size="2xs" color="onGreen">F {Math.round(macros.fat_g)}g</AppText>
+  </View>
+  <View style={styles.pill}>
+    <AppText weight="bold" size="2xs" color="onGreen">Serves {recipe.servings}</AppText>
+  </View>
+  <View style={styles.pill}>
+    <AppText weight="bold" size="2xs" color="onGreen">{timeLabel}</AppText>
+  </View>
+</View>
+
+// styles:
+pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+pill: {
+  backgroundColor: colors.headerPill,
+  paddingHorizontal: spacing[3],
+  paddingVertical: spacing[1],
+  borderRadius: radius.full,
+},
+```
+
+- When `calculatedMacros` is null (no ingredient links): show only the stored `calories_per_serve` + `protein_per_serve_g` + serves + time pills (no C/F pills — same as today but in pill style)
+- When partial coverage: prefix cal/protein/carbs/fat values with `~`
+- When full coverage: no prefix
 
 **Ingredient list:**
 - Each `IngredientRow` receives `onPress={() => openSheet(index)}` and `nutrition` from the rollup map (or null)
