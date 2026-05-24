@@ -13,6 +13,7 @@ import { usePlan } from '../hooks/usePlan';
 import { useShoppingItems } from '../hooks/useShoppingItems';
 import { useCategoryOrder } from '../hooks/useCategoryOrder';
 import { colors, spacing, radius } from '../constants/tokens';
+import * as Haptics from 'expo-haptics';
 
 type CategoryEntry = { name: string; isOneoff: boolean };
 
@@ -117,6 +118,7 @@ export default function CategoryOrderModal() {
             renderItem={renderItem}
             keyExtractor={(item) => item.name}
             onDragEnd={({ data }) => setDraggable(data)}
+            onDragBegin={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             ListFooterComponent={
               oneoffCats.length > 0 ? (
                 <View>
@@ -132,10 +134,10 @@ export default function CategoryOrderModal() {
 
         {/* Bottom buttons */}
         <View style={styles.footer}>
-          <TouchableOpacity onPress={handleReset} style={styles.resetBtn} accessibilityRole="button">
+          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleReset(); }} style={styles.resetBtn} accessibilityRole="button">
             <AppText weight="bold" color="textSecondary" size="md">Reset</AppText>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleDone} style={styles.doneBtn} accessibilityRole="button">
+          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleDone(); }} style={styles.doneBtn} accessibilityRole="button">
             <AppText weight="bold" color="onGreen" size="md">Done</AppText>
           </TouchableOpacity>
         </View>
