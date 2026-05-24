@@ -42,6 +42,7 @@ export default function RootLayout() {
           <Stack.Screen name="batch-plan" />
           <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
           <Stack.Screen name="category-order" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="barcode-scanner" options={{ presentation: 'fullScreenModal', headerShown: false }} />
         </Stack>
       </DatabaseProvider>
     </GestureHandlerRootView>
