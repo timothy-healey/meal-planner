@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Modal, TouchableOpacity, TextInput, ScrollView,
-  StyleSheet, KeyboardAvoidingView, Platform, Switch, Dimensions,
+  StyleSheet, KeyboardAvoidingView, Platform, Switch, useWindowDimensions,
 } from 'react-native';
-
-const SHEET_HEIGHT = Dimensions.get('window').height * 0.78;
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
@@ -37,6 +35,7 @@ export function ReviewItemSheet({
   visible, item, store, latestRecord, pendingScan,
   onSave, onClose, onPendingScanConsumed,
 }: Props) {
+  const { height: windowHeight } = useWindowDimensions();
   const [brand, setBrand] = useState('');
   const [productName, setProductName] = useState('');
   const [qtyAmount, setQtyAmount] = useState('');
@@ -44,12 +43,13 @@ export function ReviewItemSheet({
   const [price, setPrice] = useState('');
   const [isSale, setIsSale] = useState(false);
   const [barcode, setBarcode] = useState('');
+  const [unitPickerOpen, setUnitPickerOpen] = useState(false);
 
   const baselinePrice = latestRecord && !latestRecord.is_sale ? latestRecord.price : null;
 
-  // Pre-fill from history when sheet opens
   useEffect(() => {
     if (!visible) return;
+    setUnitPickerOpen(false);
     if (latestRecord) {
       setBrand(latestRecord.brand ?? '');
       setProductName(latestRecord.product_name ?? '');
@@ -64,7 +64,6 @@ export function ReviewItemSheet({
     }
   }, [visible, latestRecord]);
 
-  // Apply scan result when returning from scanner
   useEffect(() => {
     if (!pendingScan) return;
     setBarcode(pendingScan.barcode);
@@ -107,125 +106,131 @@ export function ReviewItemSheet({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { height: windowHeight * 0.80 }]}>
           <View style={styles.handle} />
-          <AppText weight="extrabold" size="xl" color="textPrimary" style={styles.heading}>
+
+          <AppText weight="extrabold" size="2xl" color="textPrimary" style={styles.heading}>
             {item.name}
           </AppText>
 
           {hasPrefill && latestRecord && (
             <View style={styles.prefillBadge}>
-              <AppText weight="semibold" size="2xs" color="green">
+              <AppText weight="semibold" size="sm" color="textSecondary">
                 {`↩ Last bought ${formatDate(latestRecord.purchased_at)}${latestRecord.price != null ? ` · ${formatPrice(latestRecord.price)}` : ''}`}
               </AppText>
             </View>
           )}
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.fields}>
-            <FieldWrap label="Brand">
-              <TextInput
-                style={styles.input}
-                value={brand}
-                onChangeText={setBrand}
-                placeholder="e.g. Coles, Macro, Lilydale"
-                placeholderTextColor={colors.textTertiary}
-              />
-            </FieldWrap>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.fields}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Brand */}
+            <FieldLabel>BRAND</FieldLabel>
+            <TextInput
+              style={styles.input}
+              value={brand}
+              onChangeText={setBrand}
+              placeholder="e.g. Coles, Macro, Lilydale"
+              placeholderTextColor={colors.textTertiary}
+            />
 
-            <FieldWrap label="Product name">
-              <TextInput
-                style={styles.input}
-                value={productName}
-                onChangeText={setProductName}
-                placeholder="e.g. RSPCA Chicken Breast"
-                placeholderTextColor={colors.textTertiary}
-              />
-            </FieldWrap>
+            {/* Product name */}
+            <FieldLabel top>PRODUCT NAME</FieldLabel>
+            <TextInput
+              style={styles.input}
+              value={productName}
+              onChangeText={setProductName}
+              placeholder="e.g. RSPCA Chicken Breast"
+              placeholderTextColor={colors.textTertiary}
+            />
 
+            {/* Qty + Price row */}
             <View style={styles.twoCol}>
               <View style={styles.colFlex}>
-                <AppText weight="bold" size="2xs" color="textTertiary" style={styles.fieldLabel}>
-                  QTY / SIZE
-                </AppText>
-                <View style={styles.qtyRow}>
+                <FieldLabel top>QTY / SIZE</FieldLabel>
+                {/* Split input: number on left, unit selector on right */}
+                <View style={styles.qtyBox}>
                   <TextInput
-                    style={[styles.input, styles.qtyInput]}
+                    style={styles.qtyNumber}
                     value={qtyAmount}
                     onChangeText={setQtyAmount}
                     keyboardType="decimal-pad"
                     placeholder="0"
                     placeholderTextColor={colors.textTertiary}
                   />
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.unitScroll}
-                    contentContainerStyle={styles.unitScrollContent}
+                  <View style={styles.qtyDivider} />
+                  <TouchableOpacity
+                    style={styles.unitBtn}
+                    onPress={() => setUnitPickerOpen(v => !v)}
+                    activeOpacity={0.7}
                   >
-                    {QTY_UNITS.map((u) => (
-                      <TouchableOpacity
-                        key={u}
-                        style={[styles.unitChip, qtyUnit === u && styles.unitChipSelected]}
-                        onPress={() => setQtyUnit(u)}
-                        activeOpacity={0.7}
-                      >
-                        <AppText
-                          weight="bold"
-                          size="2xs"
-                          color={qtyUnit === u ? 'onGreen' : 'textTertiary'}
-                        >
-                          {u}
-                        </AppText>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                    <AppText weight="bold" size="md" color="textPrimary">{qtyUnit}</AppText>
+                    <Ionicons
+                      name={unitPickerOpen ? 'chevron-up' : 'chevron-down'}
+                      size={12}
+                      color={colors.textTertiary}
+                      style={{ marginLeft: 2 }}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
 
               <View style={styles.colFlex}>
-                <AppText weight="bold" size="2xs" color="textTertiary" style={styles.fieldLabel}>
-                  PRICE PAID
-                </AppText>
-                <View style={styles.priceRow}>
-                  <TextInput
-                    style={[styles.input, styles.priceInput]}
-                    value={price}
-                    onChangeText={setPrice}
-                    keyboardType="decimal-pad"
-                    placeholder="$0.00"
-                    placeholderTextColor={colors.textTertiary}
-                  />
-                  <View style={styles.saleToggle}>
-                    <Switch
-                      value={isSale}
-                      onValueChange={setIsSale}
-                      trackColor={{ false: colors.checkboxBorder, true: colors.orange }}
-                      thumbColor="white"
-                      style={styles.switch}
-                    />
-                    <AppText
-                      weight="bold"
-                      size="2xs"
-                      color={isSale ? 'orange' : 'textTertiary'}
-                    >
-                      Sale
-                    </AppText>
-                  </View>
-                </View>
-                {showSaleNote && (
-                  <AppText weight="medium" size="2xs" color="textNote" style={styles.saleNote}>
-                    {`Sale price — baseline stays ${formatPrice(baselinePrice!)}`}
-                  </AppText>
-                )}
+                <FieldLabel top>PRICE PAID</FieldLabel>
+                <TextInput
+                  style={styles.input}
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="decimal-pad"
+                  placeholder="$0.00"
+                  placeholderTextColor={colors.textTertiary}
+                />
               </View>
             </View>
 
-            <AppText weight="bold" size="2xs" color="textTertiary" style={styles.fieldLabel}>
-              BARCODE
-            </AppText>
+            {/* Unit dropdown (appears below qty+price row when open) */}
+            {unitPickerOpen && (
+              <View style={styles.unitDropdown}>
+                {QTY_UNITS.map((u) => (
+                  <TouchableOpacity
+                    key={u}
+                    style={[styles.unitOption, qtyUnit === u && styles.unitOptionSelected]}
+                    onPress={() => { setQtyUnit(u); setUnitPickerOpen(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <AppText weight="semibold" size="md" color={qtyUnit === u ? 'onGreen' : 'textPrimary'}>
+                      {u}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Sale toggle */}
+            <View style={styles.saleRow}>
+              <Switch
+                value={isSale}
+                onValueChange={setIsSale}
+                trackColor={{ false: colors.checkboxBorder, true: colors.orange }}
+                thumbColor="white"
+              />
+              <AppText weight="semibold" size="sm" color={isSale ? 'orange' : 'textTertiary'}>
+                Sale price
+              </AppText>
+              {showSaleNote && (
+                <AppText weight="medium" size="sm" color="textNote">
+                  {` — baseline stays ${formatPrice(baselinePrice!)}`}
+                </AppText>
+              )}
+            </View>
+
+            {/* Barcode */}
+            <FieldLabel top>BARCODE</FieldLabel>
             <View style={styles.barcodeRow}>
               <TextInput
-                style={[styles.input, styles.barcodeInput]}
+                style={[styles.input, { flex: 1 }]}
                 value={barcode}
                 onChangeText={setBarcode}
                 placeholder="— or scan →"
@@ -237,14 +242,16 @@ export function ReviewItemSheet({
                 onPress={() => router.push('/barcode-scanner')}
                 activeOpacity={0.85}
               >
-                <Ionicons name="camera-outline" size={15} color={colors.onGreen} />
+                <Ionicons name="camera-outline" size={16} color={colors.onGreen} />
                 <AppText weight="bold" size="sm" color="onGreen"> Scan</AppText>
               </TouchableOpacity>
             </View>
+
+            <View style={{ height: spacing[3] }} />
           </ScrollView>
 
           <TouchableOpacity style={styles.doneBtn} onPress={handleSave} activeOpacity={0.85}>
-            <AppText weight="extrabold" size="md" color="onGreen">Done</AppText>
+            <AppText weight="extrabold" size="lg" color="onGreen">Done</AppText>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -252,75 +259,90 @@ export function ReviewItemSheet({
   );
 }
 
-function FieldWrap({ label, children }: { label: string; children: React.ReactNode }) {
+function FieldLabel({ children, top }: { children: string; top?: boolean }) {
   return (
-    <View style={fieldStyles.wrap}>
-      <AppText weight="bold" size="2xs" color="textTertiary" style={fieldStyles.label}>
-        {label.toUpperCase()}
-      </AppText>
+    <AppText
+      weight="bold"
+      size="xs"
+      color="textTertiary"
+      style={{ letterSpacing: 0.8, marginBottom: spacing[1], marginTop: top ? spacing[4] : 0 }}
+    >
       {children}
-    </View>
+    </AppText>
   );
 }
-
-const fieldStyles = StyleSheet.create({
-  wrap: { marginBottom: spacing[3] },
-  label: { marginBottom: spacing[1], letterSpacing: 0.8 },
-});
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
-    height: SHEET_HEIGHT,
-    backgroundColor: colors.card, borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg, padding: spacing[4],
-    paddingBottom: spacing[8],
+    backgroundColor: colors.card,
+    borderTopLeftRadius: radius.lg + 4,
+    borderTopRightRadius: radius.lg + 4,
+    paddingTop: spacing[2],
+    paddingHorizontal: spacing[5],
+    paddingBottom: spacing[6],
   },
   handle: {
-    width: 32, height: 4, borderRadius: radius.full,
-    backgroundColor: colors.divider, alignSelf: 'center', marginBottom: spacing[3],
+    width: 36, height: 4, borderRadius: radius.full,
+    backgroundColor: colors.divider, alignSelf: 'center', marginBottom: spacing[4],
   },
-  heading: { marginBottom: spacing[2] },
+  heading: { marginBottom: spacing[3] },
   prefillBadge: {
-    alignSelf: 'flex-start', backgroundColor: 'rgba(28,69,60,0.07)',
-    borderRadius: radius.xs, paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1], marginBottom: spacing[3],
+    alignSelf: 'flex-start',
+    backgroundColor: colors.cream,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1] + 2,
+    marginBottom: spacing[4],
+    borderWidth: 1,
+    borderColor: colors.divider,
   },
   fields: { flex: 1 },
-  fieldLabel: { marginBottom: spacing[1], letterSpacing: 0.8 },
   input: {
     backgroundColor: colors.cream, borderWidth: 1.5, borderColor: colors.divider,
-    borderRadius: radius.sm + 2, paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2], fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 13, color: colors.textPrimary,
+    borderRadius: radius.md, paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3], fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 16, color: colors.textPrimary,
   },
-  twoCol: { flexDirection: 'row', gap: spacing[2], marginBottom: spacing[3] },
+  twoCol: { flexDirection: 'row', gap: spacing[3] },
   colFlex: { flex: 1 },
-  qtyRow: { flexDirection: 'row', gap: spacing[1], alignItems: 'center' },
-  qtyInput: { width: 64 },
-  unitScroll: { flex: 1 },
-  unitScrollContent: { gap: spacing[1], alignItems: 'center' },
-  unitChip: {
-    paddingHorizontal: spacing[2], paddingVertical: spacing[1],
-    borderRadius: radius.full, backgroundColor: colors.cream,
-    borderWidth: 1.5, borderColor: colors.divider,
+  qtyBox: {
+    flexDirection: 'row', alignItems: 'stretch',
+    backgroundColor: colors.cream, borderWidth: 1.5, borderColor: colors.divider,
+    borderRadius: radius.md, overflow: 'hidden',
   },
-  unitChipSelected: { backgroundColor: colors.green, borderColor: colors.green },
-  priceRow: { flexDirection: 'row', gap: spacing[1], alignItems: 'center' },
-  priceInput: { flex: 1 },
-  saleToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
-  switch: { transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] },
-  saleNote: { marginTop: spacing[1] },
-  barcodeRow: { flexDirection: 'row', gap: spacing[2], alignItems: 'center', marginBottom: spacing[4] },
-  barcodeInput: { flex: 1 },
+  qtyNumber: {
+    flex: 1, paddingHorizontal: spacing[4], paddingVertical: spacing[3],
+    fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 16, color: colors.textPrimary,
+    minWidth: 0,
+  },
+  qtyDivider: { width: 1.5, backgroundColor: colors.divider },
+  unitBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: spacing[3], paddingVertical: spacing[3], minWidth: 52,
+  },
+  unitDropdown: {
+    marginTop: spacing[1],
+    backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.divider,
+    borderRadius: radius.md, overflow: 'hidden', marginBottom: spacing[1],
+  },
+  unitOption: {
+    paddingHorizontal: spacing[4], paddingVertical: spacing[3],
+    borderBottomWidth: 1, borderBottomColor: colors.divider,
+  },
+  unitOptionSelected: { backgroundColor: colors.green },
+  saleRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing[2],
+    marginTop: spacing[3],
+  },
+  barcodeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   scanBtn: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.green,
-    borderRadius: radius.sm + 2, paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2] + 1,
+    borderRadius: radius.md, paddingHorizontal: spacing[4], paddingVertical: spacing[3],
   },
   doneBtn: {
     backgroundColor: colors.orange, borderRadius: radius.full,
-    paddingVertical: spacing[3], alignItems: 'center', marginTop: spacing[2],
+    paddingVertical: spacing[3] + 2, alignItems: 'center', marginTop: spacing[3],
   },
 });
