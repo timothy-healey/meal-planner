@@ -41,7 +41,7 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
             ph.qty_amount, ph.qty_unit, ph.price, ph.is_sale, ph.barcode
      FROM purchase_history ph
      LEFT JOIN stores s ON ph.store_id = s.id
-     WHERE ph.plan_id = ? ORDER BY ph.purchased_at ASC`,
+     WHERE ph.plan_id = ? AND ph.status = 'confirmed' ORDER BY ph.purchased_at ASC`,
     [planId]
   );
 

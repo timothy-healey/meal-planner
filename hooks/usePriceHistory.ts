@@ -25,6 +25,7 @@ export function usePriceHistory(
          AND ph.price IS NOT NULL
          AND ph.qty_amount IS NOT NULL
          AND ph.qty_unit IS NOT NULL
+         AND ph.status = 'confirmed'
        ORDER BY ph.purchased_at ASC`,
       [brand, productName],
     );
