@@ -18,4 +18,10 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     } catch {}
     await db.execAsync('PRAGMA user_version = 1');
   }
+
+  if (version < 2) {
+    // food_nutrition and ingredient_nutrition_link are created by SCHEMA_SQL above (IF NOT EXISTS).
+    // Nothing destructive to run — just bump the version.
+    await db.execAsync('PRAGMA user_version = 2');
+  }
 }

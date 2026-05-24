@@ -113,4 +113,28 @@ export const SCHEMA_SQL = `
     aisle_id    TEXT NOT NULL REFERENCES store_aisles(id),
     updated_at  TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS food_nutrition (
+    id TEXT PRIMARY KEY,
+    item_name TEXT NOT NULL,
+    brand TEXT,
+    product_name TEXT,
+    basis TEXT NOT NULL DEFAULT 'per_100g'
+      CHECK (basis IN ('per_100g', 'per_100mL', 'per_unit')),
+    cal_per_basis REAL,
+    protein_per_basis REAL,
+    carbs_per_basis REAL,
+    fat_per_basis REAL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_food_nutrition_item_name
+    ON food_nutrition(item_name);
+
+  CREATE TABLE IF NOT EXISTS ingredient_nutrition_link (
+    recipe_id TEXT NOT NULL,
+    ingredient_index INTEGER NOT NULL,
+    food_nutrition_id TEXT NOT NULL REFERENCES food_nutrition(id),
+    PRIMARY KEY (recipe_id, ingredient_index)
+  );
 `;

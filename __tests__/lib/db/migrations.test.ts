@@ -36,4 +36,25 @@ describe('runMigrations', () => {
     const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
     expect(allSql).not.toContain('DROP COLUMN');
   });
+
+  it('calls execAsync with SQL containing the two new nutrition tables', async () => {
+    await runMigrations(mockDb as any);
+    const sql: string = mockDb.execAsync.mock.calls[0][0];
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS food_nutrition');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS ingredient_nutrition_link');
+  });
+
+  it('runs version-2 migration on a v1 database', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 1 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).toContain('user_version = 2');
+  });
+
+  it('skips version-2 migration when already at version 2', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 2 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).not.toContain('user_version = 2');
+  });
 });
