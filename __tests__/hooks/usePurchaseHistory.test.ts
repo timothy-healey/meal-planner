@@ -191,4 +191,22 @@ describe('usePurchaseHistory', () => {
     expect(del?.[0]).toMatch(/status = 'pending'/);
     expect(del?.[1]).toEqual(['p1', 'Chicken']);
   });
+
+  it('updatePending updates an existing pending row in place', async () => {
+    const { result } = renderHook(() => usePurchaseHistory('p1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => {
+      await result.current.updatePending('row-1', {
+        plan_id: 'p1', item_name: 'Chicken', store: 'Coles', brand: 'Macro',
+        product_name: 'Free Range', qty_amount: 500, qty_unit: 'g',
+        price: 13.5, is_sale: 0, barcode: null,
+        purchased_at: '2026-05-12T10:00:00Z',
+      });
+    });
+    const upd = mockDb.runAsync.mock.calls.find(
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('UPDATE purchase_history')
+    );
+    expect(upd?.[0]).toMatch(/WHERE id = \? AND status = 'pending'/);
+    expect(upd?.[1]?.[upd[1].length - 1]).toBe('row-1');
+  });
 });

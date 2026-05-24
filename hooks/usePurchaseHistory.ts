@@ -106,5 +106,22 @@ export function usePurchaseHistory(planId: string | null) {
     await load();
   }, [db, load]);
 
-  return { records, loading, addRecord, deletePending, getLatestForItem, getLatestForBarcode };
+  const updatePending = useCallback(async (id: string, data: AddPurchaseData) => {
+    const storeId = await resolveOrCreateStore(db, data.store);
+    await db.runAsync(
+      `UPDATE purchase_history
+       SET item_name = ?, store_id = ?, brand = ?, product_name = ?,
+           qty_amount = ?, qty_unit = ?, price = ?, is_sale = ?,
+           barcode = ?, purchased_at = ?
+       WHERE id = ? AND status = 'pending'`,
+      [
+        data.item_name, storeId, data.brand, data.product_name,
+        data.qty_amount, data.qty_unit, data.price, data.is_sale,
+        data.barcode, data.purchased_at, id,
+      ],
+    );
+    await load();
+  }, [db, load]);
+
+  return { records, loading, addRecord, deletePending, updatePending, getLatestForItem, getLatestForBarcode };
 }
