@@ -30,16 +30,18 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
     item_name: string;
     brand: string | null;
     product_name: string | null;
-    store: string;
+    store: string | null;
     qty_amount: number | null;
     qty_unit: string | null;
     price: number | null;
     is_sale: number;
     barcode: string | null;
   }>(
-    `SELECT item_name, brand, product_name, store, qty_amount, qty_unit,
-            price, is_sale, barcode
-     FROM purchase_history WHERE plan_id = ? ORDER BY purchased_at ASC`,
+    `SELECT ph.item_name, ph.brand, ph.product_name, s.chain AS store,
+            ph.qty_amount, ph.qty_unit, ph.price, ph.is_sale, ph.barcode
+     FROM purchase_history ph
+     LEFT JOIN stores s ON ph.store_id = s.id
+     WHERE ph.plan_id = ? ORDER BY ph.purchased_at ASC`,
     [planId]
   );
 
@@ -54,7 +56,7 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
       item: p.item_name,
       brand: p.brand,
       product: p.product_name,
-      store: p.store,
+      store: p.store ?? '',
       qty,
       price: p.price,
       is_sale: p.is_sale === 1,
