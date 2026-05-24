@@ -24,13 +24,16 @@ export function Pill({ label, onPress, variant = 'white', style, accessibilityLa
           backgroundColor: bg,
           borderRadius: radius.xl,
           paddingHorizontal: spacing[3],
-          paddingVertical: spacing[1],
+          paddingVertical: spacing[2],
+          minHeight: 44,
+          justifyContent: 'center',
+          alignItems: 'center',
           ...shadow.pill,
         },
         style,
       ]}
     >
-      <AppText weight="bold" size="2xs" color={textColor}>{label}</AppText>
+      <AppText weight="bold" size="sm" color={textColor}>{label}</AppText>
     </TouchableOpacity>
   );
 }

@@ -4,7 +4,6 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { GreenHeader } from '../../components/ui/GreenHeader';
 import { AppText } from '../../components/ui/AppText';
-import { StatStrip } from '../../components/ui/StatStrip';
 import { CategoryHeader } from '../../components/ui/CategoryHeader';
 import { StepList } from '../../components/ui/StepList';
 import { IngredientRow } from '../../components/IngredientRow';
@@ -27,7 +26,6 @@ export default function RecipeDetailScreen() {
   }
 
   const timeLabel = formatCookTime(recipe.prep_minutes, recipe.cook_minutes);
-
   const buildCopyText = () =>
     [
       recipe.title,
@@ -45,13 +43,6 @@ export default function RecipeDetailScreen() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const statItems = [
-    { label: 'Cal', value: String(recipe.calories_per_serve), highlight: true },
-    { label: 'Protein', value: `${recipe.protein_per_serve_g}g`, highlight: false },
-    { label: 'Serves', value: String(recipe.servings), highlight: false },
-    { label: 'Cook', value: timeLabel, highlight: false },
-  ];
 
   return (
     <View style={styles.container}>
@@ -72,8 +63,14 @@ export default function RecipeDetailScreen() {
       </GreenHeader>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        <View style={styles.statStrip}>
-          <StatStrip stats={statItems} />
+        <View style={styles.inlineStats}>
+          <AppText weight="bold" color="orange" size="lg">{recipe.calories_per_serve} cal</AppText>
+          <AppText weight="regular" color="textTertiary" size="lg"> · </AppText>
+          <AppText weight="semibold" color="textSecondary" size="lg">{recipe.protein_per_serve_g}g protein</AppText>
+          <AppText weight="regular" color="textTertiary" size="lg"> · </AppText>
+          <AppText weight="semibold" color="textSecondary" size="lg">Serves {recipe.servings}</AppText>
+          <AppText weight="regular" color="textTertiary" size="lg"> · </AppText>
+          <AppText weight="regular" color="textTertiary" size="lg">{timeLabel}</AppText>
         </View>
 
         <View style={styles.section}>
@@ -114,18 +111,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.cream },
   notFound: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.cream },
   headerContent: { paddingBottom: spacing[4], gap: spacing[2] },
-  backBtn: { paddingVertical: spacing[3], paddingRight: spacing[4], alignSelf: 'flex-start' },
+  backBtn: { paddingVertical: spacing[4], paddingRight: spacing[4], alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   body: { flex: 1 },
-  bodyContent: { paddingBottom: spacing[10], gap: spacing[4] },
-  statStrip: { paddingHorizontal: spacing[4] },
+  bodyContent: { paddingTop: spacing[2], paddingBottom: spacing[10], gap: spacing[4] },
+  inlineStats: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: spacing[4] },
   section: { gap: spacing[2], paddingHorizontal: spacing[4] },
   card: { backgroundColor: colors.card, borderRadius: radius.md, overflow: 'hidden' },
   methodHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   copyBtn: {
     backgroundColor: colors.green,
     paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
+    paddingVertical: spacing[2],
     borderRadius: radius.xl,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   stepListWrapper: { padding: spacing[4] },
 });

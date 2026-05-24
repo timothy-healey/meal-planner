@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CategoryHeader } from '../../components/ui/CategoryHeader';
@@ -12,13 +13,16 @@ import { colors, spacing } from '../../constants/tokens';
 const MEAL_TYPE_ORDER = ['dinner', 'lunch', 'breakfast', 'snack'];
 
 export default function RecipesScreen() {
+  const insets = useSafeAreaInsets();
   const { plan } = usePlan();
   const { recipes } = useRecipes();
 
   if (!plan || recipes.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <EmptyState onImport={() => router.push('/settings')} />
+      <View style={styles.outerContainer}>
+        <View style={[styles.emptyContainer, { marginTop: insets.top }]}>
+          <EmptyState onImport={() => router.push('/settings')} />
+        </View>
       </View>
     );
   }
@@ -45,7 +49,8 @@ export default function RecipesScreen() {
   const allGroups = [...groups, ...extraGroups];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.outerContainer}>
+    <ScrollView style={[styles.container, { marginTop: insets.top }]} contentContainerStyle={styles.content}>
       {batchSteps.length > 0 && (
         <BatchPlanBanner
           steps={batchSteps}
@@ -68,13 +73,15 @@ export default function RecipesScreen() {
         </View>
       ))}
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: { flex: 1, backgroundColor: colors.green },
   container: { flex: 1, backgroundColor: colors.cream },
-  content: { paddingBottom: spacing[10] },
+  content: { paddingTop: spacing[2], paddingBottom: spacing[10] },
   emptyContainer: { flex: 1, backgroundColor: colors.cream },
-  group: { marginTop: spacing[4] },
-  cards: { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[2] },
+  group: { marginTop: spacing[4], paddingHorizontal: spacing[4] },
+  cards: { gap: spacing[3], paddingTop: spacing[2] },
 });

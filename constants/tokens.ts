@@ -11,7 +11,7 @@ export const colors = {
 
   // Surfaces
   cream: '#F4F5EB', // screen background, card surfaces
-  card:  '#FFFFFF', // recipe cards, stat pills (white on cream)
+  card:  '#FAFAF4', // recipe cards, stat pills — warm white tinted toward brand
 
   // On-green (elements rendered on the dark green header)
   onGreen:       '#F4F5EB', // primary text on green
@@ -19,10 +19,10 @@ export const colors = {
 
   // Text hierarchy (on cream)
   textPrimary:   '#1C453C', // item names, headings
-  textSecondary: '#9a9a8a', // protein, secondary stats
-  textTertiary:  '#b0b1a5', // time, tertiary stats, inactive labels
-  textNote:      '#888',    // notes, captions (replaces italic on this font)
-  tabInactive:   '#bbb',    // inactive tab labels
+  textSecondary: '#666658', // protein, secondary stats — 4.7:1 on cream (AA)
+  textTertiary:  '#898970', // time, tertiary stats, inactive labels — 3.0:1 on cream (large-text AA)
+  textNote:      '#7a7a6a', // notes, captions (replaces italic on this font) — 3.6:1 on cream
+  tabInactive:   '#aeae9e', // inactive tab labels — warm undertone consistent with palette
 
   // Structural
   divider:       '#e9eadc', // list dividers, tab bar border
@@ -49,13 +49,14 @@ export const font = {
 
   // All sizes in dp (React Native logical pixels)
   size: {
-    '2xs':  9,  // captions, category labels, budget pills, tab labels
+    '2xs':  9,  // captions, budget pills, tab labels
     xs:    10,  // supporting header text ("Week of DD MMM")
-    sm:    11,  // back links, item detail, recipe stats, plan meal labels
+    sm:    11,  // back links, item detail, recipe stats, plan meal labels, category labels
     md:    13,  // recipe card names, body
     lg:    15,  // plan day names, today card
-    xl:    17,  // screen titles (Shopping List, etc.)
+    xl:    17,  // secondary screen titles
     '2xl': 20,  // recipe detail title, stat strip values
+    '3xl': 28,  // primary screen titles (Shopping List, etc.)
   },
 
   // Letter spacing in dp (React Native does not support em units)

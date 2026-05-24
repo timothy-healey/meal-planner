@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppText } from '../../components/ui/AppText';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -27,12 +28,15 @@ function parseLocalDate(iso: string): Date {
 }
 
 export default function PlanScreen() {
+  const insets = useSafeAreaInsets();
   const { plan } = usePlan();
 
   if (!plan) {
     return (
-      <View style={styles.emptyContainer}>
-        <EmptyState onImport={() => router.push('/settings')} />
+      <View style={styles.outerContainer}>
+        <View style={[styles.emptyContainer, { marginTop: insets.top }]}>
+          <EmptyState onImport={() => router.push('/settings')} />
+        </View>
       </View>
     );
   }
@@ -78,7 +82,8 @@ export default function PlanScreen() {
   const otherDays = days.filter((_, idx) => !isTodayInPlan || idx !== todayIndex);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.outerContainer}>
+    <ScrollView style={[styles.container, { marginTop: insets.top }]} contentContainerStyle={styles.content}>
       {/* Top row: week range + cal target + import button */}
       <View style={styles.topRow}>
         <View>
@@ -102,21 +107,21 @@ export default function PlanScreen() {
       {todayDay && <TodayCard day={todayDay} />}
 
       <View style={styles.otherDays}>
-        {otherDays.map((day, idx) => (
+        {otherDays.map((day) => (
           <DayCard
             key={day.day}
             day={day}
-            isFirst={idx === 0}
-            isLast={idx === otherDays.length - 1}
             onPress={day.batchRef ? () => router.push(`/recipe/${day.batchRef}`) : undefined}
           />
         ))}
       </View>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: { flex: 1, backgroundColor: colors.green },
   container: { flex: 1, backgroundColor: colors.cream },
   content: { paddingBottom: spacing[10] },
   emptyContainer: { flex: 1, backgroundColor: colors.cream },
@@ -125,21 +130,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingHorizontal: spacing[4],
-    paddingTop: spacing[6],
+    paddingTop: spacing[2],
     paddingBottom: spacing[2],
   },
-  weekLabel: { letterSpacing: 0.3, textTransform: 'uppercase' },
+  weekLabel: { letterSpacing: 0.5, textTransform: 'uppercase' },
   importBtn: {
     backgroundColor: colors.card,
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     borderRadius: radius.xl,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     ...shadow.pill,
   },
   otherDays: {
     marginHorizontal: spacing[4],
     marginTop: spacing[4],
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
   },
 });

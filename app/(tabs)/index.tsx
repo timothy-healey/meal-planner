@@ -1,5 +1,5 @@
-import { View } from 'react-native';
+import { Redirect } from 'expo-router';
 
-export default function HomeScreen() {
-  return <View />;
+export default function Index() {
+  return <Redirect href="/(tabs)/plan" />;
 }
