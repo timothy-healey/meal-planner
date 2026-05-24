@@ -43,7 +43,7 @@ export function usePurchaseHistory(planId: string | null) {
   const load = useCallback(async () => {
     if (!planId) { setRecords([]); setLoading(false); return; }
     const rows = await db.getAllAsync<PurchaseHistoryRow>(
-      'SELECT * FROM purchase_history WHERE plan_id = ? ORDER BY purchased_at DESC',
+      "SELECT * FROM purchase_history WHERE plan_id = ? AND status = 'confirmed' ORDER BY purchased_at DESC",
       [planId]
     );
     setRecords(rows);
@@ -52,17 +52,20 @@ export function usePurchaseHistory(planId: string | null) {
 
   useEffect(() => { load(); }, [load]);
 
-  const addRecord = useCallback(async (data: AddPurchaseData) => {
+  const addRecord = useCallback(async (
+    data: AddPurchaseData,
+    status: 'pending' | 'confirmed' = 'confirmed',
+  ) => {
     const id = generateId();
     const storeId = await resolveOrCreateStore(db, data.store);
     await db.runAsync(
       `INSERT INTO purchase_history
          (id, plan_id, item_name, store_id, brand, product_name,
-          qty_amount, qty_unit, price, is_sale, barcode, purchased_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          qty_amount, qty_unit, price, is_sale, barcode, purchased_at, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [id, data.plan_id, data.item_name, storeId, data.brand,
        data.product_name, data.qty_amount, data.qty_unit, data.price,
-       data.is_sale, data.barcode, data.purchased_at]
+       data.is_sale, data.barcode, data.purchased_at, status]
     );
     await load();
   }, [db, load]);
@@ -70,14 +73,14 @@ export function usePurchaseHistory(planId: string | null) {
   const getLatestForItem = useCallback(async (itemName: string): Promise<PurchaseHistoryRow | null> => {
     const rows = await db.getAllAsync<PurchaseHistoryRow>(
       `SELECT * FROM purchase_history
-       WHERE LOWER(item_name) = LOWER(?) AND is_sale = 0
+       WHERE LOWER(item_name) = LOWER(?) AND is_sale = 0 AND status = 'confirmed'
        ORDER BY purchased_at DESC LIMIT 1`,
       [itemName]
     );
     if (rows.length > 0) return rows[0];
     const saleRows = await db.getAllAsync<PurchaseHistoryRow>(
       `SELECT * FROM purchase_history
-       WHERE LOWER(item_name) = LOWER(?)
+       WHERE LOWER(item_name) = LOWER(?) AND status = 'confirmed'
        ORDER BY purchased_at DESC LIMIT 1`,
       [itemName]
     );
@@ -87,7 +90,7 @@ export function usePurchaseHistory(planId: string | null) {
   const getLatestForBarcode = useCallback(async (barcode: string): Promise<PurchaseHistoryRow | null> => {
     const rows = await db.getAllAsync<PurchaseHistoryRow>(
       `SELECT * FROM purchase_history
-       WHERE barcode = ?
+       WHERE barcode = ? AND status = 'confirmed'
        ORDER BY purchased_at DESC LIMIT 1`,
       [barcode]
     );
