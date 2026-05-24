@@ -6,6 +6,7 @@ import { DayCard } from "../../components/DayCard";
 import { TodayCard } from "../../components/TodayCard";
 import { AppText } from "../../components/ui/AppText";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { PlanSkeleton } from "../../components/ui/PlanSkeleton";
 import { colors, radius, shadow, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
 
@@ -37,7 +38,7 @@ function parseLocalDate(iso: string): Date {
 
 export default function PlanScreen() {
   const insets = useSafeAreaInsets();
-  const { plan } = usePlan();
+  const { plan, loading } = usePlan();
 
   const days = useMemo<DisplayDay[]>(() => {
     if (!plan) return [];
@@ -55,6 +56,14 @@ export default function PlanScreen() {
         null,
     }));
   }, [plan]);
+
+  if (loading) {
+    return (
+      <View style={styles.outerContainer}>
+        <PlanSkeleton />
+      </View>
+    );
+  }
 
   if (!plan) {
     return (

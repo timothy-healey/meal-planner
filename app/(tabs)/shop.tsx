@@ -14,6 +14,7 @@ import { GreenHeader } from '../../components/ui/GreenHeader';
 import { AppText } from '../../components/ui/AppText';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ShopSkeleton } from '../../components/ui/ShopSkeleton';
 import { CategorySection } from '../../components/CategorySection';
 import { BasketSection } from '../../components/BasketSection';
 import { AddItemSheet } from '../../components/AddItemSheet';
@@ -36,8 +37,8 @@ const TITLE_COLLAPSE_END = 55;
 
 export default function ShopScreen() {
   const insets = useSafeAreaInsets();
-  const { plan } = usePlan();
-  const { items, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
+  const { plan, loading: planLoading } = usePlan();
+  const { items, loading: itemsLoading, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
   const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
   const { addRecord, getLatestForItem } = usePurchaseHistory(plan?.row.id ?? null);
   const { mode, activeStore, savedStores, setMode } = useShoppingMode(plan?.row.id ?? null);
@@ -138,6 +139,10 @@ export default function ShopScreen() {
   function handleStoreConfirm(storeName: string) {
     setStorePickerVisible(false);
     setMode('review', storeName);
+  }
+
+  if (planLoading || itemsLoading) {
+    return <ShopSkeleton />;
   }
 
   if (!plan) {

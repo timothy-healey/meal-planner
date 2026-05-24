@@ -6,6 +6,7 @@ import { BatchPlanBanner } from "../../components/BatchPlanBanner";
 import { RecipeCard } from "../../components/RecipeCard";
 import { CategoryHeader } from "../../components/ui/CategoryHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { RecipesSkeleton } from "../../components/ui/RecipesSkeleton";
 import { colors, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
 import { useRecipes } from "../../hooks/useRecipes";
@@ -15,8 +16,8 @@ const KNOWN_MEAL_TYPES = new Set(MEAL_TYPE_ORDER);
 
 export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
-  const { plan } = usePlan();
-  const { recipes } = useRecipes();
+  const { plan, loading: planLoading } = usePlan();
+  const { recipes, loading: recipesLoading } = useRecipes();
 
   const { batchSteps, allGroups } = useMemo(() => {
     if (!plan || recipes.length === 0) return { batchSteps: [], allGroups: [] };
@@ -39,6 +40,14 @@ export default function RecipesScreen() {
       allGroups: [...groups, ...extraGroups],
     };
   }, [plan, recipes]);
+
+  if (planLoading || recipesLoading) {
+    return (
+      <View style={styles.outerContainer}>
+        <RecipesSkeleton />
+      </View>
+    );
+  }
 
   if (!plan || recipes.length === 0) {
     return (
