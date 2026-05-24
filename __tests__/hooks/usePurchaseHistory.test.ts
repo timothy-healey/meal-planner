@@ -224,6 +224,29 @@ describe('usePurchaseHistory', () => {
     ]));
   });
 
+  it('addRecord resolves store by (chain, branch) tuple', async () => {
+    mockDb.getFirstAsync.mockImplementation(async (sql: string, params: any[]) => {
+      expect(sql).toMatch(/LOWER\(chain\) = LOWER\(\?\)/);
+      expect(sql).toMatch(/LOWER\(branch\) = LOWER\(\?\)/);
+      expect(params).toEqual(['Coles', 'Bondi']);
+      return { id: 'store-bondi' };
+    });
+    const { result } = renderHook(() => usePurchaseHistory('p1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => {
+      await result.current.addRecord({
+        plan_id: 'p1', item_name: 'Chicken', store: 'Coles', branch: 'Bondi',
+        brand: null, product_name: null, qty_amount: null, qty_unit: null,
+        price: 10, is_sale: 0, barcode: null,
+        purchased_at: '2026-05-12T10:00:00Z',
+      });
+    });
+    const insert = mockDb.runAsync.mock.calls.find(
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('INSERT INTO purchase_history')
+    );
+    expect(insert?.[1]).toContain('store-bondi');
+  });
+
   it('pendingRecords reflects pending rows for the active plan', async () => {
     const pendingRow = {
       id: '1', plan_id: 'p1', item_name: 'Chicken', store_id: 's1',
