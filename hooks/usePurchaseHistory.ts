@@ -38,15 +38,25 @@ async function resolveOrCreateStore(
 export function usePurchaseHistory(planId: string | null) {
   const db = useDb();
   const [records, setRecords] = useState<PurchaseHistoryRow[]>([]);
+  const [pendingRecords, setPendingRecords] = useState<PurchaseHistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!planId) { setRecords([]); setLoading(false); return; }
-    const rows = await db.getAllAsync<PurchaseHistoryRow>(
-      "SELECT * FROM purchase_history WHERE plan_id = ? AND status = 'confirmed' ORDER BY purchased_at DESC",
-      [planId]
-    );
-    setRecords(rows);
+    if (!planId) {
+      setRecords([]); setPendingRecords([]); setLoading(false); return;
+    }
+    const [confirmed, pending] = await Promise.all([
+      db.getAllAsync<PurchaseHistoryRow>(
+        "SELECT * FROM purchase_history WHERE plan_id = ? AND status = 'confirmed' ORDER BY purchased_at DESC",
+        [planId],
+      ),
+      db.getAllAsync<PurchaseHistoryRow>(
+        "SELECT * FROM purchase_history WHERE plan_id = ? AND status = 'pending' ORDER BY purchased_at ASC",
+        [planId],
+      ),
+    ]);
+    setRecords(confirmed);
+    setPendingRecords(pending);
     setLoading(false);
   }, [planId, db]);
 
@@ -123,5 +133,28 @@ export function usePurchaseHistory(planId: string | null) {
     await load();
   }, [db, load]);
 
-  return { records, loading, addRecord, deletePending, updatePending, getLatestForItem, getLatestForBarcode };
+  const confirmShop = useCallback(async (planIdArg: string) => {
+    await db.runAsync('BEGIN');
+    try {
+      await db.runAsync(
+        "UPDATE purchase_history SET status = 'confirmed' WHERE plan_id = ? AND status = 'pending'",
+        [planIdArg],
+      );
+      await db.runAsync(
+        'DELETE FROM shopping_items WHERE plan_id = ? AND is_checked = 1',
+        [planIdArg],
+      );
+      await db.runAsync('COMMIT');
+    } catch (e) {
+      await db.runAsync('ROLLBACK');
+      throw e;
+    }
+    await load();
+  }, [db, load]);
+
+  return {
+    records, pendingRecords, loading,
+    addRecord, deletePending, updatePending, confirmShop,
+    getLatestForItem, getLatestForBarcode,
+  };
 }
