@@ -12,6 +12,7 @@ import { useRecipes } from '../../hooks/useRecipes';
 import { useFoodNutrition } from '../../hooks/useFoodNutrition';
 import { rollupMacros } from '../../lib/rollupMacros';
 import { formatCookTime } from '../../lib/format';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../constants/tokens';
 import * as Haptics from 'expo-haptics';
 import type { FoodNutritionRow } from '../../types/db';
@@ -157,9 +158,12 @@ export default function RecipeDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Copy recipe to clipboard"
             >
-              <AppText weight="bold" color="onGreen" size="2xs">
-                {copied ? 'Copied!' : '📋 Copy recipe'}
-              </AppText>
+              <View style={styles.copyBtnContent}>
+                {!copied && <Ionicons name="clipboard-outline" size={12} color={colors.onGreen} />}
+                <AppText weight="bold" color="onGreen" size="2xs">
+                  {copied ? 'Copied!' : ' Copy recipe'}
+                </AppText>
+              </View>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>
@@ -210,6 +214,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  copyBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   stepListWrapper: { padding: spacing[4] },
 });
