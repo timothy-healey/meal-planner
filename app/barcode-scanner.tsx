@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ function formatDate(iso: string): string {
 
 export default function BarcodeScannerScreen() {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [matchedRecord, setMatchedRecord] = useState<any>(null);
@@ -85,7 +86,7 @@ export default function BarcodeScannerScreen() {
         <View style={styles.cancelBtn} />
       </View>
 
-      <View style={styles.viewfinder}>
+      <View style={[styles.viewfinder, { height: windowHeight * 0.28 }]}>
         <CameraView
           style={StyleSheet.absoluteFill}
           onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4], paddingVertical: spacing[3],
   },
   cancelBtn: { width: 70 },
-  viewfinder: { height: 200, backgroundColor: '#111', position: 'relative' },
+  viewfinder: { backgroundColor: colors.scannerBg, position: 'relative' },
   bracketContainer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   bracket: { width: 180, height: 100, position: 'relative' },
   corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: colors.onGreen },
