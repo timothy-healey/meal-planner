@@ -14,7 +14,7 @@ import { colors, spacing } from '../constants/tokens';
 import { formatPrice } from '../lib/format';
 
 const ACTION_WIDTH = 90;
-const SPRING = { damping: 20, stiffness: 200 };
+const SPRING = { damping: 30, stiffness: 400 };
 
 interface Props {
   name: string;
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   },
   removeAction: {
     width: ACTION_WIDTH,
-    backgroundColor: colors.terracotta,
+    backgroundColor: colors.orange,
     justifyContent: 'center', alignItems: 'center',
   },
   content: {
@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: spacing[2] + 1,
+    paddingRight: spacing[3],
   },
   left: { flex: 1, gap: 2 },
   price: {
