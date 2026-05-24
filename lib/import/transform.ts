@@ -33,7 +33,7 @@ export function transformPlan(plan: MealPlan): TransformResult {
     cook_minutes: r.cook_minutes,
     ingredients_json: JSON.stringify(r.ingredients),
     method_steps_json: JSON.stringify(
-      (r as any).method_steps ?? (r.method ? [r.method] : [])
+      r.method_steps ?? (r.method ? [r.method] : [])
     ),
     is_favourite: 0,
     source: 'imported',

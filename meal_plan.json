@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "meta": {
     "title": "Weekly Meal Plan & Shopping List",
     "week_starting": "2026-05-24",
@@ -441,7 +441,13 @@
           "amount": "to taste"
         }
       ],
-      "method": "Sear beef in batches (optional but recommended). Add everything except peas to crock-pot. Low 8 hours or high 4-5 hours. Stir peas through last 30 min. Portion into 3 containers."
+      "method_steps": [
+        "Sear beef in batches in a hot pan — optional but adds extra flavour.",
+        "Add everything except the peas to the crock-pot.",
+        "Cook on low for 8 hours or high for 4–5 hours.",
+        "Stir peas through in the last 30 minutes.",
+        "Portion into 3 containers."
+      ]
     },
     {
       "id": "honey_soy_chicken",
@@ -504,7 +510,13 @@
           "amount": "to coat veg"
         }
       ],
-      "method": "Whisk sauce ingredients. Add chicken to crock-pot, pour sauce over. Low 4 hours or high 2-3 hours. Roast veg at 200°C with olive oil + salt for 25-30 min. Portion chicken with sauce + veg into 3 containers."
+      "method_steps": [
+        "Whisk together soy sauce, honey, garlic, ginger, vinegar and sesame oil.",
+        "Add chicken to the crock-pot and pour the sauce over.",
+        "Cook on low for 4 hours or high for 2–3 hours.",
+        "With 45 minutes to go, toss the veg in olive oil and salt and roast at 200°C for 25–30 minutes.",
+        "Portion chicken with sauce and roasted veg into 3 containers."
+      ]
     },
     {
       "id": "beef_burrito",
@@ -559,7 +571,13 @@
           "amount": "to serve"
         }
       ],
-      "method": "Brown mince with onion + garlic. Add spices, capsicum, beans, corn. Simmer 10 min until thick. Cool slightly. Divide between 3 wraps with cheese + salsa. Wrap tight in foil. Refrigerate up to 4 days."
+      "method_steps": [
+        "Brown mince with onion and garlic over medium-high heat.",
+        "Add spices, capsicum, beans and corn. Simmer 10 minutes until thick.",
+        "Cool slightly.",
+        "Divide filling between 3 wraps and top with cheese and salsa.",
+        "Wrap tightly in foil. Refrigerate for up to 4 days."
+      ]
     },
     {
       "id": "chicken_caesar_wrap",
@@ -598,7 +616,11 @@
           "amount": "3"
         }
       ],
-      "method": "Pan-sear chicken with salt + pepper, 4-5 min per side. Slice. Store components separately and assemble morning-of, OR pre-roll with dressing for grab-and-go (lettuce wilts slightly)."
+      "method_steps": [
+        "Season reserved chicken thighs with salt and pepper.",
+        "Pan-sear 4–5 minutes per side until cooked through, then slice.",
+        "Store components separately for best freshness and assemble each morning, or pre-roll with dressing for grab-and-go (note: lettuce wilts slightly by day 2)."
+      ]
     },
     {
       "id": "overnight_oats",
@@ -641,7 +663,12 @@
           "amount": "to taste"
         }
       ],
-      "method": "Per jar: combine oats, milk, yoghurt, chia, protein powder, sweetener. Stir well. Lid on. Fridge overnight. Lasts 4-5 days. Top with berries or sliced kiwi in the morning."
+      "method_steps": [
+        "Per jar: combine oats, milk, Greek yoghurt, chia seeds, protein powder and sweetener.",
+        "Stir well, seal the jar and refrigerate overnight.",
+        "Keeps 4–5 days in the fridge.",
+        "Top with fresh berries or sliced kiwi before eating."
+      ]
     }
   ],
   "assumed_pantry": [

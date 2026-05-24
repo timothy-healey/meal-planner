@@ -41,7 +41,9 @@ Before you build:
    names must stay exactly the same week-to-week if the order is unchanged — the app
    uses exact name matching to preserve Tim's reorder preferences. If a new category
    is needed (e.g. "Supplements"), ask where in the walking order it should appear.
-4. Output ONE file: meal_plan.json, conforming to the attached schema.
+4. Output ONE file: meal_plan.json, conforming to the attached schema (v1.1).
+   Each recipe must have `method_steps: string[]` — an ordered list of concise
+   step strings, not a single prose blob. The old `method` string field is gone.
 5. Validate per-day calorie sums match daily_targets (±50 cal tolerance).
 6. Set meta.week_starting to the Sunday of the upcoming week.
 7. Set shopping_list.priced_at to today's date.
@@ -88,11 +90,15 @@ The app lets Tim reorder shopping categories to match his store's aisle layout. 
 
 ---
 
-## When to bump the schema version
+## Schema version
 
-Stay on schema_version "1.0" until you add real new features to the app
-(meal swaps, adherence tracking, freezer state, etc.). When you do:
-1. Update `meal_plan.schema.json` to v1.1
+The current schema is **v1.1**. Key changes from v1.0:
+- `method: string` → replaced by `method_steps: string[]` on every recipe.
+  The app renders these as a numbered list. Always use `method_steps`.
+- `method` is still accepted by the app for old v1.0 imports (backward compat),
+  but new plans must not use it.
+
+When adding future features (meal swaps, adherence tracking, freezer state, etc.):
+1. Update `meal_plan.schema.json` and bump the version string
 2. Update `meal_plan.types.ts` to match
-3. Old weeks at v1.0 will still validate against v1.0 — keep both schemas
-   if you want to load historical data
+3. Old plans remain importable via the app's backward-compat fallbacks
