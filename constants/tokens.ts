@@ -30,6 +30,9 @@ export const colors = {
 
   // Overlays
   headerPill: 'rgba(0,0,0,0.25)', // budget/count pill background on header
+
+  // Dark surfaces
+  scannerBg: '#111111', // camera viewfinder background (shown briefly before camera loads)
 } as const;
 
 export type Color = keyof typeof colors;
