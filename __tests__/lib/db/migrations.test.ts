@@ -57,4 +57,19 @@ describe('runMigrations', () => {
     const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
     expect(allSql).not.toContain('user_version = 2');
   });
+
+  it('runs version-4 migration on a v3 database (adds status column)', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 3 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).toContain("ALTER TABLE purchase_history ADD COLUMN status TEXT NOT NULL DEFAULT 'confirmed'");
+    expect(allSql).toContain('user_version = 4');
+  });
+
+  it('skips version-4 migration when already at version 4', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 4 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).not.toContain('ADD COLUMN status');
+  });
 });
