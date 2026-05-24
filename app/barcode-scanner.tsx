@@ -8,6 +8,7 @@ import { colors, spacing, radius } from '../constants/tokens';
 import { setPendingScanResult } from '../lib/barcodeScanResult';
 import { usePurchaseHistory } from '../hooks/usePurchaseHistory';
 import { usePlan } from '../hooks/usePlan';
+import * as Haptics from 'expo-haptics';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function formatDate(iso: string): string {
@@ -63,7 +64,7 @@ export default function BarcodeScannerScreen() {
           <AppText weight="semibold" size="md" color="textPrimary" style={styles.permissionText}>
             Camera access is needed to scan barcodes.
           </AppText>
-          <TouchableOpacity style={styles.grantBtn} onPress={requestPermission} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.grantBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); requestPermission(); }} activeOpacity={0.85}>
             <AppText weight="extrabold" size="md" color="onGreen">Grant Access</AppText>
           </TouchableOpacity>
         </View>
@@ -130,11 +131,11 @@ export default function BarcodeScannerScreen() {
                   {matchedRecord.brand}{matchedRecord.brand ? ' · ' : ''}last bought {formatDate(matchedRecord.purchased_at)}
                 </AppText>
               </View>
-              <TouchableOpacity style={styles.actionBtn} onPress={handleUse} activeOpacity={0.85}>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleUse(); }} activeOpacity={0.85}>
                 <AppText weight="bold" size="sm" color="onGreen">Use</AppText>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => setScanned(false)} style={styles.rescanLink}>
+            <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setScanned(false); }} style={styles.rescanLink}>
               <AppText weight="semibold" size="sm" color="textSecondary">Scan again</AppText>
             </TouchableOpacity>
           </>
@@ -153,7 +154,7 @@ export default function BarcodeScannerScreen() {
                 Barcode saved — fill in the details manually
               </AppText>
             </View>
-            <TouchableOpacity style={styles.actionBtn} onPress={handleUse} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleUse(); }} activeOpacity={0.85}>
               <AppText weight="bold" size="sm" color="onGreen">Continue</AppText>
             </TouchableOpacity>
           </>
