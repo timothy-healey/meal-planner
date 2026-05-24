@@ -51,7 +51,7 @@ Opens automatically when the user checks off an item while in Review mode. Imple
 |---|---|
 | Brand | Text input |
 | Product name | Text input |
-| Qty / size | Text input |
+| Qty / size | Decimal number input + unit dropdown (`g`, `kg`, `mL`, `L`, `units`) |
 | Price paid | Number input, with an inline Sale toggle |
 | Barcode | Text input, with a camera scan button |
 
@@ -99,7 +99,8 @@ CREATE TABLE purchase_history (
   store           TEXT NOT NULL,
   brand           TEXT,
   product_name    TEXT,
-  qty             TEXT,
+  qty_amount      REAL,
+  qty_unit        TEXT CHECK (qty_unit IN ('g', 'kg', 'mL', 'L', 'units')),
   price           REAL,
   is_sale         INTEGER NOT NULL DEFAULT 0,
   barcode         TEXT,
