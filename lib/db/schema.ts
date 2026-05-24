@@ -38,10 +38,29 @@ export const SCHEMA_SQL = `
     estimated_price  REAL NOT NULL,
     is_oneoff        INTEGER DEFAULT 0,
     note             TEXT,
-    is_checked       INTEGER DEFAULT 0,
-    actual_price     REAL,
-    store            TEXT
+    is_checked       INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS purchase_history (
+    id              TEXT PRIMARY KEY,
+    plan_id         TEXT NOT NULL REFERENCES weekly_plans(id),
+    item_name       TEXT NOT NULL,
+    store           TEXT NOT NULL,
+    brand           TEXT,
+    product_name    TEXT,
+    qty_amount      REAL,
+    qty_unit        TEXT CHECK (qty_unit IN ('g', 'kg', 'mL', 'L', 'units')),
+    price           REAL,
+    is_sale         INTEGER NOT NULL DEFAULT 0,
+    barcode         TEXT,
+    purchased_at    TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_purchase_history_item_name
+    ON purchase_history(item_name);
+
+  CREATE INDEX IF NOT EXISTS idx_purchase_history_barcode
+    ON purchase_history(barcode);
 
   CREATE TABLE IF NOT EXISTS barcode_stores (
     barcode     TEXT NOT NULL,

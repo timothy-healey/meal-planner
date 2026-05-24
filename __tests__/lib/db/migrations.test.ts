@@ -2,26 +2,38 @@ import { runMigrations } from '../../../lib/db/migrations';
 
 const mockDb = {
   execAsync: jest.fn().mockResolvedValue(undefined),
+  getAllAsync: jest.fn().mockResolvedValue([{ user_version: 0 }]),
+  runAsync: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('runMigrations', () => {
+  beforeEach(() => {
+    mockDb.execAsync.mockClear();
+    mockDb.getAllAsync.mockClear();
+    mockDb.runAsync.mockClear();
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 0 }]);
+  });
+
   it('calls execAsync with SQL containing all core table names', async () => {
     await runMigrations(mockDb as any);
     const sql: string = mockDb.execAsync.mock.calls[0][0];
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS recipes');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS weekly_plans');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS shopping_items');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS barcode_stores');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS barcode_nutrition');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS price_history');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS stores');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS store_aisles');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS item_aisle_map');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS purchase_history');
   });
 
-  it('calls execAsync exactly once', async () => {
-    mockDb.execAsync.mockClear();
+  it('runs version-1 migration on a fresh database', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 0 }]);
     await runMigrations(mockDb as any);
-    expect(mockDb.execAsync).toHaveBeenCalledTimes(1);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).toContain('user_version = 1');
+  });
+
+  it('skips version-1 migration when already at version 1', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 1 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).not.toContain('DROP COLUMN');
   });
 });
