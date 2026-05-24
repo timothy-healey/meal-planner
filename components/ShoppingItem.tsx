@@ -10,9 +10,10 @@ import type { ShoppingItemRow } from '../types/db';
 interface Props {
   item: ShoppingItemRow;
   onToggle: () => void;
+  showDivider?: boolean;
 }
 
-export function ShoppingItem({ item, onToggle }: Props) {
+export function ShoppingItem({ item, onToggle, showDivider = true }: Props) {
   return (
     <>
       <TouchableOpacity
@@ -45,7 +46,7 @@ export function ShoppingItem({ item, onToggle }: Props) {
           ) : null}
         </View>
       </TouchableOpacity>
-      <Divider />
+      {showDivider && <Divider />}
     </>
   );
 }
@@ -53,7 +54,7 @@ export function ShoppingItem({ item, onToggle }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
     gap: spacing[3],

@@ -136,7 +136,12 @@ export default function ShopScreen() {
         })}
 
         {checkedItems.length > 0 && (
-          <BasketSection items={checkedItems} onToggle={toggleItem} />
+          <BasketSection
+            items={checkedItems}
+            onToggle={toggleItem}
+            onDelete={deleteItem}
+            onEdit={setEditingItem}
+          />
         )}
       </Animated.ScrollView>
 

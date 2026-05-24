@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { BasketItem } from './BasketItem';
+import { SwipeableShoppingItem } from './SwipeableShoppingItem';
 import { AppText } from './ui/AppText';
 import { colors, spacing } from '../constants/tokens';
 import type { ShoppingItemRow } from '../types/db';
@@ -9,9 +9,11 @@ import type { ShoppingItemRow } from '../types/db';
 interface Props {
   items: ShoppingItemRow[];
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  onEdit: (item: ShoppingItemRow) => void;
 }
 
-export function BasketSection({ items, onToggle }: Props) {
+export function BasketSection({ items, onToggle, onDelete, onEdit }: Props) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleToggleExpand = () => setIsExpanded((prev) => !prev);
@@ -36,7 +38,13 @@ export function BasketSection({ items, onToggle }: Props) {
             Tap any item to put it back
           </AppText>
           {items.map((item) => (
-            <BasketItem key={item.id} item={item} onToggle={() => onToggle(item.id)} />
+            <SwipeableShoppingItem
+              key={item.id}
+              item={item}
+              onToggle={() => onToggle(item.id)}
+              onDelete={() => onDelete(item.id)}
+              onEdit={() => onEdit(item)}
+            />
           ))}
         </Animated.View>
       )}
