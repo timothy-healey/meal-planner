@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { useDb } from '../providers/DatabaseProvider';
 import { generateId } from '../lib/uuid';
 import type { PurchaseHistoryRow, QtyUnit } from '../types/db';
 
 export interface AddPurchaseData {
-  plan_id: string;
+  plan_id: string | null;
   item_name: string;
   store: string;
   brand: string | null;
@@ -15,6 +16,23 @@ export interface AddPurchaseData {
   is_sale: 0 | 1;
   barcode: string | null;
   purchased_at: string;
+}
+
+async function resolveOrCreateStore(
+  db: SQLiteDatabase,
+  chainName: string,
+): Promise<string> {
+  const existing = await db.getFirstAsync<{ id: string }>(
+    'SELECT id FROM stores WHERE LOWER(chain) = LOWER(?)',
+    [chainName],
+  );
+  if (existing) return existing.id;
+  const id = generateId();
+  await db.runAsync(
+    'INSERT INTO stores (id, chain, branch, created_at) VALUES (?, ?, ?, ?)',
+    [id, chainName, '', new Date().toISOString()],
+  );
+  return id;
 }
 
 export function usePurchaseHistory(planId: string | null) {
@@ -36,12 +54,13 @@ export function usePurchaseHistory(planId: string | null) {
 
   const addRecord = useCallback(async (data: AddPurchaseData) => {
     const id = generateId();
+    const storeId = await resolveOrCreateStore(db, data.store);
     await db.runAsync(
       `INSERT INTO purchase_history
-         (id, plan_id, item_name, store, brand, product_name,
+         (id, plan_id, item_name, store_id, brand, product_name,
           qty_amount, qty_unit, price, is_sale, barcode, purchased_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, data.plan_id, data.item_name, data.store, data.brand,
+      [id, data.plan_id, data.item_name, storeId, data.brand,
        data.product_name, data.qty_amount, data.qty_unit, data.price,
        data.is_sale, data.barcode, data.purchased_at]
     );
