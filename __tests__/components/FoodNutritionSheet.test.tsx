@@ -3,6 +3,10 @@ import { render } from '@testing-library/react-native';
 import { FoodNutritionSheet } from '../../components/FoodNutritionSheet';
 import type { FoodNutritionRow } from '../../types/db';
 
+jest.mock('../../components/PriceHistoryChart', () => ({
+  PriceHistoryChart: () => null,
+}));
+
 const EXISTING: FoodNutritionRow = {
   id: 'test-id',
   item_name: 'oat milk',
