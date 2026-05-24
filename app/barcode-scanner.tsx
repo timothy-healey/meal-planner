@@ -131,11 +131,22 @@ export default function BarcodeScannerScreen() {
                   {matchedRecord.brand}{matchedRecord.brand ? ' · ' : ''}last bought {formatDate(matchedRecord.purchased_at)}
                 </AppText>
               </View>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleUse(); }} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleUse(); }}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Use this item"
+              >
                 <AppText weight="bold" size="sm" color="onGreen">Use</AppText>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setScanned(false); }} style={styles.rescanLink}>
+            <TouchableOpacity
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setScanned(false); }}
+              style={styles.rescanLink}
+              accessibilityRole="button"
+              accessibilityLabel="Scan again"
+            >
               <AppText weight="semibold" size="sm" color="textSecondary">Scan again</AppText>
             </TouchableOpacity>
           </>
@@ -154,7 +165,13 @@ export default function BarcodeScannerScreen() {
                 Barcode saved — fill in the details manually
               </AppText>
             </View>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleUse(); }} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleUse(); }}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with scanned barcode"
+            >
               <AppText weight="bold" size="sm" color="onGreen">Continue</AppText>
             </TouchableOpacity>
           </>
