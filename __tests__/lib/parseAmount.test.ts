@@ -28,11 +28,24 @@ describe('parseAmount', () => {
     expect(parseAmount('4 cloves garlic')).toEqual({ type: 'units', value: 4 });
   });
 
-  it('returns null for recognised-but-unsupported measurement units', () => {
-    expect(parseAmount('1 tbsp')).toBeNull();
-    expect(parseAmount('2 tsp')).toBeNull();
-    expect(parseAmount('1 cup')).toBeNull();
-    expect(parseAmount('2 cups')).toBeNull();
+  it('converts cups/tbsp/tsp to mL', () => {
+    expect(parseAmount('1 cup')).toEqual({ type: 'mL', value: 240 });
+    expect(parseAmount('2 cups')).toEqual({ type: 'mL', value: 480 });
+    expect(parseAmount('1 tbsp')).toEqual({ type: 'mL', value: 15 });
+    expect(parseAmount('2 tsp')).toEqual({ type: 'mL', value: 10 });
+  });
+
+  it('converts oz/lb to grams', () => {
+    expect(parseAmount('1 oz')).toEqual({ type: 'grams', value: 28.35 });
+    expect(parseAmount('1 lb')).toEqual({ type: 'grams', value: 453.6 });
+    expect(parseAmount('2 lbs')).toEqual({ type: 'grams', value: 907.2 });
+  });
+
+  it('parses fractions', () => {
+    expect(parseAmount('1/3 cup')).toEqual({ type: 'mL', value: 80 });
+    expect(parseAmount('1/2 cup')).toEqual({ type: 'mL', value: 120 });
+    expect(parseAmount('1 1/2 cups')).toEqual({ type: 'mL', value: 360 });
+    expect(parseAmount('1/3')).toEqual({ type: 'units', value: 1 / 3 });
   });
 
   it('returns null for non-numeric strings', () => {

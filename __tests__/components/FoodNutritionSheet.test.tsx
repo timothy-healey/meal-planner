@@ -22,6 +22,7 @@ describe('FoodNutritionSheet', () => {
       <FoodNutritionSheet
         visible={true}
         ingredientName="Oat milk"
+        ingredientAmount="240mL"
         existingEntry={EXISTING}
         onSave={jest.fn()}
         onClose={jest.fn()}
@@ -36,6 +37,7 @@ describe('FoodNutritionSheet', () => {
       <FoodNutritionSheet
         visible={true}
         ingredientName="Oat milk"
+        ingredientAmount="240mL"
         existingEntry={EXISTING}
         onSave={jest.fn()}
         onClose={jest.fn()}
@@ -49,6 +51,7 @@ describe('FoodNutritionSheet', () => {
       <FoodNutritionSheet
         visible={true}
         ingredientName="Brown rice"
+        ingredientAmount="200g"
         existingEntry={null}
         onSave={jest.fn()}
         onClose={jest.fn()}
@@ -63,6 +66,7 @@ describe('FoodNutritionSheet', () => {
       <FoodNutritionSheet
         visible={true}
         ingredientName="Brown rice"
+        ingredientAmount="200g"
         existingEntry={null}
         onSave={jest.fn()}
         onClose={jest.fn()}

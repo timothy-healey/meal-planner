@@ -31,6 +31,7 @@ Constraints:
   special meaningfully changes the math on a high-cost item)
 - Budget: ~$140 AUD/week for groceries including some household items
 - Region: Adelaide, South Australia
+- Units: metric only — use g/kg for weight, mL/L for volume. Never use cups, tbsp, tsp, oz, or lb. Unit counts (e.g. "1 head", "3", "5 scoops") are fine for things that can't be weighed or measured by volume.
 
 Before you build:
 1. Search the web for current Woolworths and Coles weekly specials so prices are realistic.

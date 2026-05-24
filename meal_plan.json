@@ -410,7 +410,7 @@
         },
         {
           "item": "Frozen peas (added last 30 min)",
-          "amount": "1 cup"
+          "amount": "240mL"
         },
         {
           "item": "Tin diced tomatoes",
@@ -422,19 +422,19 @@
         },
         {
           "item": "Tomato paste",
-          "amount": "2 tbsp"
+          "amount": "30mL"
         },
         {
           "item": "Paprika",
-          "amount": "2 tsp"
+          "amount": "10mL"
         },
         {
           "item": "Dried thyme",
-          "amount": "1 tsp"
+          "amount": "5mL"
         },
         {
           "item": "Worcestershire sauce",
-          "amount": "2 tbsp"
+          "amount": "30mL"
         },
         {
           "item": "Salt and pepper",
@@ -467,11 +467,11 @@
         },
         {
           "item": "Soy sauce",
-          "amount": "1/3 cup"
+          "amount": "80mL"
         },
         {
           "item": "Honey",
-          "amount": "1/3 cup"
+          "amount": "80mL"
         },
         {
           "item": "Garlic cloves, crushed",
@@ -479,15 +479,15 @@
         },
         {
           "item": "Grated ginger (or 1 tsp dried)",
-          "amount": "2 tsp"
+          "amount": "10mL"
         },
         {
           "item": "Rice vinegar or apple cider vinegar",
-          "amount": "1 tbsp"
+          "amount": "15mL"
         },
         {
           "item": "Sesame oil (optional)",
-          "amount": "1 tsp"
+          "amount": "5mL"
         },
         {
           "item": "Broccoli (for roast veg)",
@@ -544,7 +544,7 @@
         },
         {
           "item": "Mexican spice mix",
-          "amount": "1 tbsp"
+          "amount": "15mL"
         },
         {
           "item": "Tin red kidney beans, drained",
@@ -552,7 +552,7 @@
         },
         {
           "item": "Corn kernels",
-          "amount": "1 cup"
+          "amount": "240mL"
         },
         {
           "item": "Red capsicum, diced",
@@ -564,7 +564,7 @@
         },
         {
           "item": "Grated tasty cheese",
-          "amount": "1 cup"
+          "amount": "240mL"
         },
         {
           "item": "Salsa or diced tomato",
@@ -605,7 +605,7 @@
         },
         {
           "item": "Grated parmesan",
-          "amount": "1/3 cup"
+          "amount": "80mL"
         },
         {
           "item": "Light Caesar dressing",
@@ -636,19 +636,19 @@
       "ingredients": [
         {
           "item": "Rolled oats",
-          "amount": "2.5 cups (1/2 cup per jar)"
+          "amount": "600mL (120mL per jar)"
         },
         {
           "item": "Milk",
-          "amount": "2.5 cups (1/2 cup per jar)"
+          "amount": "600mL (120mL per jar)"
         },
         {
           "item": "Greek yoghurt",
-          "amount": "1.25 cups (1/4 cup per jar)"
+          "amount": "300mL (60mL per jar)"
         },
         {
           "item": "Chia seeds",
-          "amount": "5 tbsp (1 tbsp per jar)"
+          "amount": "75mL (15mL per jar)"
         },
         {
           "item": "Vanilla protein powder",
@@ -656,7 +656,7 @@
         },
         {
           "item": "Honey or maple syrup",
-          "amount": "5 tsp"
+          "amount": "25mL"
         },
         {
           "item": "Berries or kiwi to top",

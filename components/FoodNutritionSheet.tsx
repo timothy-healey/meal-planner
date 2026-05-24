@@ -7,6 +7,7 @@ import { AppText } from './ui/AppText';
 import { colors, spacing, radius } from '../constants/tokens';
 import type { FoodNutritionRow } from '../types/db';
 import type { FoodNutritionData } from '../hooks/useFoodNutrition';
+import { parseAmount } from '../lib/parseAmount';
 
 type Basis = 'per_100g' | 'per_100mL' | 'per_unit';
 
@@ -19,13 +20,14 @@ const BASIS_LABELS: { value: Basis; label: string }[] = [
 interface Props {
   visible: boolean;
   ingredientName: string;
+  ingredientAmount: string;
   existingEntry: FoodNutritionRow | null;
   onSave: (data: FoodNutritionData) => void;
   onClose: () => void;
 }
 
 export function FoodNutritionSheet({
-  visible, ingredientName, existingEntry, onSave, onClose,
+  visible, ingredientName, ingredientAmount, existingEntry, onSave, onClose,
 }: Props) {
   const { height: windowHeight } = useWindowDimensions();
   const [basis, setBasis] = useState<Basis>('per_100g');
@@ -50,7 +52,10 @@ export function FoodNutritionSheet({
       setCarbs(existingEntry.carbs_per_basis != null ? String(existingEntry.carbs_per_basis) : '');
       setFat(existingEntry.fat_per_basis != null ? String(existingEntry.fat_per_basis) : '');
     } else {
-      setBasis('per_100g');
+      const parsed = parseAmount(ingredientAmount);
+      if (parsed?.type === 'mL') setBasis('per_100mL');
+      else if (parsed?.type === 'units') setBasis('per_unit');
+      else setBasis('per_100g');
       setBrand('');
       setProductName('');
       setCal('');
@@ -58,7 +63,7 @@ export function FoodNutritionSheet({
       setCarbs('');
       setFat('');
     }
-  }, [visible, existingEntry]);
+  }, [visible, existingEntry, ingredientAmount]);
 
   useEffect(() => {
     const p = parseFloat(protein);

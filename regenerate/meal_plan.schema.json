@@ -295,7 +295,8 @@
                   "type": "string"
                 },
                 "amount": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Metric units only: g/kg for weight, mL/L for volume. Unit counts (e.g. '1 head', '3', '5 scoops') are fine. Never use cups, tbsp, tsp, oz, or lb."
                 }
               }
             }
