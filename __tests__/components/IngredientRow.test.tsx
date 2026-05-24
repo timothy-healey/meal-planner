@@ -13,16 +13,14 @@ describe('IngredientRow', () => {
   });
 
   it('shows macro chip strip when nutrition provided', () => {
-    const { getByText } = render(
+    const { getByLabelText } = render(
       <IngredientRow
         ingredient={ING}
         nutrition={{ protein_g: 62, carbs_g: 0, fat_g: 7.2 }}
         onPress={jest.fn()}
       />
     );
-    expect(getByText('P 62g')).toBeTruthy();
-    expect(getByText('C 0g')).toBeTruthy();
-    expect(getByText('F 7g')).toBeTruthy();
+    expect(getByLabelText('62g protein, 0g carbs, 7g fat')).toBeTruthy();
   });
 
   it('shows "tap to add nutrition" hint when onPress provided but no nutrition', () => {
