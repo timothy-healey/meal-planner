@@ -13,6 +13,7 @@ import { useFoodNutrition } from '../../hooks/useFoodNutrition';
 import { rollupMacros } from '../../lib/rollupMacros';
 import { formatCookTime } from '../../lib/format';
 import { colors, spacing, radius } from '../../constants/tokens';
+import * as Haptics from 'expo-haptics';
 import type { FoodNutritionRow } from '../../types/db';
 import type { FoodNutritionData } from '../../hooks/useFoodNutrition';
 
@@ -151,7 +152,7 @@ export default function RecipeDetailScreen() {
           <View style={styles.methodHeader}>
             <CategoryHeader label="Method" isOneoff={false} />
             <TouchableOpacity
-              onPress={handleCopy}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleCopy(); }}
               style={styles.copyBtn}
               accessibilityRole="button"
               accessibilityLabel="Copy recipe to clipboard"
