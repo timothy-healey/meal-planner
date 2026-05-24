@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { GreenHeader } from '../../components/ui/GreenHeader';
@@ -65,11 +66,11 @@ export default function RecipeDetailScreen() {
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         <View style={styles.inlineStats}>
           <AppText weight="bold" color="orange" size="lg">{recipe.calories_per_serve} cal</AppText>
-          <AppText weight="regular" color="textTertiary" size="lg"> · </AppText>
+          <Ionicons name="ellipse" size={5} color={colors.textTertiary} style={styles.sep} />
           <AppText weight="semibold" color="textSecondary" size="lg">{recipe.protein_per_serve_g}g protein</AppText>
-          <AppText weight="regular" color="textTertiary" size="lg"> · </AppText>
+          <Ionicons name="ellipse" size={5} color={colors.textTertiary} style={styles.sep} />
           <AppText weight="semibold" color="textSecondary" size="lg">Serves {recipe.servings}</AppText>
-          <AppText weight="regular" color="textTertiary" size="lg"> · </AppText>
+          <Ionicons name="ellipse" size={5} color={colors.textTertiary} style={styles.sep} />
           <AppText weight="regular" color="textTertiary" size="lg">{timeLabel}</AppText>
         </View>
 
@@ -110,11 +111,12 @@ export default function RecipeDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.cream },
   notFound: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.cream },
-  headerContent: { paddingBottom: spacing[4], gap: spacing[2] },
+  headerContent: { paddingBottom: spacing[1], gap: spacing[2] },
   backBtn: { paddingVertical: spacing[4], paddingRight: spacing[4], alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   body: { flex: 1 },
   bodyContent: { paddingTop: spacing[2], paddingBottom: spacing[10], gap: spacing[4] },
   inlineStats: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: spacing[4] },
+  sep: { marginHorizontal: spacing[2], marginTop: 6 },
   section: { gap: spacing[2], paddingHorizontal: spacing[4] },
   card: { backgroundColor: colors.card, borderRadius: radius.md, overflow: 'hidden' },
   methodHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
