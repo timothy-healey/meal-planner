@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback } from "react";
+import * as Haptics from 'expo-haptics';
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -64,10 +65,12 @@ export function SwipeableShoppingItem({ item, onToggle, onDelete, onEdit }: Prop
   );
 
   const handleDelete = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onDelete();
   };
 
   const handleEdit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     translateX.value = withSpring(0, SPRING);
     onEdit();
   };
