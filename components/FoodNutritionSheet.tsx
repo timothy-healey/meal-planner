@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Modal, TouchableOpacity, TextInput, ScrollView,
   StyleSheet, KeyboardAvoidingView, Platform, useWindowDimensions,
@@ -35,9 +35,12 @@ export function FoodNutritionSheet({
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  // tracks whether the current cal value was auto-calculated (so macros can update it)
+  const calIsAuto = useRef(false);
 
   useEffect(() => {
     if (!visible) return;
+    calIsAuto.current = false;
     if (existingEntry) {
       setBasis(existingEntry.basis);
       setBrand(existingEntry.brand ?? '');
@@ -56,6 +59,17 @@ export function FoodNutritionSheet({
       setFat('');
     }
   }, [visible, existingEntry]);
+
+  useEffect(() => {
+    const p = parseFloat(protein);
+    const c = parseFloat(carbs);
+    const f = parseFloat(fat);
+    if (!isNaN(p) && !isNaN(c) && !isNaN(f) && (cal === '' || calIsAuto.current)) {
+      const computed = Math.round(p * 4 + c * 4 + f * 9);
+      calIsAuto.current = true;
+      setCal(String(computed));
+    }
+  }, [protein, carbs, fat]);
 
   function handleSave() {
     onSave({
@@ -131,7 +145,7 @@ export function FoodNutritionSheet({
             <TextInput
               style={styles.input}
               value={cal}
-              onChangeText={setCal}
+              onChangeText={(v) => { calIsAuto.current = false; setCal(v); }}
               keyboardType="decimal-pad"
               placeholder="0"
               placeholderTextColor={colors.textTertiary}
