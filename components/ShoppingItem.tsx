@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { AppText } from './ui/AppText';
 import { Checkbox } from './ui/Checkbox';
 import { Divider } from './ui/Divider';
@@ -17,7 +18,10 @@ export function ShoppingItem({ item, onToggle, showDivider = true }: Props) {
   return (
     <>
       <TouchableOpacity
-        onPress={onToggle}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onToggle();
+        }}
         activeOpacity={0.7}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: item.is_checked === 1 }}
