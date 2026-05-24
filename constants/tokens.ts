@@ -12,6 +12,8 @@ export const colors = {
   // Surfaces
   cream: '#F4F5EB', // screen background, card surfaces
   card:  '#FAFAF4', // recipe cards, stat pills — warm white tinted toward brand
+  paper:        '#fbfbf2', // receipt screen background (warmer than cream)
+  paperDivider: '#b8b8a0', // dashed dividers on receipt screen
 
   // On-green (elements rendered on the dark green header)
   onGreen:       '#F4F5EB', // primary text on green
