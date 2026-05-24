@@ -209,4 +209,37 @@ describe('usePurchaseHistory', () => {
     expect(upd?.[0]).toMatch(/WHERE id = \? AND status = 'pending'/);
     expect(upd?.[1]?.[upd[1].length - 1]).toBe('row-1');
   });
+
+  it('confirmShop runs the bulk update and deletes checked items in a transaction', async () => {
+    const { result } = renderHook(() => usePurchaseHistory('p1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.confirmShop('p1'); });
+
+    const calls = mockDb.runAsync.mock.calls.map((c: any[]) => c[0] as string);
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.stringContaining('BEGIN'),
+      expect.stringMatching(/UPDATE purchase_history SET status = 'confirmed' WHERE plan_id = \? AND status = 'pending'/),
+      expect.stringMatching(/DELETE FROM shopping_items WHERE plan_id = \? AND is_checked = 1/),
+      expect.stringContaining('COMMIT'),
+    ]));
+  });
+
+  it('pendingRecords reflects pending rows for the active plan', async () => {
+    const pendingRow = {
+      id: '1', plan_id: 'p1', item_name: 'Chicken', store_id: 's1',
+      brand: null, product_name: null, qty_amount: null, qty_unit: null,
+      price: 10, is_sale: 0, barcode: null,
+      purchased_at: '2026-05-12T10:00:00Z', status: 'pending',
+    };
+    mockDb.getAllAsync.mockImplementation(async (sql: string) => {
+      if (sql.includes("status = 'pending'") && sql.includes('plan_id = ?')) {
+        return [pendingRow];
+      }
+      return [];
+    });
+    const { result } = renderHook(() => usePurchaseHistory('p1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.pendingRecords).toHaveLength(1);
+    expect(result.current.pendingRecords[0].status).toBe('pending');
+  });
 });
