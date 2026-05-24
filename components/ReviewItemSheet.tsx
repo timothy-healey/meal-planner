@@ -1,19 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View, Modal, TouchableOpacity, TextInput, ScrollView,
-  StyleSheet, KeyboardAvoidingView, Platform, Switch, useWindowDimensions,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { AppText } from './ui/AppText';
-import { colors, spacing, radius } from '../constants/tokens';
-import { formatPrice } from '../lib/format';
-import type { ShoppingItemRow, PurchaseHistoryRow, QtyUnit } from '../types/db';
-import type { AddPurchaseData } from '../hooks/usePurchaseHistory';
-import type { ScanResult } from '../lib/barcodeScanResult';
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { colors, font, radius, spacing } from "../constants/tokens";
+import type { AddPurchaseData } from "../hooks/usePurchaseHistory";
+import type { ScanResult } from "../lib/barcodeScanResult";
+import { formatPrice } from "../lib/format";
+import type { PurchaseHistoryRow, QtyUnit, ShoppingItemRow } from "../types/db";
+import { AppText } from "./ui/AppText";
 
-const QTY_UNITS: QtyUnit[] = ['g', 'kg', 'mL', 'L', 'units'];
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QTY_UNITS: QtyUnit[] = ["g", "kg", "mL", "L", "units"];
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -32,35 +53,49 @@ interface Props {
 }
 
 export function ReviewItemSheet({
-  visible, item, store, latestRecord, pendingScan,
-  onSave, onClose, onPendingScanConsumed,
+  visible,
+  item,
+  store,
+  latestRecord,
+  pendingScan,
+  onSave,
+  onClose,
+  onPendingScanConsumed,
 }: Props) {
   const { height: windowHeight } = useWindowDimensions();
-  const [brand, setBrand] = useState('');
-  const [productName, setProductName] = useState('');
-  const [qtyAmount, setQtyAmount] = useState('');
-  const [qtyUnit, setQtyUnit] = useState<QtyUnit>('g');
-  const [price, setPrice] = useState('');
+  const [brand, setBrand] = useState("");
+  const [productName, setProductName] = useState("");
+  const [qtyAmount, setQtyAmount] = useState("");
+  const [qtyUnit, setQtyUnit] = useState<QtyUnit>("g");
+  const [price, setPrice] = useState("");
   const [isSale, setIsSale] = useState(false);
-  const [barcode, setBarcode] = useState('');
+  const [barcode, setBarcode] = useState("");
   const [unitPickerOpen, setUnitPickerOpen] = useState(false);
 
-  const baselinePrice = latestRecord && !latestRecord.is_sale ? latestRecord.price : null;
+  const baselinePrice =
+    latestRecord && !latestRecord.is_sale ? latestRecord.price : null;
 
   useEffect(() => {
     if (!visible) return;
     setUnitPickerOpen(false);
     if (latestRecord) {
-      setBrand(latestRecord.brand ?? '');
-      setProductName(latestRecord.product_name ?? '');
-      setQtyAmount(latestRecord.qty_amount != null ? String(latestRecord.qty_amount) : '');
-      setQtyUnit(latestRecord.qty_unit ?? 'g');
-      setPrice(latestRecord.price != null ? String(latestRecord.price) : '');
+      setBrand(latestRecord.brand ?? "");
+      setProductName(latestRecord.product_name ?? "");
+      setQtyAmount(
+        latestRecord.qty_amount != null ? String(latestRecord.qty_amount) : "",
+      );
+      setQtyUnit(latestRecord.qty_unit ?? "g");
+      setPrice(latestRecord.price != null ? String(latestRecord.price) : "");
       setIsSale(false);
-      setBarcode(latestRecord.barcode ?? '');
+      setBarcode(latestRecord.barcode ?? "");
     } else {
-      setBrand(''); setProductName(''); setQtyAmount('');
-      setQtyUnit('g'); setPrice(''); setIsSale(false); setBarcode('');
+      setBrand("");
+      setProductName("");
+      setQtyAmount("");
+      setQtyUnit("g");
+      setPrice("");
+      setIsSale(false);
+      setBarcode("");
     }
   }, [visible, latestRecord]);
 
@@ -68,11 +103,19 @@ export function ReviewItemSheet({
     if (!pendingScan) return;
     setBarcode(pendingScan.barcode);
     if (pendingScan.record) {
-      setBrand(pendingScan.record.brand ?? '');
-      setProductName(pendingScan.record.product_name ?? '');
-      setQtyAmount(pendingScan.record.qty_amount != null ? String(pendingScan.record.qty_amount) : '');
-      setQtyUnit(pendingScan.record.qty_unit ?? 'g');
-      setPrice(pendingScan.record.price != null ? String(pendingScan.record.price) : '');
+      setBrand(pendingScan.record.brand ?? "");
+      setProductName(pendingScan.record.product_name ?? "");
+      setQtyAmount(
+        pendingScan.record.qty_amount != null
+          ? String(pendingScan.record.qty_amount)
+          : "",
+      );
+      setQtyUnit(pendingScan.record.qty_unit ?? "g");
+      setPrice(
+        pendingScan.record.price != null
+          ? String(pendingScan.record.price)
+          : "",
+      );
     }
     onPendingScanConsumed();
   }, [pendingScan]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -100,23 +143,37 @@ export function ReviewItemSheet({
   const showSaleNote = isSale && baselinePrice != null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-        <View style={[styles.sheet, { height: windowHeight * 0.80 }]}>
+        <TouchableOpacity
+          style={styles.backdrop}
+          onPress={onClose}
+          activeOpacity={1}
+        />
+        <View style={[styles.sheet, { height: windowHeight * 0.8 }]}>
           <View style={styles.handle} />
 
-          <AppText weight="extrabold" size="2xl" color="textPrimary" style={styles.heading}>
+          <AppText
+            weight="extrabold"
+            size="2xl"
+            color="textPrimary"
+            style={styles.heading}
+          >
             {item.name}
           </AppText>
 
           {hasPrefill && latestRecord && (
             <View style={styles.prefillBadge}>
               <AppText weight="semibold" size="sm" color="textSecondary">
-                {`↩ Last bought ${formatDate(latestRecord.purchased_at)}${latestRecord.price != null ? ` · ${formatPrice(latestRecord.price)}` : ''}`}
+                {`↩ Last bought ${formatDate(latestRecord.purchased_at)}${latestRecord.price != null ? ` · ${formatPrice(latestRecord.price)}` : ""}`}
               </AppText>
             </View>
           )}
@@ -163,12 +220,14 @@ export function ReviewItemSheet({
                   <View style={styles.qtyDivider} />
                   <TouchableOpacity
                     style={styles.unitBtn}
-                    onPress={() => setUnitPickerOpen(v => !v)}
+                    onPress={() => setUnitPickerOpen((v) => !v)}
                     activeOpacity={0.7}
                   >
-                    <AppText weight="bold" size="md" color="textPrimary">{qtyUnit}</AppText>
+                    <AppText weight="bold" size="md" color="textPrimary">
+                      {qtyUnit}
+                    </AppText>
                     <Ionicons
-                      name={unitPickerOpen ? 'chevron-up' : 'chevron-down'}
+                      name={unitPickerOpen ? "chevron-up" : "chevron-down"}
                       size={12}
                       color={colors.textTertiary}
                       style={{ marginLeft: 2 }}
@@ -196,11 +255,21 @@ export function ReviewItemSheet({
                 {QTY_UNITS.map((u) => (
                   <TouchableOpacity
                     key={u}
-                    style={[styles.unitOption, qtyUnit === u && styles.unitOptionSelected]}
-                    onPress={() => { setQtyUnit(u); setUnitPickerOpen(false); }}
+                    style={[
+                      styles.unitOption,
+                      qtyUnit === u && styles.unitOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setQtyUnit(u);
+                      setUnitPickerOpen(false);
+                    }}
                     activeOpacity={0.7}
                   >
-                    <AppText weight="semibold" size="md" color={qtyUnit === u ? 'onGreen' : 'textPrimary'}>
+                    <AppText
+                      weight="semibold"
+                      size="md"
+                      color={qtyUnit === u ? "onGreen" : "textPrimary"}
+                    >
                       {u}
                     </AppText>
                   </TouchableOpacity>
@@ -213,10 +282,17 @@ export function ReviewItemSheet({
               <Switch
                 value={isSale}
                 onValueChange={setIsSale}
-                trackColor={{ false: colors.checkboxBorder, true: colors.orange }}
+                trackColor={{
+                  false: colors.checkboxBorder,
+                  true: colors.orange,
+                }}
                 thumbColor="white"
               />
-              <AppText weight="semibold" size="sm" color={isSale ? 'orange' : 'textTertiary'}>
+              <AppText
+                weight="semibold"
+                size="sm"
+                color={isSale ? "orange" : "textTertiary"}
+              >
                 Sale price
               </AppText>
               {showSaleNote && (
@@ -239,19 +315,32 @@ export function ReviewItemSheet({
               />
               <TouchableOpacity
                 style={styles.scanBtn}
-                onPress={() => router.push('/barcode-scanner')}
+                onPress={() => router.push("/barcode-scanner")}
                 activeOpacity={0.85}
               >
-                <Ionicons name="camera-outline" size={16} color={colors.onGreen} />
-                <AppText weight="bold" size="sm" color="onGreen"> Scan</AppText>
+                <Ionicons
+                  name="camera-outline"
+                  size={16}
+                  color={colors.onGreen}
+                />
+                <AppText weight="bold" size="sm" color="onGreen">
+                  {" "}
+                  Scan
+                </AppText>
               </TouchableOpacity>
             </View>
 
             <View style={{ height: spacing[3] }} />
           </ScrollView>
 
-          <TouchableOpacity style={styles.doneBtn} onPress={handleSave} activeOpacity={0.85}>
-            <AppText weight="extrabold" size="lg" color="onGreen">Done</AppText>
+          <TouchableOpacity
+            style={styles.doneBtn}
+            onPress={handleSave}
+            activeOpacity={0.85}
+          >
+            <AppText weight="extrabold" size="lg" color="onGreen">
+              Done
+            </AppText>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -265,7 +354,11 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
       weight="bold"
       size="xs"
       color="textTertiary"
-      style={{ letterSpacing: 0.8, marginBottom: spacing[1], marginTop: top ? spacing[4] : 0 }}
+      style={{
+        letterSpacing: 0.8,
+        marginBottom: spacing[1],
+        marginTop: top ? spacing[4] : 0,
+      }}
     >
       {children}
     </AppText>
@@ -273,8 +366,15 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
+  overlay: { flex: 1, justifyContent: "flex-end" },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
   sheet: {
     backgroundColor: colors.card,
     borderTopLeftRadius: radius.lg + 4,
@@ -284,12 +384,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[6],
   },
   handle: {
-    width: 36, height: 4, borderRadius: radius.full,
-    backgroundColor: colors.divider, alignSelf: 'center', marginBottom: spacing[4],
+    width: 36,
+    height: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.divider,
+    alignSelf: "center",
+    marginBottom: spacing[4],
   },
   heading: { marginBottom: spacing[3] },
   prefillBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: colors.cream,
     borderRadius: radius.md,
     paddingHorizontal: spacing[3],
@@ -300,49 +404,81 @@ const styles = StyleSheet.create({
   },
   fields: { flex: 1 },
   input: {
-    backgroundColor: colors.cream, borderWidth: 1.5, borderColor: colors.divider,
-    borderRadius: radius.md, paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3], fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 16, color: colors.textPrimary,
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    fontFamily: font.family.semibold,
+    fontSize: font.size.lg,
+    color: colors.textPrimary,
   },
-  twoCol: { flexDirection: 'row', gap: spacing[3] },
+  twoCol: { flexDirection: "row", gap: spacing[3] },
   colFlex: { flex: 1 },
   qtyBox: {
-    flexDirection: 'row', alignItems: 'stretch',
-    backgroundColor: colors.cream, borderWidth: 1.5, borderColor: colors.divider,
-    borderRadius: radius.md, overflow: 'hidden',
+    flexDirection: "row",
+    alignItems: "stretch",
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    overflow: "hidden",
   },
   qtyNumber: {
-    flex: 1, paddingHorizontal: spacing[4], paddingVertical: spacing[3],
-    fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 16, color: colors.textPrimary,
+    flex: 1,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    fontFamily: font.family.semibold,
+    fontSize: font.size.lg,
+    color: colors.textPrimary,
     minWidth: 0,
   },
   qtyDivider: { width: 1.5, backgroundColor: colors.divider },
   unitBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: spacing[3], paddingVertical: spacing[3], minWidth: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+    minWidth: 52,
   },
   unitDropdown: {
     marginTop: spacing[1],
-    backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.divider,
-    borderRadius: radius.md, overflow: 'hidden', marginBottom: spacing[1],
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    marginBottom: spacing[1],
   },
   unitOption: {
-    paddingHorizontal: spacing[4], paddingVertical: spacing[3],
-    borderBottomWidth: 1, borderBottomColor: colors.divider,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   unitOptionSelected: { backgroundColor: colors.green },
   saleRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing[2],
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[2],
     marginTop: spacing[3],
   },
-  barcodeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  barcodeRow: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
   scanBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.green,
-    borderRadius: radius.md, paddingHorizontal: spacing[4], paddingVertical: spacing[3],
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.green,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   doneBtn: {
-    backgroundColor: colors.orange, borderRadius: radius.full,
-    paddingVertical: spacing[3] + 2, alignItems: 'center', marginTop: spacing[3],
+    backgroundColor: colors.orange,
+    borderRadius: radius.full,
+    paddingVertical: spacing[3] + 2,
+    alignItems: "center",
+    marginTop: spacing[3],
   },
 });

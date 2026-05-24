@@ -1,20 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from "react";
 import {
-  View, Modal, TouchableOpacity, TextInput, ScrollView,
-  StyleSheet, KeyboardAvoidingView, Platform, useWindowDimensions,
-} from 'react-native';
-import { AppText } from './ui/AppText';
-import { colors, spacing, radius } from '../constants/tokens';
-import type { FoodNutritionRow } from '../types/db';
-import type { FoodNutritionData } from '../hooks/useFoodNutrition';
-import { parseAmount } from '../lib/parseAmount';
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { colors, font, radius, spacing } from "../constants/tokens";
+import type { FoodNutritionData } from "../hooks/useFoodNutrition";
+import { parseAmount } from "../lib/parseAmount";
+import type { FoodNutritionRow } from "../types/db";
+import { AppText } from "./ui/AppText";
 
-type Basis = 'per_100g' | 'per_100mL' | 'per_unit';
+type Basis = "per_100g" | "per_100mL" | "per_unit";
 
 const BASIS_LABELS: { value: Basis; label: string }[] = [
-  { value: 'per_100g', label: '100g' },
-  { value: 'per_100mL', label: '100mL' },
-  { value: 'per_unit', label: 'unit' },
+  { value: "per_100g", label: "100g" },
+  { value: "per_100mL", label: "100mL" },
+  { value: "per_unit", label: "unit" },
 ];
 
 interface Props {
@@ -27,16 +34,21 @@ interface Props {
 }
 
 export function FoodNutritionSheet({
-  visible, ingredientName, ingredientAmount, existingEntry, onSave, onClose,
+  visible,
+  ingredientName,
+  ingredientAmount,
+  existingEntry,
+  onSave,
+  onClose,
 }: Props) {
   const { height: windowHeight } = useWindowDimensions();
-  const [basis, setBasis] = useState<Basis>('per_100g');
-  const [brand, setBrand] = useState('');
-  const [productName, setProductName] = useState('');
-  const [cal, setCal] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fat, setFat] = useState('');
+  const [basis, setBasis] = useState<Basis>("per_100g");
+  const [brand, setBrand] = useState("");
+  const [productName, setProductName] = useState("");
+  const [cal, setCal] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbs, setCarbs] = useState("");
+  const [fat, setFat] = useState("");
   // tracks whether the current cal value was auto-calculated (so macros can update it)
   const calIsAuto = useRef(false);
 
@@ -45,23 +57,39 @@ export function FoodNutritionSheet({
     calIsAuto.current = false;
     if (existingEntry) {
       setBasis(existingEntry.basis);
-      setBrand(existingEntry.brand ?? '');
-      setProductName(existingEntry.product_name ?? '');
-      setCal(existingEntry.cal_per_basis != null ? String(existingEntry.cal_per_basis) : '');
-      setProtein(existingEntry.protein_per_basis != null ? String(existingEntry.protein_per_basis) : '');
-      setCarbs(existingEntry.carbs_per_basis != null ? String(existingEntry.carbs_per_basis) : '');
-      setFat(existingEntry.fat_per_basis != null ? String(existingEntry.fat_per_basis) : '');
+      setBrand(existingEntry.brand ?? "");
+      setProductName(existingEntry.product_name ?? "");
+      setCal(
+        existingEntry.cal_per_basis != null
+          ? String(existingEntry.cal_per_basis)
+          : "",
+      );
+      setProtein(
+        existingEntry.protein_per_basis != null
+          ? String(existingEntry.protein_per_basis)
+          : "",
+      );
+      setCarbs(
+        existingEntry.carbs_per_basis != null
+          ? String(existingEntry.carbs_per_basis)
+          : "",
+      );
+      setFat(
+        existingEntry.fat_per_basis != null
+          ? String(existingEntry.fat_per_basis)
+          : "",
+      );
     } else {
       const parsed = parseAmount(ingredientAmount);
-      if (parsed?.type === 'mL') setBasis('per_100mL');
-      else if (parsed?.type === 'units') setBasis('per_unit');
-      else setBasis('per_100g');
-      setBrand('');
-      setProductName('');
-      setCal('');
-      setProtein('');
-      setCarbs('');
-      setFat('');
+      if (parsed?.type === "mL") setBasis("per_100mL");
+      else if (parsed?.type === "units") setBasis("per_unit");
+      else setBasis("per_100g");
+      setBrand("");
+      setProductName("");
+      setCal("");
+      setProtein("");
+      setCarbs("");
+      setFat("");
     }
   }, [visible, existingEntry, ingredientAmount]);
 
@@ -69,7 +97,12 @@ export function FoodNutritionSheet({
     const p = parseFloat(protein);
     const c = parseFloat(carbs);
     const f = parseFloat(fat);
-    if (!isNaN(p) && !isNaN(c) && !isNaN(f) && (cal === '' || calIsAuto.current)) {
+    if (
+      !isNaN(p) &&
+      !isNaN(c) &&
+      !isNaN(f) &&
+      (cal === "" || calIsAuto.current)
+    ) {
       const computed = Math.round(p * 4 + c * 4 + f * 9);
       calIsAuto.current = true;
       setCal(String(computed));
@@ -90,31 +123,48 @@ export function FoodNutritionSheet({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-        <View style={[styles.sheet, { height: windowHeight * 0.80 }]}>
+        <TouchableOpacity
+          style={styles.backdrop}
+          onPress={onClose}
+          activeOpacity={1}
+        />
+        <View style={[styles.sheet, { height: windowHeight * 0.8 }]}>
           <View style={styles.handle} />
 
           <View style={styles.nameRow}>
-            <AppText weight="extrabold" size="2xl" color="textPrimary" style={styles.nameText}>
+            <AppText
+              weight="extrabold"
+              size="2xl"
+              color="textPrimary"
+              style={styles.nameText}
+            >
               {ingredientName}
             </AppText>
             <View style={styles.unitToggle}>
               {BASIS_LABELS.map(({ value, label }) => (
                 <TouchableOpacity
                   key={value}
-                  style={[styles.unitOpt, basis === value && styles.unitOptActive]}
+                  style={[
+                    styles.unitOpt,
+                    basis === value && styles.unitOptActive,
+                  ]}
                   onPress={() => setBasis(value)}
                   activeOpacity={0.7}
                 >
                   <AppText
-                    weight={basis === value ? 'bold' : 'semibold'}
+                    weight={basis === value ? "bold" : "semibold"}
                     size="2xs"
-                    color={basis === value ? 'green' : 'textTertiary'}
+                    color={basis === value ? "green" : "textTertiary"}
                   >
                     {label}
                   </AppText>
@@ -150,7 +200,10 @@ export function FoodNutritionSheet({
             <TextInput
               style={styles.input}
               value={cal}
-              onChangeText={(v) => { calIsAuto.current = false; setCal(v); }}
+              onChangeText={(v) => {
+                calIsAuto.current = false;
+                setCal(v);
+              }}
               keyboardType="decimal-pad"
               placeholder="0"
               placeholderTextColor={colors.textTertiary}
@@ -195,8 +248,14 @@ export function FoodNutritionSheet({
             <View style={{ height: spacing[3] }} />
           </ScrollView>
 
-          <TouchableOpacity style={styles.doneBtn} onPress={handleSave} activeOpacity={0.85}>
-            <AppText weight="extrabold" size="lg" color="onGreen">Done</AppText>
+          <TouchableOpacity
+            style={styles.doneBtn}
+            onPress={handleSave}
+            activeOpacity={0.85}
+          >
+            <AppText weight="extrabold" size="lg" color="onGreen">
+              Done
+            </AppText>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -210,7 +269,11 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
       weight="bold"
       size="xs"
       color="textTertiary"
-      style={{ letterSpacing: 0.8, marginBottom: spacing[1], marginTop: top ? spacing[4] : 0 }}
+      style={{
+        letterSpacing: 0.8,
+        marginBottom: spacing[1],
+        marginTop: top ? spacing[4] : 0,
+      }}
     >
       {children}
     </AppText>
@@ -218,10 +281,14 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
+  overlay: { flex: 1, justifyContent: "flex-end" },
   backdrop: {
-    position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
   sheet: {
     backgroundColor: colors.card,
@@ -232,19 +299,23 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[6],
   },
   handle: {
-    width: 36, height: 4, borderRadius: radius.full,
-    backgroundColor: colors.divider, alignSelf: 'center', marginBottom: spacing[4],
+    width: 36,
+    height: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.divider,
+    alignSelf: "center",
+    marginBottom: spacing[4],
   },
   nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing[2],
     marginBottom: spacing[4],
   },
   nameText: { flex: 1 },
   unitToggle: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.divider,
     borderRadius: radius.full,
     padding: 2,
@@ -272,17 +343,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 16,
+    fontFamily: font.family.semibold,
+    fontSize: font.size.lg,
     color: colors.textPrimary,
   },
-  twoCol: { flexDirection: 'row', gap: spacing[3] },
+  twoCol: { flexDirection: "row", gap: spacing[3] },
   colFlex: { flex: 1 },
   doneBtn: {
     backgroundColor: colors.orange,
     borderRadius: radius.full,
     paddingVertical: spacing[3] + 2,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: spacing[3],
   },
 });
