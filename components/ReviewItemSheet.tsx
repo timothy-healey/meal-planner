@@ -18,6 +18,7 @@ import type { AddPurchaseData } from "../hooks/usePurchaseHistory";
 import type { ScanResult } from "../lib/barcodeScanResult";
 import { formatPrice } from "../lib/format";
 import type { PurchaseHistoryRow, QtyUnit, ShoppingItemRow } from "../types/db";
+import { PriceHistoryChart } from "./PriceHistoryChart";
 import { AppText } from "./ui/AppText";
 
 const QTY_UNITS: QtyUnit[] = ["g", "kg", "mL", "L", "units"];
@@ -329,6 +330,15 @@ export function ReviewItemSheet({
                 </AppText>
               </TouchableOpacity>
             </View>
+
+            {brand.trim() && productName.trim() && (
+              <View style={{ marginTop: spacing[4], marginHorizontal: -spacing[5] }}>
+                <PriceHistoryChart
+                  brand={brand.trim()}
+                  productName={productName.trim()}
+                />
+              </View>
+            )}
 
             <View style={{ height: spacing[3] }} />
           </ScrollView>
