@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Modal, TouchableOpacity, TextInput, ScrollView,
-  StyleSheet, KeyboardAvoidingView, Platform, Switch,
+  StyleSheet, KeyboardAvoidingView, Platform, Switch, Dimensions,
 } from 'react-native';
+
+const SHEET_HEIGHT = Dimensions.get('window').height * 0.78;
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
@@ -270,9 +272,10 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
+    height: SHEET_HEIGHT,
     backgroundColor: colors.card, borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg, padding: spacing[4],
-    paddingBottom: spacing[8], maxHeight: '90%',
+    paddingBottom: spacing[8],
   },
   handle: {
     width: 32, height: 4, borderRadius: radius.full,
