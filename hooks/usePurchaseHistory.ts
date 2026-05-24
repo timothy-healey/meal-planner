@@ -8,6 +8,7 @@ export interface AddPurchaseData {
   plan_id: string | null;
   item_name: string;
   store: string;
+  branch?: string;
   brand: string | null;
   product_name: string | null;
   qty_amount: number | null;
@@ -21,16 +22,17 @@ export interface AddPurchaseData {
 async function resolveOrCreateStore(
   db: SQLiteDatabase,
   chainName: string,
+  branchName: string = '',
 ): Promise<string> {
   const existing = await db.getFirstAsync<{ id: string }>(
-    'SELECT id FROM stores WHERE LOWER(chain) = LOWER(?)',
-    [chainName],
+    'SELECT id FROM stores WHERE LOWER(chain) = LOWER(?) AND LOWER(branch) = LOWER(?)',
+    [chainName, branchName],
   );
   if (existing) return existing.id;
   const id = generateId();
   await db.runAsync(
     'INSERT INTO stores (id, chain, branch, created_at) VALUES (?, ?, ?, ?)',
-    [id, chainName, '', new Date().toISOString()],
+    [id, chainName, branchName, new Date().toISOString()],
   );
   return id;
 }
@@ -67,7 +69,7 @@ export function usePurchaseHistory(planId: string | null) {
     status: 'pending' | 'confirmed' = 'confirmed',
   ) => {
     const id = generateId();
-    const storeId = await resolveOrCreateStore(db, data.store);
+    const storeId = await resolveOrCreateStore(db, data.store, data.branch ?? '');
     await db.runAsync(
       `INSERT INTO purchase_history
          (id, plan_id, item_name, store_id, brand, product_name,
@@ -117,7 +119,7 @@ export function usePurchaseHistory(planId: string | null) {
   }, [db, load]);
 
   const updatePending = useCallback(async (id: string, data: AddPurchaseData) => {
-    const storeId = await resolveOrCreateStore(db, data.store);
+    const storeId = await resolveOrCreateStore(db, data.store, data.branch ?? '');
     await db.runAsync(
       `UPDATE purchase_history
        SET item_name = ?, store_id = ?, brand = ?, product_name = ?,
