@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { GreenHeader } from '../../components/ui/GreenHeader';
@@ -8,15 +7,32 @@ import { AppText } from '../../components/ui/AppText';
 import { CategoryHeader } from '../../components/ui/CategoryHeader';
 import { StepList } from '../../components/ui/StepList';
 import { IngredientRow } from '../../components/IngredientRow';
+import { FoodNutritionSheet } from '../../components/FoodNutritionSheet';
 import { useRecipes } from '../../hooks/useRecipes';
+import { useFoodNutrition } from '../../hooks/useFoodNutrition';
+import { rollupMacros } from '../../lib/rollupMacros';
 import { formatCookTime } from '../../lib/format';
 import { colors, spacing, radius } from '../../constants/tokens';
+import type { FoodNutritionRow } from '../../types/db';
+import type { FoodNutritionData } from '../../hooks/useFoodNutrition';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { recipes } = useRecipes();
   const recipe = recipes.find((r) => r.id === id) ?? null;
+  const { upsert, linkIngredient, getLinksForRecipe } = useFoodNutrition();
+
   const [copied, setCopied] = useState(false);
+  const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
+  const [sheetIngredient, setSheetIngredient] = useState<{ index: number; name: string } | null>(null);
+
+  const loadLinks = useCallback(async () => {
+    if (!recipe) return;
+    const result = await getLinksForRecipe(recipe.id);
+    setLinks(result);
+  }, [recipe?.id, getLinksForRecipe]);
+
+  useEffect(() => { loadLinks(); }, [loadLinks]);
 
   if (!recipe) {
     return (
@@ -27,8 +43,20 @@ export default function RecipeDetailScreen() {
   }
 
   const timeLabel = formatCookTime(recipe.prep_minutes, recipe.cook_minutes);
-  const buildCopyText = () =>
-    [
+  const rollup = rollupMacros(recipe.ingredients, links, recipe.servings);
+  const prefix = rollup?.isPartial ? '~' : '';
+
+  async function handleNutritionSave(data: FoodNutritionData) {
+    if (!sheetIngredient) return;
+    const existingId = links[sheetIngredient.index]?.id;
+    const foodNutritionId = await upsert({ ...data, id: existingId });
+    await linkIngredient(recipe!.id, sheetIngredient.index, foodNutritionId);
+    await loadLinks();
+    setSheetIngredient(null);
+  }
+
+  const handleCopy = async () => {
+    const text = [
       recipe.title,
       `Serves ${recipe.servings} | ${recipe.calories_per_serve} cal | ${recipe.protein_per_serve_g}g protein | ${recipe.cook_method} | ${timeLabel}`,
       '',
@@ -38,9 +66,7 @@ export default function RecipeDetailScreen() {
       'Method:',
       ...recipe.method_steps.map((s, idx) => `${idx + 1}. ${s}`),
     ].join('\n');
-
-  const handleCopy = async () => {
-    await Clipboard.setStringAsync(buildCopyText());
+    await Clipboard.setStringAsync(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -60,25 +86,65 @@ export default function RecipeDetailScreen() {
           <AppText weight="extrabold" color="onGreen" size="2xl" numberOfLines={2}>
             {recipe.title}
           </AppText>
+          <View style={styles.pillRow}>
+            {rollup ? (
+              <>
+                <View style={styles.pill}>
+                  <AppText weight="bold" size="2xs" color="onGreen">
+                    {prefix}{Math.round(rollup.perServe.cal)} kcal
+                  </AppText>
+                </View>
+                <View style={styles.pill}>
+                  <AppText weight="bold" size="2xs" color="onGreen">
+                    P {prefix}{Math.round(rollup.perServe.protein_g)}g
+                  </AppText>
+                </View>
+                <View style={styles.pill}>
+                  <AppText weight="bold" size="2xs" color="onGreen">
+                    C {prefix}{Math.round(rollup.perServe.carbs_g)}g
+                  </AppText>
+                </View>
+                <View style={styles.pill}>
+                  <AppText weight="bold" size="2xs" color="onGreen">
+                    F {prefix}{Math.round(rollup.perServe.fat_g)}g
+                  </AppText>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.pill}>
+                  <AppText weight="bold" size="2xs" color="onGreen">
+                    {recipe.calories_per_serve} kcal
+                  </AppText>
+                </View>
+                <View style={styles.pill}>
+                  <AppText weight="bold" size="2xs" color="onGreen">
+                    P {recipe.protein_per_serve_g}g
+                  </AppText>
+                </View>
+              </>
+            )}
+            <View style={styles.pill}>
+              <AppText weight="bold" size="2xs" color="onGreen">Serves {recipe.servings}</AppText>
+            </View>
+            <View style={styles.pill}>
+              <AppText weight="bold" size="2xs" color="onGreen">{timeLabel}</AppText>
+            </View>
+          </View>
         </View>
       </GreenHeader>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        <View style={styles.inlineStats}>
-          <AppText weight="bold" color="orange" size="lg">{recipe.calories_per_serve} cal</AppText>
-          <Ionicons name="ellipse" size={5} color={colors.textTertiary} style={styles.sep} />
-          <AppText weight="semibold" color="textSecondary" size="lg">{recipe.protein_per_serve_g}g protein</AppText>
-          <Ionicons name="ellipse" size={5} color={colors.textTertiary} style={styles.sep} />
-          <AppText weight="semibold" color="textSecondary" size="lg">Serves {recipe.servings}</AppText>
-          <Ionicons name="ellipse" size={5} color={colors.textTertiary} style={styles.sep} />
-          <AppText weight="regular" color="textTertiary" size="lg">{timeLabel}</AppText>
-        </View>
-
         <View style={styles.section}>
           <CategoryHeader label="Ingredients" isOneoff={false} />
           <View style={styles.card}>
             {recipe.ingredients.map((ing, idx) => (
-              <IngredientRow key={idx} ingredient={ing} />
+              <IngredientRow
+                key={idx}
+                ingredient={ing}
+                nutrition={rollup?.contributions[idx] ?? null}
+                onPress={() => setSheetIngredient({ index: idx, name: ing.item })}
+              />
             ))}
           </View>
         </View>
@@ -104,6 +170,14 @@ export default function RecipeDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <FoodNutritionSheet
+        visible={sheetIngredient !== null}
+        ingredientName={sheetIngredient?.name ?? ''}
+        existingEntry={sheetIngredient !== null ? (links[sheetIngredient.index] ?? null) : null}
+        onSave={handleNutritionSave}
+        onClose={() => setSheetIngredient(null)}
+      />
     </View>
   );
 }
@@ -112,11 +186,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.cream },
   notFound: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.cream },
   headerContent: { paddingBottom: spacing[1], gap: spacing[2] },
-  backBtn: { paddingVertical: spacing[4], paddingRight: spacing[4], alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  backBtn: {
+    paddingVertical: spacing[4], paddingRight: spacing[4],
+    alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center',
+  },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  pill: {
+    backgroundColor: colors.headerPill,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
+    borderRadius: radius.full,
+  },
   body: { flex: 1 },
   bodyContent: { paddingTop: spacing[2], paddingBottom: spacing[10], gap: spacing[4] },
-  inlineStats: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: spacing[4] },
-  sep: { marginHorizontal: spacing[2], marginTop: 6 },
   section: { gap: spacing[2], paddingHorizontal: spacing[4] },
   card: { backgroundColor: colors.card, borderRadius: radius.md, overflow: 'hidden' },
   methodHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
