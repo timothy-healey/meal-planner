@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { GreenHeader } from '../components/ui/GreenHeader';
 import { AppText } from '../components/ui/AppText';
 import { Pill } from '../components/ui/Pill';
@@ -8,16 +9,22 @@ import { Divider } from '../components/ui/Divider';
 import { Row } from '../components/ui/Row';
 import { useImport } from '../hooks/useImport';
 import { useBackup } from '../hooks/useBackup';
+import { usePlan } from '../hooks/usePlan';
+import { useDb } from '../providers/DatabaseProvider';
+import { buildClaudeContext } from '../lib/exportContext';
 import { colors, spacing, radius } from '../constants/tokens';
 
 export default function SettingsScreen() {
   const { importPlan, status: importStatus } = useImport(() => router.back());
   const { exportBackup, restoreBackup, status: backupStatus } = useBackup(() => router.back());
+  const { plan } = usePlan();
+  const db = useDb();
   const [restorePreview, setRestorePreview] = useState<{
     summary: string;
     exportedDate: string;
     execute: () => void;
   } | null>(null);
+  const [contextCopied, setContextCopied] = useState(false);
 
   async function handleRestore() {
     const preview = await restoreBackup();
@@ -28,6 +35,14 @@ export default function SettingsScreen() {
     if (!restorePreview) return;
     restorePreview.execute();
     setRestorePreview(null);
+  }
+
+  async function handleCopyContext() {
+    if (!plan) return;
+    const json = await buildClaudeContext(db, plan.row.id);
+    await Clipboard.setStringAsync(json);
+    setContextCopied(true);
+    setTimeout(() => setContextCopied(false), 2000);
   }
 
   return (
@@ -56,6 +71,24 @@ export default function SettingsScreen() {
               <AppText color="terracotta">{importStatus.message}</AppText>
               <Pill label="Try again" onPress={importPlan} />
             </View>
+          )}
+        </View>
+
+        <Divider />
+
+        {/* Claude Context */}
+        <View style={styles.section}>
+          <AppText weight="bold" size="lg">Claude Context</AppText>
+          <AppText color="textSecondary">
+            Copy this week's purchases with nutrition data as JSON to paste into Claude.
+          </AppText>
+          <Pill
+            label={contextCopied ? '✓ Copied!' : '🤖 Copy context for Claude'}
+            onPress={handleCopyContext}
+            style={!plan ? styles.dimmed : undefined}
+          />
+          {!plan && (
+            <AppText size="sm" color="textTertiary">No active plan — import a plan first.</AppText>
           )}
         </View>
 
@@ -119,6 +152,9 @@ const styles = StyleSheet.create({
   },
   errorBlock: {
     gap: spacing[1],
+  },
+  dimmed: {
+    opacity: 0.45,
   },
   restorePreviewCard: {
     gap: spacing[3],
