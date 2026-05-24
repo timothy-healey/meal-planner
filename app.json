@@ -22,7 +22,8 @@
           "backgroundColor": "#1C453C",
           "image": "./assets/images/splash-icon.png"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
