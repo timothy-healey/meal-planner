@@ -29,10 +29,15 @@ function formatDateTime(iso: string): string {
   return `${dd} ${mmm} ${yyyy} · ${hh}:${mm} ${ampm}`;
 }
 
+function formatQty(amount: number, unit: PurchaseHistoryRow['qty_unit']): string {
+  if (unit === 'units') return amount === 1 ? '1 unit' : `${amount} units`;
+  return `${amount}${unit}`;
+}
+
 function rowSubtitle(row: PurchaseHistoryRow): string | null {
   const parts: string[] = [];
   if (row.qty_amount != null && row.qty_unit != null) {
-    parts.push(`${row.qty_amount}${row.qty_unit}`);
+    parts.push(formatQty(row.qty_amount, row.qty_unit));
   }
   if (row.brand) parts.push(row.brand);
   if (row.product_name && row.product_name !== row.brand) parts.push(row.product_name);
