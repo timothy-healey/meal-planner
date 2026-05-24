@@ -18,6 +18,7 @@ import { BasketSection } from '../../components/BasketSection';
 import { AddItemSheet } from '../../components/AddItemSheet';
 import { usePlan } from '../../hooks/usePlan';
 import { useShoppingItems } from '../../hooks/useShoppingItems';
+import type { ShoppingItemRow } from '../../types/db';
 import { useCategoryOrder } from '../../hooks/useCategoryOrder';
 import { formatWeekOf, formatPrice, formatItemCount } from '../../lib/format';
 import { colors, spacing, radius, shadow } from '../../constants/tokens';
@@ -27,9 +28,10 @@ const TITLE_COLLAPSE_END = 55;
 
 export default function ShopScreen() {
   const { plan } = usePlan();
-  const { items, toggleItem, addItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
+  const { items, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
   const { applySavedOrder } = useCategoryOrder();
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<ShoppingItemRow | null>(null);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -128,6 +130,7 @@ export default function ShopScreen() {
               isOneoff={isCategoryOneoff(cat)}
               onToggle={toggleItem}
               onDelete={deleteItem}
+              onEdit={setEditingItem}
             />
           );
         })}
@@ -148,10 +151,18 @@ export default function ShopScreen() {
       </TouchableOpacity>
 
       <AddItemSheet
-        visible={sheetVisible}
+        visible={sheetVisible || editingItem !== null}
         categories={allCategories}
         onAdd={addItem}
-        onClose={() => setSheetVisible(false)}
+        onSave={(id, data) => {
+          updateItem(id, data);
+          setEditingItem(null);
+        }}
+        onClose={() => {
+          setSheetVisible(false);
+          setEditingItem(null);
+        }}
+        initialItem={editingItem ?? undefined}
       />
     </View>
   );
