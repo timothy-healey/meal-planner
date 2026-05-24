@@ -3,14 +3,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ShoppingMode = 'quick' | 'review';
 
-export interface SavedStore {
-  name: string;
+export interface StoreLocation {
+  chain: string;
+  branch: string;
+}
+
+export interface SavedStore extends StoreLocation {
   lastUsed: string; // ISO datetime
 }
 
 interface PersistedModeState {
   mode: ShoppingMode;
-  store: string | null;
+  store: StoreLocation | null;
+}
+
+interface LegacyOrCurrentSavedStore {
+  name?: string;        // legacy
+  chain?: string;
+  branch?: string;
+  lastUsed: string;
 }
 
 const STORES_KEY = 'shopping_stores';
@@ -19,9 +30,20 @@ function modeKey(planId: string) {
   return `shopping_mode_${planId}`;
 }
 
+function migrateStore(entry: LegacyOrCurrentSavedStore): SavedStore {
+  if (entry.chain != null) {
+    return { chain: entry.chain, branch: entry.branch ?? '', lastUsed: entry.lastUsed };
+  }
+  return { chain: entry.name ?? '', branch: '', lastUsed: entry.lastUsed };
+}
+
+function sameStore(a: StoreLocation, b: StoreLocation): boolean {
+  return a.chain === b.chain && a.branch === b.branch;
+}
+
 export function useShoppingMode(planId: string | null) {
   const [mode, setModeState] = useState<ShoppingMode>('quick');
-  const [activeStore, setActiveStore] = useState<string | null>(null);
+  const [activeStore, setActiveStore] = useState<StoreLocation | null>(null);
   const [savedStores, setSavedStores] = useState<SavedStore[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,26 +59,30 @@ export function useShoppingMode(planId: string | null) {
         setActiveStore(parsed.store);
       }
       if (storesRaw) {
-        const stores: SavedStore[] = JSON.parse(storesRaw);
-        setSavedStores(stores.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed)));
+        const raw: LegacyOrCurrentSavedStore[] = JSON.parse(storesRaw);
+        const migrated = raw.map(migrateStore);
+        setSavedStores(migrated.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed)));
       }
       setLoading(false);
     }
     load();
   }, [planId]);
 
-  const addStore = useCallback(async (name: string) => {
+  const addStore = useCallback(async (store: StoreLocation) => {
     const now = new Date().toISOString();
-    const existing: SavedStore[] = JSON.parse(await AsyncStorage.getItem(STORES_KEY) ?? '[]');
+    const existingRaw = await AsyncStorage.getItem(STORES_KEY);
+    const existing: SavedStore[] = existingRaw
+      ? (JSON.parse(existingRaw) as LegacyOrCurrentSavedStore[]).map(migrateStore)
+      : [];
     const updated = [
-      { name, lastUsed: now },
-      ...existing.filter(s => s.name !== name),
+      { ...store, lastUsed: now },
+      ...existing.filter(s => !sameStore(s, store)),
     ].sort((a, b) => b.lastUsed.localeCompare(a.lastUsed));
     await AsyncStorage.setItem(STORES_KEY, JSON.stringify(updated));
     setSavedStores(updated);
   }, []);
 
-  const setMode = useCallback(async (newMode: ShoppingMode, store?: string) => {
+  const setMode = useCallback(async (newMode: ShoppingMode, store?: StoreLocation) => {
     const newStore = newMode === 'review' ? (store ?? null) : null;
     setModeState(newMode);
     setActiveStore(newStore);
