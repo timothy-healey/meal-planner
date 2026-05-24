@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
-import { colors, spacing, radius } from '../constants/tokens';
+import { colors, font, spacing, radius } from '../constants/tokens';
 import type { SavedStore } from '../hooks/useShoppingMode';
 
 interface Props {
@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[3], marginBottom: spacing[2],
   },
   input: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 13, color: colors.textPrimary,
+    fontFamily: font.family.semibold,
+    fontSize: font.size.md, color: colors.textPrimary,
     paddingVertical: spacing[3],
   },
   addRow: {
