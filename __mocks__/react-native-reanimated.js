@@ -78,6 +78,15 @@ module.exports = {
   runOnJS: (fn) => fn,
   runOnUI: (fn) => fn,
 
+  Easing: {
+    linear: (t) => t,
+    ease: (t) => t,
+    quad: (t) => t * t,
+    inOut: (fn) => fn,
+    in: (fn) => fn,
+    out: (fn) => fn,
+    bezier: () => (t) => t,
+  },
   Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
   ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
 
