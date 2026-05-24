@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, ViewStyle } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { AppText } from './AppText';
 import { colors, radius, shadow, spacing } from '../../constants/tokens';
 
@@ -16,7 +17,10 @@ export function Pill({ label, onPress, variant = 'white', style, accessibilityLa
   const textColor = variant === 'green' ? 'onGreen' as const : 'green' as const;
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress?.();
+      }}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
       style={[
