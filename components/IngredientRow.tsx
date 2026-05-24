@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppText } from './ui/AppText';
 import { Divider } from './ui/Divider';
-import { spacing } from '../constants/tokens';
+import { colors, spacing } from '../constants/tokens';
 import type { Ingredient } from '../meal_plan.types';
 
 interface MacroContribution {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginTop: spacing[1],
   },
   macroChip: {
-    backgroundColor: '#e8f0ee',
+    backgroundColor: colors.chipSurface,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 1,

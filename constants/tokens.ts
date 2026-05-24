@@ -27,6 +27,7 @@ export const colors = {
   // Structural
   divider:       '#e9eadc', // list dividers, tab bar border
   checkboxBorder:'#ced0c1', // unchecked checkbox border
+  chipSurface:   '#e8f0ee', // macro chip backgrounds in ingredient rows
 
   // Overlays
   headerPill: 'rgba(0,0,0,0.25)', // budget/count pill background on header
