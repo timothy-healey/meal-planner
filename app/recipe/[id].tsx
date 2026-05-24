@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -25,14 +25,12 @@ export default function RecipeDetailScreen() {
   const [copied, setCopied] = useState(false);
   const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
   const [sheetIngredient, setSheetIngredient] = useState<{ index: number; name: string } | null>(null);
+  const [linksKey, setLinksKey] = useState(0);
 
-  const loadLinks = useCallback(async () => {
-    if (!recipe) return;
-    const result = await getLinksForRecipe(recipe.id);
-    setLinks(result);
-  }, [recipe?.id, getLinksForRecipe]);
-
-  useEffect(() => { loadLinks(); }, [loadLinks]);
+  useEffect(() => {
+    if (!recipe?.id) return;
+    getLinksForRecipe(recipe.id).then(setLinks);
+  }, [recipe?.id, linksKey, getLinksForRecipe]);
 
   if (!recipe) {
     return (
@@ -51,7 +49,7 @@ export default function RecipeDetailScreen() {
     const existingId = links[sheetIngredient.index]?.id;
     const foodNutritionId = await upsert({ ...data, id: existingId });
     await linkIngredient(recipe!.id, sheetIngredient.index, foodNutritionId);
-    await loadLinks();
+    setLinksKey(k => k + 1);
     setSheetIngredient(null);
   }
 
