@@ -11,7 +11,7 @@ import type { SavedStore } from '../hooks/useShoppingMode';
 interface Props {
   visible: boolean;
   stores: SavedStore[];
-  onConfirm: (storeName: string) => void;
+  onConfirm: (store: { chain: string; branch: string }) => void;
   onClose: () => void;
 }
 
@@ -21,16 +21,31 @@ function formatLastUsed(iso: string): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+function storeKey(s: { chain: string; branch: string }) {
+  return `${s.chain}__${s.branch}`;
+}
+
 export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props) {
-  const [selected, setSelected] = useState<string | null>(stores[0]?.name ?? null);
-  const [newStore, setNewStore] = useState('');
+  const [selectedKey, setSelectedKey] = useState<string | null>(
+    stores[0] ? storeKey(stores[0]) : null,
+  );
+  const [newChain, setNewChain] = useState('');
+  const [newBranch, setNewBranch] = useState('');
   const [adding, setAdding] = useState(false);
 
   function handleConfirm() {
-    const name = adding ? newStore.trim() : selected;
-    if (!name) return;
-    onConfirm(name);
+    if (adding) {
+      const chain = newChain.trim();
+      if (!chain) return;
+      onConfirm({ chain, branch: newBranch.trim() });
+      return;
+    }
+    const sel = stores.find(s => storeKey(s) === selectedKey);
+    if (!sel) return;
+    onConfirm({ chain: sel.chain, branch: sel.branch });
   }
+
+  const canSave = adding ? !!newChain.trim() : !!selectedKey;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -49,34 +64,48 @@ export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props)
           </AppText>
 
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-            {stores.map((s) => (
-              <TouchableOpacity
-                key={s.name}
-                style={[styles.storeRow, selected === s.name && !adding && styles.storeRowSelected]}
-                onPress={() => { setSelected(s.name); setAdding(false); }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.storeRowContent}>
-                  <AppText weight="bold" size="md" color="textPrimary">{s.name}</AppText>
-                  <AppText weight="regular" size="sm" color="textTertiary">
-                    Last used {formatLastUsed(s.lastUsed)}
-                  </AppText>
-                </View>
-                {selected === s.name && !adding && (
-                  <Ionicons name="checkmark" size={16} color={colors.green} />
-                )}
-              </TouchableOpacity>
-            ))}
+            {stores.map((s) => {
+              const key = storeKey(s);
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.storeRow, selectedKey === key && !adding && styles.storeRowSelected]}
+                  onPress={() => { setSelectedKey(key); setAdding(false); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.storeRowContent}>
+                    <AppText weight="bold" size="md" color="textPrimary">{s.chain}</AppText>
+                    {s.branch ? (
+                      <AppText weight="semibold" size="sm" color="textTertiary">{s.branch}</AppText>
+                    ) : null}
+                    <AppText weight="regular" size="sm" color="textTertiary">
+                      Last used {formatLastUsed(s.lastUsed)}
+                    </AppText>
+                  </View>
+                  {selectedKey === key && !adding && (
+                    <Ionicons name="checkmark" size={16} color={colors.green} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
 
             {adding ? (
-              <View style={styles.newStoreInput}>
+              <View style={styles.newStoreInputs}>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g. Coles Bondi"
+                  placeholder="Chain (e.g. Coles)"
                   placeholderTextColor={colors.textTertiary}
-                  value={newStore}
-                  onChangeText={setNewStore}
+                  value={newChain}
+                  onChangeText={setNewChain}
                   autoFocus
+                  returnKeyType="next"
+                />
+                <TextInput
+                  style={[styles.input, { marginTop: spacing[2] }]}
+                  placeholder="Branch — optional (e.g. Bondi)"
+                  placeholderTextColor={colors.textTertiary}
+                  value={newBranch}
+                  onChangeText={setNewBranch}
                   returnKeyType="done"
                   onSubmitEditing={handleConfirm}
                 />
@@ -84,7 +113,7 @@ export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props)
             ) : (
               <TouchableOpacity
                 style={styles.addRow}
-                onPress={() => { setAdding(true); setSelected(null); }}
+                onPress={() => { setAdding(true); setSelectedKey(null); }}
                 activeOpacity={0.7}
               >
                 <Ionicons name="add-circle-outline" size={16} color={colors.textTertiary} />
@@ -96,9 +125,10 @@ export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props)
           </ScrollView>
 
           <TouchableOpacity
-            style={[styles.confirmBtn, !(selected || (adding && newStore.trim())) && styles.confirmBtnDisabled]}
+            style={[styles.confirmBtn, !canSave && styles.confirmBtnDisabled]}
             onPress={handleConfirm}
             activeOpacity={0.85}
+            disabled={!canSave}
           >
             <AppText weight="extrabold" size="md" color="onGreen">Start reviewing</AppText>
           </TouchableOpacity>
@@ -133,16 +163,16 @@ const styles = StyleSheet.create({
     borderColor: colors.divider, marginBottom: spacing[2],
   },
   storeRowSelected: { borderColor: colors.green, backgroundColor: 'rgba(28,69,60,0.04)' },
-  storeRowContent: { flex: 1, gap: spacing[1] },
-  newStoreInput: {
-    backgroundColor: colors.cream, borderRadius: radius.md,
-    borderWidth: 1.5, borderColor: colors.green,
-    paddingHorizontal: spacing[3], marginBottom: spacing[2],
+  storeRowContent: { flex: 1, gap: 2 },
+  newStoreInputs: {
+    marginBottom: spacing[2],
   },
   input: {
+    backgroundColor: colors.cream, borderRadius: radius.md,
+    borderWidth: 1.5, borderColor: colors.green,
+    paddingHorizontal: spacing[3], paddingVertical: spacing[3],
     fontFamily: font.family.semibold,
     fontSize: font.size.md, color: colors.textPrimary,
-    paddingVertical: spacing[3],
   },
   addRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing[2],
