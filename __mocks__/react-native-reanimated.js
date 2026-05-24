@@ -53,6 +53,8 @@ module.exports = {
   },
   useAnimatedReaction: NOOP,
   useScrollViewOffset: () => ({ value: 0 }),
+  useEvent: (_handler, _eventNames, _rebuild) => NOOP,
+  useHandler: (_handlers, _deps) => ({ context: {}, doDependenciesDiffer: false, useWeb: false }),
   useAnimatedKeyboard: () => ({ height: { value: 0 }, state: { value: 0 } }),
   useAnimatedSensor: () => ({ sensor: { value: {} }, unregister: NOOP }),
 

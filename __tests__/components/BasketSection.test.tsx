@@ -19,22 +19,28 @@ const makeItem = (id: string, name: string): ShoppingItemRow => ({
   store: null,
 });
 
+const DEFAULT_PROPS = {
+  onToggle: jest.fn(),
+  onDelete: jest.fn(),
+  onEdit: jest.fn(),
+};
+
 describe('BasketSection', () => {
   it('shows "IN BASKET" header with count', () => {
     const items = [makeItem('a', 'Milk'), makeItem('b', 'Eggs')];
-    const { getByText } = render(<BasketSection items={items} onToggle={jest.fn()} />);
+    const { getByText } = render(<BasketSection items={items} {...DEFAULT_PROPS} />);
     expect(getByText('IN BASKET (2)')).toBeTruthy();
   });
 
   it('shows hint text', () => {
     const items = [makeItem('a', 'Milk')];
-    const { getByText } = render(<BasketSection items={items} onToggle={jest.fn()} />);
+    const { getByText } = render(<BasketSection items={items} {...DEFAULT_PROPS} />);
     expect(getByText('Tap any item to put it back')).toBeTruthy();
   });
 
   it('renders item names when expanded (default)', () => {
     const items = [makeItem('a', 'Milk'), makeItem('b', 'Eggs')];
-    const { getByText } = render(<BasketSection items={items} onToggle={jest.fn()} />);
+    const { getByText } = render(<BasketSection items={items} {...DEFAULT_PROPS} />);
     expect(getByText('Milk')).toBeTruthy();
     expect(getByText('Eggs')).toBeTruthy();
   });
@@ -42,18 +48,18 @@ describe('BasketSection', () => {
   it('collapses item list when header is pressed', () => {
     const items = [makeItem('a', 'Milk')];
     const { getByText, queryByText } = render(
-      <BasketSection items={items} onToggle={jest.fn()} />
+      <BasketSection items={items} {...DEFAULT_PROPS} />
     );
     fireEvent.press(getByText('IN BASKET (1)'));
-    // Items still in DOM tree (Reanimated hides via maxHeight, not unmount)
-    expect(queryByText('Milk')).toBeTruthy();
+    expect(queryByText('Milk')).toBeNull();
   });
 
   it('calls onToggle with item id when item is pressed', () => {
     const onToggle = jest.fn();
     const items = [makeItem('a', 'Milk')];
-    const { getAllByRole } = render(<BasketSection items={items} onToggle={onToggle} />);
-    // BasketItem has accessibilityRole="checkbox" on its TouchableOpacity
+    const { getAllByRole } = render(
+      <BasketSection items={items} onToggle={onToggle} onDelete={jest.fn()} onEdit={jest.fn()} />
+    );
     const checkbox = getAllByRole('checkbox')[0];
     fireEvent.press(checkbox);
     expect(onToggle).toHaveBeenCalledWith('a');
