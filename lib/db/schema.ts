@@ -43,9 +43,9 @@ export const SCHEMA_SQL = `
 
   CREATE TABLE IF NOT EXISTS purchase_history (
     id              TEXT PRIMARY KEY,
-    plan_id         TEXT NOT NULL REFERENCES weekly_plans(id),
+    plan_id         TEXT REFERENCES weekly_plans(id),
     item_name       TEXT NOT NULL,
-    store           TEXT NOT NULL,
+    store_id        TEXT REFERENCES stores(id),
     brand           TEXT,
     product_name    TEXT,
     qty_amount      REAL,
@@ -78,17 +78,6 @@ export const SCHEMA_SQL = `
     carbs_per_100g   REAL NOT NULL,
     fat_per_100g     REAL NOT NULL,
     scanned_at       TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS price_history (
-    id          TEXT PRIMARY KEY,
-    barcode     TEXT REFERENCES barcode_nutrition(barcode),
-    item_name   TEXT NOT NULL,
-    store       TEXT NOT NULL,
-    price       REAL NOT NULL,
-    qty         TEXT NOT NULL,
-    date        TEXT NOT NULL,
-    plan_id     TEXT REFERENCES weekly_plans(id)
   );
 
   CREATE TABLE IF NOT EXISTS stores (
