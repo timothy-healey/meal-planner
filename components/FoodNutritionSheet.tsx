@@ -15,6 +15,7 @@ import type { FoodNutritionData } from "../hooks/useFoodNutrition";
 import { parseAmount } from "../lib/parseAmount";
 import type { FoodNutritionRow } from "../types/db";
 import { AppText } from "./ui/AppText";
+import { PriceHistoryChart } from "./PriceHistoryChart";
 
 type Basis = "per_100g" | "per_100mL" | "per_unit";
 
@@ -246,6 +247,15 @@ export function FoodNutritionSheet({
             </View>
 
             <View style={{ height: spacing[3] }} />
+
+            {existingEntry?.brand && existingEntry?.product_name && (
+              <PriceHistoryChart
+                brand={existingEntry.brand}
+                productName={existingEntry.product_name}
+              />
+            )}
+
+            <View style={{ height: spacing[4] }} />
           </ScrollView>
 
           <TouchableOpacity
