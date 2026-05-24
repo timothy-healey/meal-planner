@@ -332,7 +332,7 @@ export function ReviewItemSheet({
             </View>
 
             {brand.trim() && productName.trim() && (
-              <View style={{ marginTop: spacing[4], marginHorizontal: -spacing[5] }}>
+              <View style={{ marginTop: spacing[4], marginHorizontal: -spacing[4] }}>
                 <PriceHistoryChart
                   brand={brand.trim()}
                   productName={productName.trim()}
