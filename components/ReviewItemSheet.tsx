@@ -45,10 +45,12 @@ function formatDate(iso: string): string {
 interface Props {
   visible: boolean;
   item: ShoppingItemRow | null;
-  store: string;
+  store: string;          // chain
+  branch: string;         // may be ''
   latestRecord: PurchaseHistoryRow | null;
+  pendingRow: PurchaseHistoryRow | null;
   pendingScan: ScanResult | null;
-  onSave: (data: AddPurchaseData) => void;
+  onSave: (data: AddPurchaseData, pendingRowId: string | null) => void;
   onClose: () => void;
   onPendingScanConsumed: () => void;
 }
@@ -57,7 +59,9 @@ export function ReviewItemSheet({
   visible,
   item,
   store,
+  branch,
   latestRecord,
+  pendingRow,
   pendingScan,
   onSave,
   onClose,
@@ -79,16 +83,15 @@ export function ReviewItemSheet({
   useEffect(() => {
     if (!visible) return;
     setUnitPickerOpen(false);
-    if (latestRecord) {
-      setBrand(latestRecord.brand ?? "");
-      setProductName(latestRecord.product_name ?? "");
-      setQtyAmount(
-        latestRecord.qty_amount != null ? String(latestRecord.qty_amount) : "",
-      );
-      setQtyUnit(latestRecord.qty_unit ?? "g");
-      setPrice(latestRecord.price != null ? String(latestRecord.price) : "");
-      setIsSale(false);
-      setBarcode(latestRecord.barcode ?? "");
+    const source = pendingRow ?? latestRecord;
+    if (source) {
+      setBrand(source.brand ?? "");
+      setProductName(source.product_name ?? "");
+      setQtyAmount(source.qty_amount != null ? String(source.qty_amount) : "");
+      setQtyUnit(source.qty_unit ?? "g");
+      setPrice(source.price != null ? String(source.price) : "");
+      setIsSale(pendingRow ? source.is_sale === 1 : false);
+      setBarcode(source.barcode ?? "");
     } else {
       setBrand("");
       setProductName("");
@@ -98,7 +101,7 @@ export function ReviewItemSheet({
       setIsSale(false);
       setBarcode("");
     }
-  }, [visible, latestRecord]);
+  }, [visible, latestRecord, pendingRow]);
 
   useEffect(() => {
     if (!pendingScan) return;
@@ -123,19 +126,23 @@ export function ReviewItemSheet({
 
   function handleSave() {
     if (!item) return;
-    onSave({
-      plan_id: item.plan_id,
-      item_name: item.name,
-      store,
-      brand: brand.trim() || null,
-      product_name: productName.trim() || null,
-      qty_amount: qtyAmount ? parseFloat(qtyAmount) : null,
-      qty_unit: qtyUnit,
-      price: price ? parseFloat(price) : null,
-      is_sale: isSale ? 1 : 0,
-      barcode: barcode.trim() || null,
-      purchased_at: new Date().toISOString(),
-    });
+    onSave(
+      {
+        plan_id: item.plan_id,
+        item_name: item.name,
+        store,
+        branch,
+        brand: brand.trim() || null,
+        product_name: productName.trim() || null,
+        qty_amount: qtyAmount ? parseFloat(qtyAmount) : null,
+        qty_unit: qtyUnit,
+        price: price ? parseFloat(price) : null,
+        is_sale: isSale ? 1 : 0,
+        barcode: barcode.trim() || null,
+        purchased_at: pendingRow?.purchased_at ?? new Date().toISOString(),
+      },
+      pendingRow?.id ?? null,
+    );
   }
 
   if (!item) return null;
@@ -171,7 +178,7 @@ export function ReviewItemSheet({
             {item.name}
           </AppText>
 
-          {hasPrefill && latestRecord && (
+          {!pendingRow && hasPrefill && latestRecord && (
             <View style={styles.prefillBadge}>
               <AppText weight="semibold" size="sm" color="textSecondary">
                 {`↩ Last bought ${formatDate(latestRecord.purchased_at)}${latestRecord.price != null ? ` · ${formatPrice(latestRecord.price)}` : ""}`}
