@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppText } from './ui/AppText';
 import { Divider } from './ui/Divider';
 import { colors, spacing } from '../constants/tokens';
+import * as Haptics from 'expo-haptics';
 import type { Ingredient } from '../meal_plan.types';
 
 interface MacroContribution {
@@ -62,7 +63,7 @@ export function IngredientRow({ ingredient, nutrition, onPress }: Props) {
   if (onPress) {
     return (
       <TouchableOpacity
-        onPress={onPress}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={ingredient.item}
