@@ -63,8 +63,8 @@ export function SwipeableShoppingItem({ item, onToggle, onDelete, onEdit }: Prop
       rightThreshold={60}
       renderRightActions={() => (
         <>
-          <EditAction onEdit={handleEdit} />
           <DeleteAction onDelete={handleDelete} />
+          <EditAction onEdit={handleEdit} />
         </>
       )}
       overshootRight={false}
