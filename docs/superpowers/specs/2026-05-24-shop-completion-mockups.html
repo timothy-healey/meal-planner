@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Shop completion — visual reference</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #ececdc;
+    margin: 0;
+    padding: 40px 20px;
+    color: #1C453C;
+  }
+  h1 { text-align: center; margin-bottom: 8px; }
+  .sub { text-align: center; color: #666; margin-bottom: 32px; font-size: 14px; }
+  .section-title {
+    text-align: center; margin-top: 48px; margin-bottom: 16px;
+    font-size: 18px; font-weight: 800; color: #1C453C;
+  }
+  .pair {
+    display: flex; gap: 32px; justify-content: center; align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .frame {
+    padding: 18px; background: #f0f0e8; border-radius: 12px;
+    display: flex; justify-content: center;
+  }
+  .phone {
+    width: 320px; height: 660px; border-radius: 32px;
+    background: #F4F5EB; border: 10px solid #1C2520;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+    overflow: hidden; position: relative;
+  }
+  .notes {
+    max-width: 320px; font-size: 13px; line-height: 1.55; color: #333;
+  }
+  .notes h4 { margin: 8px 0 4px; color: #1C453C; }
+  .notes code { background: #fbfbf2; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .notes ul { padding-left: 18px; margin: 4px 0 12px; }
+
+  /* ---- Shop header ---- */
+  .header-green {
+    background: #1C453C; color: #F4F5EB;
+    padding: 36px 18px 14px 18px;
+  }
+  .header-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .header-title-text { font-size: 24px; font-weight: 800; }
+  .right-cluster { display: flex; align-items: center; gap: 10px; }
+  .mode-pill {
+    background: rgba(0,0,0,0.22); border-radius: 999px; padding: 2px; display: flex; gap: 2px;
+  }
+  .mode-opt { padding: 4px 10px; font-size: 10px; font-weight: 700; color: #c4d5d0; border-radius: 999px; }
+  .mode-opt.active { background: #F4F5EB; color: #1C453C; }
+  .reorder { color: #F4F5EB; font-size: 18px; opacity: 0.85; }
+  .week-row { font-size: 10px; color: #c4d5d0; font-weight: 600; margin-bottom: 12px; }
+  .complete-btn {
+    background: #E87B3A; color: white; padding: 11px 16px;
+    border-radius: 999px; font-size: 13px; font-weight: 800;
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; box-sizing: border-box;
+  }
+
+  /* shop list body */
+  .body {
+    padding: 14px 18px 80px 18px;
+    height: calc(100% - 145px);
+    overflow: hidden;
+  }
+  .cat-label {
+    font-size: 9px; font-weight: 800; color: #744234;
+    letter-spacing: 1.2px; margin: 14px 0 8px; text-transform: uppercase;
+  }
+  .row {
+    display: flex; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid #e9eadc;
+  }
+  .check {
+    width: 19px; height: 19px; border-radius: 4px;
+    border: 1.5px solid #ced0c1; margin-right: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .check.on { background: #1C453C; border-color: #1C453C; color: #F4F5EB; font-size: 12px; }
+  .item-name { flex: 1; font-size: 13px; color: #1C453C; font-weight: 600; }
+  .item-name.struck { color: #898970; text-decoration: line-through; }
+  .price { font-size: 12px; color: #E87B3A; font-weight: 700; }
+  .basket-header {
+    font-size: 10px; font-weight: 800; color: #744234;
+    letter-spacing: 1.2px; margin: 20px 0 6px;
+  }
+  .fab-add {
+    position: absolute; right: 18px; bottom: 22px;
+    width: 56px; height: 56px; border-radius: 999px;
+    background: #E87B3A; color: white; font-size: 30px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+
+  /* ---- Receipt modal ---- */
+  .modal-header {
+    background: #1C453C; color: #F4F5EB;
+    padding: 36px 18px 16px 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .modal-header .close { font-size: 26px; line-height: 1; color: #F4F5EB; opacity: 0.95; }
+  .modal-header .title { font-size: 20px; font-weight: 800; flex: 1; }
+  .modal-header .modal-sub { font-size: 10px; color: #c4d5d0; font-weight: 600; }
+
+  .paper {
+    background: #fbfbf2;
+    padding: 22px 22px 130px;
+    height: calc(100% - 110px);
+  }
+  .store-line {
+    font-weight: 800; font-size: 18px;
+    text-align: center; letter-spacing: 1.8px;
+    color: #1C453C;
+  }
+  .branch-line {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-align: center; color: #1C453C; opacity: 0.75;
+    margin-top: 2px;
+  }
+  .date-line {
+    font-size: 10px; text-align: center;
+    color: #898970; margin-top: 6px; font-weight: 600;
+  }
+  .dashed { border-top: 1px dashed #b8b8a0; margin: 14px 0; }
+  .ritem {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; font-size: 13px; color: #1C453C;
+  }
+  .ritem .left { display: flex; flex-direction: column; gap: 2px; }
+  .ritem .name { font-weight: 700; }
+  .ritem .qty { color: #898970; font-size: 10px; font-weight: 600; }
+  .ritem .r-price {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #1C453C;
+  }
+  .item-count {
+    text-align: center; font-size: 10px;
+    color: #898970; margin-top: 6px; font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .footer {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: #fbfbf2; padding: 14px 18px 16px;
+    border-top: 1px dashed #b8b8a0;
+  }
+  .total-line {
+    display: flex; justify-content: space-between;
+    font-weight: 800; font-size: 16px; margin-bottom: 12px;
+    color: #1C453C;
+  }
+  .total-line .amount { color: #E87B3A; font-variant-numeric: tabular-nums; }
+  .confirm-btn {
+    background: #E87B3A; color: white; padding: 14px;
+    border-radius: 999px; text-align: center;
+    font-size: 14px; font-weight: 800;
+  }
+
+  .tokens {
+    max-width: 880px; margin: 48px auto 0;
+    background: white; border-radius: 12px; padding: 24px 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    font-size: 13px; line-height: 1.6;
+  }
+  .tokens h2 { margin-top: 0; font-size: 16px; }
+  .tokens table { width: 100%; border-collapse: collapse; }
+  .tokens td, .tokens th { padding: 4px 8px; border-bottom: 1px solid #eee; text-align: left; }
+  .tokens code { background: #f4f5eb; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<h1>Shop completion — visual reference</h1>
+<p class="sub">Locked designs for implementation. Match these exactly.</p>
+
+<div class="section-title">1 · Shop screen header (Review mode, ≥1 pending)</div>
+<div class="pair">
+  <div class="frame">
+    <div class="phone">
+      <div class="header-green">
+        <div class="header-title">
+          <span class="header-title-text">Shopping List</span>
+          <div class="right-cluster">
+            <div class="mode-pill">
+              <span class="mode-opt">Quick</span><span class="mode-opt active">Review</span>
+            </div>
+            <span class="reorder">⇅</span>
+          </div>
+        </div>
+        <div class="week-row">Week of 25 May · 📍 Coles</div>
+        <div class="complete-btn">
+          <span>Done shopping · 4 of 10</span>
+          <span>$42.30 ›</span>
+        </div>
+      </div>
+      <div class="body">
+        <div class="cat-label">Produce</div>
+        <div class="row"><div class="check"></div><div class="item-name">Avocado</div><div class="price">$3.50</div></div>
+        <div class="row"><div class="check"></div><div class="item-name">Spinach</div><div class="price">$4.00</div></div>
+        <div class="cat-label">Dairy</div>
+        <div class="row"><div class="check"></div><div class="item-name">Greek yoghurt</div><div class="price">$6.50</div></div>
+        <div class="row"><div class="check"></div><div class="item-name">Butter</div><div class="price">$7.00</div></div>
+        <div class="basket-header">Basket (4)</div>
+        <div class="row"><div class="check on">✓</div><div class="item-name struck">Eggs</div><div class="price">$7.20</div></div>
+        <div class="row"><div class="check on">✓</div><div class="item-name struck">Sourdough</div><div class="price">$8.50</div></div>
+      </div>
+      <div class="fab-add">+</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h4>Header rows</h4>
+    <ul>
+      <li>Title row: title · mode segment · reorder icon</li>
+      <li>Week line: <code>Week of {date} · 📍 {chain}</code> (branch suppressed)</li>
+      <li>CTA row: full-width orange button</li>
+    </ul>
+    <h4>CTA spec</h4>
+    <ul>
+      <li>Background <code>colors.orange</code> (#E87B3A), white text</li>
+      <li>Border radius <code>radius.full</code> (pill)</li>
+      <li><code>paddingVertical</code> ≈ 11dp, full width within header padding</li>
+      <li>Font: Plus Jakarta Sans extrabold, size <code>sm</code> (11dp on RN)</li>
+      <li>Layout: <code>justifyContent: 'space-between'</code> — label left, total right with chevron</li>
+      <li>Left: <code>Done shopping · {pendingCount} of {totalItems}</code></li>
+      <li>Right: <code>${pendingTotal} ›</code> (via <code>formatPrice</code>)</li>
+    </ul>
+    <h4>Removed from current header</h4>
+    <ul>
+      <li>Budget pill</li>
+      <li>Item-count pill</li>
+      <li>Progress bar</li>
+      <li>"X items left" text</li>
+    </ul>
+    <h4>Visibility</h4>
+    <ul>
+      <li>Review mode only</li>
+      <li>Only when ≥1 pending row exists for the active plan</li>
+      <li>When hidden, the CTA row collapses (no empty space)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section-title">2 · Receipt screen (modal)</div>
+<div class="pair">
+  <div class="frame">
+    <div class="phone">
+      <div class="modal-header">
+        <span class="close">×</span>
+        <div style="flex:1">
+          <div class="title">Done shopping</div>
+          <div class="modal-sub">Tap a line to edit · swipe to remove</div>
+        </div>
+      </div>
+      <div class="paper">
+        <div class="store-line">COLES</div>
+        <div class="branch-line">BONDI</div>
+        <div class="date-line">25 May 2026 · 4:32 PM</div>
+        <div class="dashed"></div>
+        <div class="ritem">
+          <div class="left"><span class="name">Avocado</span><span class="qty">×2</span></div>
+          <span class="r-price">$3.50</span>
+        </div>
+        <div class="ritem">
+          <div class="left"><span class="name">Spinach</span><span class="qty">120g · Coles brand</span></div>
+          <span class="r-price">$4.00</span>
+        </div>
+        <div class="ritem">
+          <div class="left"><span class="name">Greek yoghurt</span><span class="qty">500g · Chobani</span></div>
+          <span class="r-price">$6.50</span>
+        </div>
+        <div class="ritem">
+          <div class="left"><span class="name">Butter</span><span class="qty">250g · Western Star</span></div>
+          <span class="r-price">$7.00</span>
+        </div>
+        <div class="ritem">
+          <div class="left"><span class="name">Olive oil</span><span class="qty">500ml · Cobram Estate</span></div>
+          <span class="r-price">$12.00</span>
+        </div>
+        <div class="ritem">
+          <div class="left"><span class="name">Sourdough</span><span class="qty">450g · Bakers Delight</span></div>
+          <span class="r-price">$8.50</span>
+        </div>
+        <div class="dashed"></div>
+        <div class="item-count">— 6 items —</div>
+      </div>
+      <div class="footer">
+        <div class="total-line"><span>TOTAL</span><span class="amount">$41.50</span></div>
+        <div class="confirm-btn">Confirm</div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h4>Modal header (green)</h4>
+    <ul>
+      <li>× close button (left, white, font size 26)</li>
+      <li>Title: <code>Done shopping</code> (size 20, weight 800)</li>
+      <li>Subtitle: <code>Tap a line to edit · swipe to remove</code> (size 10, <code>colors.onGreenSubtle</code>)</li>
+    </ul>
+    <h4>Receipt body (paper)</h4>
+    <ul>
+      <li>Background <code>#fbfbf2</code> (warmer than <code>colors.cream</code>)</li>
+      <li>Padding 22dp horizontal, 22dp top, 130dp bottom (for footer clearance)</li>
+      <li>Centred chain: size 18, weight 800, <code>letterSpacing: 1.8</code></li>
+      <li>Centred branch underneath: size 11, weight 700, <code>letterSpacing: 1</code>, <code>opacity: 0.75</code></li>
+      <li><strong>Branch line hidden if empty.</strong></li>
+      <li>Date line: <code>{D MMM YYYY · HH:mm}</code>, size 10, <code>#898970</code>, weight 600, marginTop 6</li>
+      <li>Dashed divider: <code>borderTopWidth: 1, borderStyle: 'dashed', borderColor: #b8b8a0</code>, marginVertical 14</li>
+      <li>Item count footer: <code>— {N} items —</code>, centred, size 10, <code>#898970</code></li>
+    </ul>
+    <h4>Rows</h4>
+    <ul>
+      <li>Padding vertical 9dp</li>
+      <li>Name (size 13, weight 700, <code>colors.green</code>)</li>
+      <li>Subtitle (qty · brand · product, size 10, weight 600, <code>#898970</code>)</li>
+      <li>Price (size 13, weight 800, <code>fontVariant: ['tabular-nums']</code>, <code>colors.green</code>)</li>
+    </ul>
+    <h4>Footer (sticky)</h4>
+    <ul>
+      <li>Background <code>#fbfbf2</code> (continues paper)</li>
+      <li>Top: dashed border (matches body dividers)</li>
+      <li>TOTAL row: <code>TOTAL</code> label (weight 800, size 16), amount in orange tabular-nums</li>
+      <li>Confirm button: orange pill, white extrabold size 14, paddingVertical 14</li>
+    </ul>
+    <h4>Interactions</h4>
+    <ul>
+      <li>Tap row → opens <code>ReviewItemSheet</code> preloaded</li>
+      <li>Swipe left → reveals <code>Remove</code> action (red, full row height)</li>
+      <li>Close (×) → dismisses, pending rows persist</li>
+      <li>Confirm → transaction, light success haptic, dismiss</li>
+    </ul>
+  </div>
+</div>
+
+<div class="tokens">
+  <h2>Token reference</h2>
+  <table>
+    <tr><th>Role</th><th>Value</th><th>Token</th></tr>
+    <tr><td><span class="swatch" style="background:#1C453C"></span>Green</td><td>#1C453C</td><td><code>colors.green</code></td></tr>
+    <tr><td><span class="swatch" style="background:#E87B3A"></span>Orange CTA</td><td>#E87B3A</td><td><code>colors.orange</code></td></tr>
+    <tr><td><span class="swatch" style="background:#F4F5EB"></span>Cream surface</td><td>#F4F5EB</td><td><code>colors.cream</code></td></tr>
+    <tr><td><span class="swatch" style="background:#fbfbf2"></span>Receipt paper</td><td>#fbfbf2</td><td>literal (not in tokens yet — consider adding <code>colors.paper</code>)</td></tr>
+    <tr><td><span class="swatch" style="background:#b8b8a0"></span>Dashed divider</td><td>#b8b8a0</td><td>literal</td></tr>
+    <tr><td><span class="swatch" style="background:#898970"></span>Subtitle</td><td>#898970</td><td><code>colors.textTertiary</code></td></tr>
+    <tr><td><span class="swatch" style="background:#c4d5d0"></span>Modal subtitle</td><td>#c4d5d0</td><td><code>colors.onGreenSubtle</code></td></tr>
+    <tr><td>Body font</td><td>Plus Jakarta Sans</td><td><code>font.family.*</code></td></tr>
+    <tr><td>Prices</td><td><code>fontVariant: ['tabular-nums']</code></td><td>—</td></tr>
+  </table>
+
+  <h2 style="margin-top:24px">Two new colour tokens to add</h2>
+  <p>To keep tokens authoritative, add to <code>constants/tokens.ts</code>:</p>
+  <ul>
+    <li><code>colors.paper = '#fbfbf2'</code> — receipt background</li>
+    <li><code>colors.paperDivider = '#b8b8a0'</code> — dashed divider on receipt</li>
+  </ul>
+</div>
+
+</body>
+</html>
