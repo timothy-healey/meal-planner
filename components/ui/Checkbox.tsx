@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ViewStyle } from 'react-native';
-import { AppText } from './AppText';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius } from '../../constants/tokens';
 
 interface CheckboxProps {
@@ -33,7 +33,7 @@ export function Checkbox({ checked, style, testID, accessibilityLabel }: Checkbo
       ]}
     >
       {checked && (
-        <AppText weight="bold" size="2xs" color="onGreen">✓</AppText>
+        <Ionicons name="checkmark" size={13} color={colors.onGreen} />
       )}
     </View>
   );
