@@ -44,9 +44,9 @@ export type QtyUnit = 'g' | 'kg' | 'mL' | 'L' | 'units';
 
 export interface PurchaseHistoryRow {
   id: string;
-  plan_id: string;
+  plan_id: string | null;
   item_name: string;
-  store: string;
+  store_id: string | null;
   brand: string | null;
   product_name: string | null;
   qty_amount: number | null;
@@ -55,6 +55,13 @@ export interface PurchaseHistoryRow {
   is_sale: 0 | 1;
   barcode: string | null;
   purchased_at: string;
+}
+
+export interface PricePoint {
+  chain: string;
+  purchasedAt: string;
+  normalisedPrice: number;
+  isOnSale: boolean;
 }
 
 export interface StoreRow {
