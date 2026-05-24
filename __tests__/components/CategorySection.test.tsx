@@ -15,8 +15,6 @@ const makeItem = (id: string, name: string, isOneoff = 0): ShoppingItemRow => ({
   is_oneoff: isOneoff as 0 | 1,
   note: null,
   is_checked: 0,
-  actual_price: null,
-  store: null,
 });
 
 describe('CategorySection', () => {

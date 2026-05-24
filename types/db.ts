@@ -38,8 +38,23 @@ export interface ShoppingItemRow {
   is_oneoff: 0 | 1;
   note: string | null;
   is_checked: 0 | 1;
-  actual_price: number | null;
-  store: string | null;
+}
+
+export type QtyUnit = 'g' | 'kg' | 'mL' | 'L' | 'units';
+
+export interface PurchaseHistoryRow {
+  id: string;
+  plan_id: string;
+  item_name: string;
+  store: string;
+  brand: string | null;
+  product_name: string | null;
+  qty_amount: number | null;
+  qty_unit: QtyUnit | null;
+  price: number | null;
+  is_sale: 0 | 1;
+  barcode: string | null;
+  purchased_at: string;
 }
 
 export interface StoreRow {

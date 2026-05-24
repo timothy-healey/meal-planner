@@ -15,8 +15,6 @@ const ITEM: ShoppingItemRow = {
   is_oneoff: 0,
   note: null,
   is_checked: 0,
-  actual_price: null,
-  store: null,
 };
 
 const ITEM_WITH_NOTE: ShoppingItemRow = { ...ITEM, id: 'plan1_0_1', note: 'Free range' };
