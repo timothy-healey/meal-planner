@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -9,7 +9,7 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { GreenHeader } from '../../components/ui/GreenHeader';
 import { AppText } from '../../components/ui/AppText';
 import { ProgressBar } from '../../components/ui/ProgressBar';
@@ -17,9 +17,16 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CategorySection } from '../../components/CategorySection';
 import { BasketSection } from '../../components/BasketSection';
 import { AddItemSheet } from '../../components/AddItemSheet';
+import { ReviewItemSheet } from '../../components/ReviewItemSheet';
+import { StorePickerSheet } from '../../components/StorePickerSheet';
 import { usePlan } from '../../hooks/usePlan';
 import { useShoppingItems } from '../../hooks/useShoppingItems';
-import type { ShoppingItemRow } from '../../types/db';
+import { usePurchaseHistory } from '../../hooks/usePurchaseHistory';
+import { useShoppingMode } from '../../hooks/useShoppingMode';
+import { takePendingScanResult } from '../../lib/barcodeScanResult';
+import type { ShoppingItemRow, PurchaseHistoryRow } from '../../types/db';
+import type { ScanResult } from '../../lib/barcodeScanResult';
+import type { AddPurchaseData } from '../../hooks/usePurchaseHistory';
 import { useCategoryOrder } from '../../hooks/useCategoryOrder';
 import { formatWeekOf, formatPrice, formatItemCount } from '../../lib/format';
 import { colors, spacing, radius, shadow } from '../../constants/tokens';
@@ -32,8 +39,15 @@ export default function ShopScreen() {
   const { plan } = usePlan();
   const { items, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
   const { applySavedOrder } = useCategoryOrder();
+  const { addRecord, getLatestForItem } = usePurchaseHistory(plan?.row.id ?? null);
+  const { mode, activeStore, savedStores, setMode } = useShoppingMode(plan?.row.id ?? null);
+
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingItemRow | null>(null);
+  const [reviewItem, setReviewItem] = useState<ShoppingItemRow | null>(null);
+  const [reviewLatest, setReviewLatest] = useState<PurchaseHistoryRow | null>(null);
+  const [storePickerVisible, setStorePickerVisible] = useState(false);
+  const [pendingScan, setPendingScan] = useState<ScanResult | null>(null);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -46,15 +60,18 @@ export default function ShopScreen() {
     return { opacity, maxHeight, overflow: 'hidden' };
   });
 
+  // Pick up scanner result when returning from barcode-scanner route
+  useFocusEffect(useCallback(() => {
+    const result = takePendingScanResult();
+    if (result) setPendingScan(result);
+  }, []));
+
   const uncheckedItems = items.filter((i) => i.is_checked === 0);
   const checkedItems = items.filter((i) => i.is_checked === 1);
-
   const allCategories = [...new Set(items.map((i) => i.category))];
-
   const allCategoryNames = [...new Set(uncheckedItems.map((i) => i.category))];
   const isCategoryOneoff = (cat: string) =>
     uncheckedItems.some((i) => i.category === cat && i.is_oneoff === 1);
-
   const sortedNames = applySavedOrder(allCategoryNames);
   const regularCategories = sortedNames.filter((c) => !isCategoryOneoff(c));
   const oneoffCategories = sortedNames.filter((c) => isCategoryOneoff(c));
@@ -65,6 +82,40 @@ export default function ShopScreen() {
   const totalBudget = items.reduce((sum, i) => sum + i.estimated_price, 0);
   const progress = totalItems > 0 ? checkedCount / totalItems : 0;
   const itemsLeft = totalItems - checkedCount;
+
+  async function handleToggle(itemId: string) {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+    if (mode === 'review' && item.is_checked === 0) {
+      const latest = await getLatestForItem(item.name);
+      setReviewLatest(latest);
+      setReviewItem(item);
+    } else {
+      toggleItem(itemId);
+    }
+  }
+
+  async function handleReviewSave(data: AddPurchaseData) {
+    if (!reviewItem) return;
+    toggleItem(reviewItem.id);
+    await addRecord(data);
+    setReviewItem(null);
+    setReviewLatest(null);
+  }
+
+  function handleModeToggle(newMode: 'quick' | 'review') {
+    if (newMode === mode) return;
+    if (newMode === 'review') {
+      setStorePickerVisible(true);
+    } else {
+      setMode('quick');
+    }
+  }
+
+  function handleStoreConfirm(storeName: string) {
+    setStorePickerVisible(false);
+    setMode('review', storeName);
+  }
 
   if (!plan) {
     return (
@@ -82,19 +133,51 @@ export default function ShopScreen() {
         <View style={styles.headerContent}>
           <Animated.View style={[styles.titleRow, titleRowStyle, { paddingBottom: spacing[2] }]}>
             <AppText weight="extrabold" color="onGreen" size="3xl">Shopping List</AppText>
-            <TouchableOpacity
-              onPress={() => router.push('/category-order')}
-              style={styles.reorderBtn}
-              accessibilityLabel="Reorder categories"
-              accessibilityRole="button"
-            >
-              <Ionicons name="swap-vertical-outline" size={22} color={colors.onGreen} />
-            </TouchableOpacity>
+            <View style={styles.titleRowRight}>
+              {/* Mode toggle pill */}
+              <View style={styles.modeSeg}>
+                <TouchableOpacity
+                  style={[styles.segOpt, mode === 'quick' && styles.segOptActive]}
+                  onPress={() => handleModeToggle('quick')}
+                  activeOpacity={0.8}
+                >
+                  <AppText weight="bold" size="2xs" color={mode === 'quick' ? 'green' : 'onGreenSubtle'}>
+                    Quick
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.segOpt, mode === 'review' && styles.segOptActive]}
+                  onPress={() => handleModeToggle('review')}
+                  activeOpacity={0.8}
+                >
+                  <AppText weight="bold" size="2xs" color={mode === 'review' ? 'green' : 'onGreenSubtle'}>
+                    Review
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push('/category-order')}
+                style={styles.reorderBtn}
+                accessibilityLabel="Reorder categories"
+                accessibilityRole="button"
+              >
+                <Ionicons name="swap-vertical-outline" size={22} color={colors.onGreen} />
+              </TouchableOpacity>
+            </View>
           </Animated.View>
 
-          <AppText weight="semibold" color="onGreenSubtle" size="xs">
-            Week of {formatWeekOf(plan.row.week_starting)}
-          </AppText>
+          {/* Week label + store pill */}
+          <View style={styles.weekStoreRow}>
+            <AppText weight="semibold" color="onGreenSubtle" size="xs">
+              Week of {formatWeekOf(plan.row.week_starting)}
+            </AppText>
+            {mode === 'review' && activeStore && (
+              <View style={styles.storePill}>
+                <Ionicons name="location-outline" size={10} color={colors.onGreenSubtle} />
+                <AppText weight="bold" size="2xs" color="onGreenSubtle">{activeStore}</AppText>
+              </View>
+            )}
+          </View>
 
           <View style={styles.pillsRow}>
             <View style={styles.pill}>
@@ -132,7 +215,7 @@ export default function ShopScreen() {
               category={cat}
               items={catItems}
               isOneoff={isCategoryOneoff(cat)}
-              onToggle={toggleItem}
+              onToggle={handleToggle}
               onDelete={deleteItem}
               onEdit={setEditingItem}
             />
@@ -142,7 +225,7 @@ export default function ShopScreen() {
         {checkedItems.length > 0 && (
           <BasketSection
             items={checkedItems}
-            onToggle={toggleItem}
+            onToggle={handleToggle}
             onDelete={deleteItem}
             onEdit={setEditingItem}
           />
@@ -173,66 +256,57 @@ export default function ShopScreen() {
         }}
         initialItem={editingItem ?? undefined}
       />
+
+      <ReviewItemSheet
+        visible={reviewItem !== null}
+        item={reviewItem}
+        store={activeStore ?? ''}
+        latestRecord={reviewLatest}
+        pendingScan={pendingScan}
+        onSave={handleReviewSave}
+        onClose={() => { setReviewItem(null); setReviewLatest(null); }}
+        onPendingScanConsumed={() => setPendingScan(null)}
+      />
+
+      <StorePickerSheet
+        visible={storePickerVisible}
+        stores={savedStores}
+        onConfirm={handleStoreConfirm}
+        onClose={() => setStorePickerVisible(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.cream,
+  container: { flex: 1, backgroundColor: colors.cream },
+  outerEmpty: { flex: 1, backgroundColor: colors.green },
+  emptyContainer: { flex: 1, backgroundColor: colors.cream },
+  headerContent: { paddingBottom: spacing[1], gap: spacing[1] },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  titleRowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  modeSeg: {
+    flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.22)',
+    borderRadius: radius.full, padding: 2, gap: 2,
   },
-  outerEmpty: {
-    flex: 1,
-    backgroundColor: colors.green,
+  segOpt: { borderRadius: radius.full, paddingHorizontal: spacing[2], paddingVertical: spacing[1] },
+  segOptActive: { backgroundColor: colors.onGreen },
+  reorderBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  weekStoreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  storePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.22)', borderRadius: radius.full,
+    paddingHorizontal: spacing[2], paddingVertical: spacing[1],
   },
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: colors.cream,
-  },
-  headerContent: {
-    paddingBottom: spacing[1],
-    gap: spacing[1],
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reorderBtn: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pillsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing[2],
-  },
-  pill: {
-    backgroundColor: colors.headerPill,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
-    borderRadius: 9999,
-  },
+  pillsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[2] },
+  pill: { backgroundColor: colors.headerPill, paddingHorizontal: spacing[3], paddingVertical: spacing[1], borderRadius: 9999 },
   itemsLeft: {},
-  body: {
-    flex: 1,
-  },
-  bodyContent: {
-    paddingBottom: 100,
-  },
+  body: { flex: 1 },
+  bodyContent: { paddingBottom: 100 },
   fab: {
-    position: 'absolute',
-    bottom: spacing[6],
-    right: spacing[5],
-    width: 60,
-    height: 60,
-    borderRadius: radius.full,
-    backgroundColor: colors.orange,
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute', bottom: spacing[6], right: spacing[5],
+    width: 60, height: 60, borderRadius: radius.full,
+    backgroundColor: colors.orange, justifyContent: 'center', alignItems: 'center',
     ...shadow.pill,
   },
 });
