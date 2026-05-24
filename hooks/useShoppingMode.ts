@@ -17,6 +17,20 @@ interface PersistedModeState {
   store: StoreLocation | null;
 }
 
+// Legacy on-disk shape (before chain/branch split) stored `store` as a string.
+interface LegacyPersistedModeState {
+  mode: ShoppingMode;
+  store: string | null;
+}
+
+function migrateModeState(raw: PersistedModeState | LegacyPersistedModeState): PersistedModeState {
+  if (raw.store == null) return { mode: raw.mode, store: null };
+  if (typeof raw.store === 'string') {
+    return { mode: raw.mode, store: { chain: raw.store, branch: '' } };
+  }
+  return { mode: raw.mode, store: raw.store };
+}
+
 interface LegacyOrCurrentSavedStore {
   name?: string;        // legacy
   chain?: string;
@@ -54,9 +68,13 @@ export function useShoppingMode(planId: string | null) {
         AsyncStorage.getItem(STORES_KEY),
       ]);
       if (modeRaw) {
-        const parsed: PersistedModeState = JSON.parse(modeRaw);
+        const parsed = migrateModeState(JSON.parse(modeRaw));
         setModeState(parsed.mode);
         setActiveStore(parsed.store);
+        // Rewrite migrated shape so subsequent reads are clean.
+        if (planId) {
+          await AsyncStorage.setItem(modeKey(planId), JSON.stringify(parsed));
+        }
       }
       if (storesRaw) {
         const raw: LegacyOrCurrentSavedStore[] = JSON.parse(storesRaw);

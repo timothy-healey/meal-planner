@@ -72,4 +72,15 @@ describe('useShoppingMode', () => {
       expect.objectContaining({ chain: 'Coles Bondi', branch: '' }),
     );
   });
+
+  it('migrates legacy persisted activeStore string into { chain, branch }', async () => {
+    await AsyncStorage.setItem(
+      'shopping_mode_plan-1',
+      JSON.stringify({ mode: 'review', store: 'Coles Bondi' }),
+    );
+    const { result } = renderHook(() => useShoppingMode('plan-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.mode).toBe('review');
+    expect(result.current.activeStore).toEqual({ chain: 'Coles Bondi', branch: '' });
+  });
 });
