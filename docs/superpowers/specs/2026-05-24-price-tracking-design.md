@@ -14,7 +14,7 @@ Display a normalised price history chart at the bottom of the brand + food detai
 
 2. **Add `store_id` FK to `purchase_history`** — replace the free-text `store TEXT` column with `store_id INTEGER REFERENCES stores(id)`. Migration: for each existing row, match `store` text to `stores.chain` (case-insensitive); create a new `stores` row if no match exists. Then drop the old `store` column.
 
-3. **Add `is_purchase` flag to `purchase_history`** — `is_purchase INTEGER NOT NULL DEFAULT 1`. When `1` the row is an actual purchase; when `0` it is a manual price observation (logged via "Add price" without buying).
+3. No `is_purchase` flag needed — all rows in `purchase_history` are purchases, including those backfilled from receipts via the "Add price" sheet.
 
 ### Normalised price
 
@@ -36,7 +36,6 @@ interface PricePoint {
   purchasedAt: string;   // ISO date string
   normalisedPrice: number; // ¢ per 100g/mL, or total price in ¢ for unit items
   isOnSale: boolean;
-  isPurchase: boolean;   // false = manual price observation
 }
 
 function usePriceHistory(brand: string, productName: string): PricePoint[]
@@ -65,7 +64,7 @@ Query: `SELECT ph.*, s.chain FROM purchase_history ph JOIN stores s ON ph.store_
 │                                         │
 │  Best value now        Woolworths 37¢/100g │  ← summary strip
 │                                         │
-│  ● Woolworths  ● Coles  ● ALDI  ◎ Sale  ○ Price check │  ← legend
+│  ● Woolworths  ● Coles  ● ALDI  ◎ Sale              │  ← legend
 └─────────────────────────────────────────┘
 ```
 
@@ -108,7 +107,7 @@ Derived from the brand palette — not arbitrary. Assign in chain-name sort orde
 - **Y axis**: bottom = 20¢, top = max observed price rounded up to next 10¢ tick. Always at least 5 ticks.
 - **X axis**: month labels (`MMM`), spaced evenly across the selected time range.
 - **Line**: 2px stroke, `round` line join and cap.
-- **Dot**: 3.5px radius filled circle (same colour as line). `isPurchase = false` → hollow dot (white fill, 2px coloured stroke).
+- **Dot**: 3.5px radius filled circle (same colour as line).
 - **Sparse line**: fewer than 3 data points for a chain → dashed line (`strokeDasharray="5,3"`), reduced opacity (0.8).
 - **Sale dot**: rendered at its actual normalised price on the Y axis (lower = cheaper = correct). Two dashed arms connect it to the adjacent regular-price dots on either side — drawn as separate `<line>` elements with `strokeDasharray="3,2"`. The sale dot itself gets the orange ring.
 - **No tooltip or annotation on the chart** — the ring is the only sale indicator; no labels or badges overlaid on data points.
@@ -148,11 +147,9 @@ When `usePriceHistory` returns an empty array, render a plain text message insid
 | Price | Numeric input | — | Required |
 | Qty | Text input | Last used qty for this product, else `1 kg` | e.g. `500 g`, `2 L`, `1 unit` |
 | Date | Date picker | Today | Editable — allows historical backfill |
-| Sale price | Toggle | Off | Sets `is_sale = 1` on the saved row. Does not affect `is_purchase` — that is always `0` for rows from this sheet. |
+| Sale price | Toggle | Off | Sets `is_sale = 1` on the saved row. |
 
-`is_purchase = 0` is always set on rows created via this sheet (they are price observations, not purchases).
-
-**Save behaviour:** inserts into `purchase_history` with `is_purchase = 0`, then dismisses the sheet and refreshes the chart.
+**Save behaviour:** inserts into `purchase_history` as a regular purchase row, then dismisses the sheet and refreshes the chart.
 
 **Sheet style:** matches existing `ReviewItemSheet` — bottom sheet, `radius.lg` top corners, `colors.card` background, drag handle, `font.size.xl` title, green pill save button.
 
