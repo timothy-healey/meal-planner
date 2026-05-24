@@ -10,9 +10,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { GreenHeader } from '../../components/ui/GreenHeader';
 import { AppText } from '../../components/ui/AppText';
-import { ProgressBar } from '../../components/ui/ProgressBar';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ShopSkeleton } from '../../components/ui/ShopSkeleton';
 import { CategorySection } from '../../components/CategorySection';
@@ -29,7 +29,7 @@ import type { ShoppingItemRow, PurchaseHistoryRow } from '../../types/db';
 import type { ScanResult } from '../../lib/barcodeScanResult';
 import type { AddPurchaseData } from '../../hooks/usePurchaseHistory';
 import { useCategoryOrder } from '../../hooks/useCategoryOrder';
-import { formatWeekOf, formatPrice, formatItemCount } from '../../lib/format';
+import { formatWeekOf, formatPrice } from '../../lib/format';
 import { colors, spacing, radius, shadow } from '../../constants/tokens';
 
 const TITLE_COLLAPSE_START = 10;
@@ -38,10 +38,11 @@ const TITLE_COLLAPSE_END = 55;
 export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { plan, loading: planLoading } = usePlan();
-  const { items, loading: itemsLoading, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
+  const planId = plan?.row.id ?? null;
+  const { items, loading: itemsLoading, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(planId);
   const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
-  const { addRecord, getLatestForItem } = usePurchaseHistory(plan?.row.id ?? null);
-  const { mode, activeStore, savedStores, setMode } = useShoppingMode(plan?.row.id ?? null);
+  const { pendingRecords, addRecord, deletePending, getLatestForItem } = usePurchaseHistory(planId);
+  const { mode, activeStore, savedStores, setMode } = useShoppingMode(planId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingItemRow | null>(null);
@@ -74,38 +75,33 @@ export default function ShopScreen() {
     allCategories,
     orderedCategories,
     oneoffCategorySet,
-    totalItems,
-    checkedCount,
-    totalBudget,
-    progress,
-    itemsLeft,
   } = useMemo(() => {
     const unchecked = items.filter((i) => i.is_checked === 0);
     const checked = items.filter((i) => i.is_checked === 1);
     const allCats = [...new Set(items.map((i) => i.category))];
     const uncheckedCatNames = [...new Set(unchecked.map((i) => i.category))];
     const oneoffCats = new Set(
-      unchecked.filter((i) => i.is_oneoff === 1).map((i) => i.category)
+      unchecked.filter((i) => i.is_oneoff === 1).map((i) => i.category),
     );
     const sorted = applySavedOrder(uncheckedCatNames);
     const regular = sorted.filter((c) => !oneoffCats.has(c));
     const oneoff = sorted.filter((c) => oneoffCats.has(c));
-    const total = items.length;
-    const checkedCnt = checked.length;
-    const budget = items.reduce((sum, i) => sum + i.estimated_price, 0);
     return {
       uncheckedItems: unchecked,
       checkedItems: checked,
       allCategories: allCats,
       orderedCategories: [...regular, ...oneoff],
       oneoffCategorySet: oneoffCats,
-      totalItems: total,
-      checkedCount: checkedCnt,
-      totalBudget: budget,
-      progress: total > 0 ? checkedCnt / total : 0,
-      itemsLeft: total - checkedCnt,
     };
   }, [items, applySavedOrder]);
+
+  const pendingCount = pendingRecords.length;
+  const totalItems = items.length;
+  const pendingTotal = useMemo(
+    () => pendingRecords.reduce((sum, r) => sum + (r.price ?? 0), 0),
+    [pendingRecords],
+  );
+  const showCompleteCta = mode === 'review' && pendingCount > 0;
 
   async function handleToggle(itemId: string) {
     const item = items.find((i) => i.id === itemId);
@@ -114,15 +110,20 @@ export default function ShopScreen() {
       const latest = await getLatestForItem(item.name);
       setReviewLatest(latest);
       setReviewItem(item);
-    } else {
-      toggleItem(itemId);
+      return;
     }
+    // Uncheck in Review mode also deletes the corresponding pending purchase row
+    // so it doesn't persist as an orphan.
+    if (mode === 'review' && item.is_checked === 1 && planId) {
+      await deletePending(planId, item.name);
+    }
+    toggleItem(itemId);
   }
 
   async function handleReviewSave(data: AddPurchaseData) {
     if (!reviewItem) return;
     toggleItem(reviewItem.id);
-    await addRecord(data);
+    await addRecord(data, 'pending');
     setReviewItem(null);
     setReviewLatest(null);
   }
@@ -136,9 +137,9 @@ export default function ShopScreen() {
     }
   }
 
-  function handleStoreConfirm(storeName: string) {
+  function handleStoreConfirm(store: { chain: string; branch: string }) {
     setStorePickerVisible(false);
-    setMode('review', storeName);
+    setMode('review', store);
   }
 
   if (planLoading || itemsLoading) {
@@ -162,7 +163,6 @@ export default function ShopScreen() {
           <Animated.View style={[styles.titleRow, titleRowStyle, { paddingBottom: spacing[2] }]}>
             <AppText weight="extrabold" color="onGreen" size="3xl">Shopping List</AppText>
             <View style={styles.titleRowRight}>
-              {/* Mode toggle pill */}
               <View style={styles.modeSeg}>
                 <TouchableOpacity
                   style={[styles.segOpt, mode === 'quick' && styles.segOptActive]}
@@ -194,37 +194,32 @@ export default function ShopScreen() {
             </View>
           </Animated.View>
 
-          {/* Week label + store pill */}
           <View style={styles.weekStoreRow}>
             <AppText weight="semibold" color="onGreenSubtle" size="xs">
               Week of {formatWeekOf(plan.row.week_starting)}
+              {mode === 'review' && activeStore ? `  ·  📍 ${activeStore.chain}` : ''}
             </AppText>
-            {mode === 'review' && activeStore && (
-              <View style={styles.storePill}>
-                <Ionicons name="location-outline" size={10} color={colors.onGreenSubtle} />
-                <AppText weight="bold" size="2xs" color="onGreenSubtle">{activeStore}</AppText>
-              </View>
-            )}
           </View>
 
-          <View style={styles.pillsRow}>
-            <View style={styles.pill}>
-              <AppText weight="bold" color="onGreen" size="2xs">
-                Budget {formatPrice(totalBudget)}
+          {showCompleteCta && (
+            <TouchableOpacity
+              style={styles.completeCta}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/shop-receipt');
+              }}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Done shopping — review receipt"
+            >
+              <AppText weight="extrabold" size="sm" color="onGreen">
+                {`Done shopping · ${pendingCount} of ${totalItems}`}
               </AppText>
-            </View>
-            <View style={styles.pill}>
-              <AppText weight="bold" color="onGreen" size="2xs">
-                {formatItemCount(checkedCount, totalItems)}
+              <AppText weight="extrabold" size="sm" color="onGreen">
+                {`${formatPrice(pendingTotal)} ›`}
               </AppText>
-            </View>
-          </View>
-
-          <ProgressBar progress={progress} />
-
-          <AppText weight="semibold" color="onGreenSubtle" size="2xs" style={styles.itemsLeft}>
-            {itemsLeft} item{itemsLeft !== 1 ? 's' : ''} left
-          </AppText>
+            </TouchableOpacity>
+          )}
         </View>
       </GreenHeader>
 
@@ -288,8 +283,10 @@ export default function ShopScreen() {
       <ReviewItemSheet
         visible={reviewItem !== null}
         item={reviewItem}
-        store={activeStore ?? ''}
+        store={activeStore?.chain ?? ''}
+        branch={activeStore?.branch ?? ''}
         latestRecord={reviewLatest}
+        pendingRow={null}
         pendingScan={pendingScan}
         onSave={handleReviewSave}
         onClose={() => { setReviewItem(null); setReviewLatest(null); }}
@@ -321,14 +318,14 @@ const styles = StyleSheet.create({
   segOptActive: { backgroundColor: colors.onGreen },
   reorderBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   weekStoreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  storePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.22)', borderRadius: radius.full,
-    paddingHorizontal: spacing[2], paddingVertical: spacing[1],
+  completeCta: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.orange,
+    paddingHorizontal: spacing[4],
+    paddingVertical: 11,
+    borderRadius: radius.full,
+    marginTop: spacing[1],
   },
-  pillsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[2] },
-  pill: { backgroundColor: colors.headerPill, paddingHorizontal: spacing[3], paddingVertical: spacing[1], borderRadius: 9999 },
-  itemsLeft: {},
   body: { flex: 1 },
   bodyContent: { paddingBottom: 100 },
   fab: {
