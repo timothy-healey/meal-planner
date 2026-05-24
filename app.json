@@ -26,6 +26,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.mealplanner"
     }
   }
 }

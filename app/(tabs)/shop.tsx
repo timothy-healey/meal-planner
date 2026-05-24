@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -27,6 +28,7 @@ const TITLE_COLLAPSE_START = 10;
 const TITLE_COLLAPSE_END = 55;
 
 export default function ShopScreen() {
+  const insets = useSafeAreaInsets();
   const { plan } = usePlan();
   const { items, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(plan?.row.id ?? null);
   const { applySavedOrder } = useCategoryOrder();
@@ -66,8 +68,10 @@ export default function ShopScreen() {
 
   if (!plan) {
     return (
-      <View style={styles.emptyContainer}>
-        <EmptyState onImport={() => router.push('/settings')} />
+      <View style={styles.outerEmpty}>
+        <View style={[styles.emptyContainer, { marginTop: insets.top }]}>
+          <EmptyState onImport={() => router.push('/settings')} />
+        </View>
       </View>
     );
   }
@@ -177,6 +181,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.cream,
+  },
+  outerEmpty: {
+    flex: 1,
+    backgroundColor: colors.green,
   },
   emptyContainer: {
     flex: 1,

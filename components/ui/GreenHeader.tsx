@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../../constants/tokens';
 
 interface GreenHeaderProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style?: ViewStyle;
 }
 
