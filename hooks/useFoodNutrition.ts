@@ -80,7 +80,10 @@ export function useFoodNutrition() {
     recipeId: string,
   ): Promise<Record<number, FoodNutritionRow>> => {
     const rows = await db.getAllAsync<{ ingredient_index: number } & FoodNutritionRow>(
-      `SELECT l.ingredient_index, fn.*
+      `SELECT l.ingredient_index,
+              fn.id, fn.item_name, fn.brand, fn.product_name, fn.basis,
+              fn.cal_per_basis, fn.protein_per_basis, fn.carbs_per_basis, fn.fat_per_basis,
+              fn.updated_at
        FROM ingredient_nutrition_link l
        JOIN food_nutrition fn ON fn.id = l.food_nutrition_id
        WHERE l.recipe_id = ?`,

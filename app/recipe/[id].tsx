@@ -24,7 +24,7 @@ export default function RecipeDetailScreen() {
 
   const [copied, setCopied] = useState(false);
   const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
-  const [sheetIngredient, setSheetIngredient] = useState<{ index: number; name: string } | null>(null);
+  const [sheetIngredient, setSheetIngredient] = useState<{ index: number; name: string; amount: string } | null>(null);
   const [linksKey, setLinksKey] = useState(0);
 
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function RecipeDetailScreen() {
                 key={idx}
                 ingredient={ing}
                 nutrition={rollup?.contributions[idx] ?? null}
-                onPress={() => setSheetIngredient({ index: idx, name: ing.item })}
+                onPress={() => setSheetIngredient({ index: idx, name: ing.item, amount: ing.amount })}
               />
             ))}
           </View>
@@ -172,6 +172,7 @@ export default function RecipeDetailScreen() {
       <FoodNutritionSheet
         visible={sheetIngredient !== null}
         ingredientName={sheetIngredient?.name ?? ''}
+        ingredientAmount={sheetIngredient?.amount ?? ''}
         existingEntry={sheetIngredient !== null ? (links[sheetIngredient.index] ?? null) : null}
         onSave={handleNutritionSave}
         onClose={() => setSheetIngredient(null)}
