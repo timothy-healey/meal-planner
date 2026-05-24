@@ -26,18 +26,22 @@ export function IngredientRow({ ingredient, nutrition, onPress }: Props) {
             {ingredient.item}
           </AppText>
           {nutrition ? (
-            <View style={styles.chipRow}>
-              <View style={styles.macroChip}>
+            <View
+              style={styles.chipRow}
+              accessible
+              accessibilityLabel={`${Math.round(nutrition.protein_g)}g protein, ${Math.round(nutrition.carbs_g)}g carbs, ${Math.round(nutrition.fat_g)}g fat`}
+            >
+              <View style={styles.macroChip} importantForAccessibility="no-hide-descendants">
                 <AppText weight="semibold" size="2xs" color="textSecondary">
                   P {Math.round(nutrition.protein_g)}g
                 </AppText>
               </View>
-              <View style={styles.macroChip}>
+              <View style={styles.macroChip} importantForAccessibility="no-hide-descendants">
                 <AppText weight="semibold" size="2xs" color="textSecondary">
                   C {Math.round(nutrition.carbs_g)}g
                 </AppText>
               </View>
-              <View style={styles.macroChip}>
+              <View style={styles.macroChip} importantForAccessibility="no-hide-descendants">
                 <AppText weight="semibold" size="2xs" color="textSecondary">
                   F {Math.round(nutrition.fat_g)}g
                 </AppText>
@@ -57,7 +61,13 @@ export function IngredientRow({ ingredient, nutrition, onPress }: Props) {
 
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={ingredient.item}
+        accessibilityHint={nutrition ? 'Tap to edit nutrition data' : 'Tap to add nutrition data'}
+      >
         {inner}
       </TouchableOpacity>
     );

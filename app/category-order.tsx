@@ -70,7 +70,9 @@ export default function CategoryOrderModal() {
         onLongPress={drag}
         disabled={isActive}
         style={[styles.row, isActive && styles.rowActive]}
+        accessibilityRole="button"
         accessibilityLabel={item.name}
+        accessibilityHint="Hold to drag and reorder"
       >
         <AppText weight="regular" color="textSecondary" size="xl" style={styles.handle}>
           ≡
