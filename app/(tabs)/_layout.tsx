@@ -1,5 +1,5 @@
-import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, font } from '../../constants/tokens';
 
 export default function TabLayout() {
@@ -27,7 +27,9 @@ export default function TabLayout() {
         options={{
           title: 'Plan',
           tabBarAccessibilityLabel: 'Plan',
-          tabBarIcon: () => <Text style={{ fontSize: 18 }}>📅</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -35,7 +37,9 @@ export default function TabLayout() {
         options={{
           title: 'Shop',
           tabBarAccessibilityLabel: 'Shop',
-          tabBarIcon: () => <Text style={{ fontSize: 18 }}>🛒</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'cart' : 'cart-outline'} size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -43,7 +47,9 @@ export default function TabLayout() {
         options={{
           title: 'Recipes',
           tabBarAccessibilityLabel: 'Recipes',
-          tabBarIcon: () => <Text style={{ fontSize: 18 }}>🍳</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'restaurant' : 'restaurant-outline'} size={22} color={color} />
+          ),
         }}
       />
     </Tabs>
