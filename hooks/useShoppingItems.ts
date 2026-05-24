@@ -12,7 +12,7 @@ export function useShoppingItems(planId: string | null) {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!planId) { setItems([]); setLoading(false); return; }
     const rows = await db.getAllAsync<ShoppingItemRow>(
       'SELECT * FROM shopping_items WHERE plan_id = ? ORDER BY category_order, item_order',
@@ -20,9 +20,9 @@ export function useShoppingItems(planId: string | null) {
     );
     setItems(rows.map((r) => ({ ...r, isChecked: r.is_checked === 1 })));
     setLoading(false);
-  }
+  }, [planId, db]);
 
-  useEffect(() => { load(); }, [planId]);
+  useEffect(() => { load(); }, [load]);
 
   const toggleItem = useCallback(async (itemId: string) => {
     const item = items.find((i) => i.id === itemId);
@@ -65,7 +65,7 @@ export function useShoppingItems(planId: string | null) {
        data.name, data.qty, data.estimatedPrice, data.note ?? null]
     );
     await load();
-  }, [planId, items, db]);
+  }, [planId, items, db, load]);
 
   const deleteItem = useCallback(async (itemId: string) => {
     await db.runAsync('DELETE FROM shopping_items WHERE id = ?', [itemId]);
@@ -128,5 +128,5 @@ export function useShoppingItems(planId: string | null) {
     );
   }, [items, db]);
 
-  return { items, loading, toggleItem, resetAll, addItem, updateItem, deleteItem };
+  return { items, loading, reload: load, toggleItem, resetAll, addItem, updateItem, deleteItem };
 }

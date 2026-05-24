@@ -39,7 +39,7 @@ export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { plan, loading: planLoading } = usePlan();
   const planId = plan?.row.id ?? null;
-  const { items, loading: itemsLoading, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(planId);
+  const { items, loading: itemsLoading, reload: reloadItems, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(planId);
   const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
   const { pendingRecords, addRecord, deletePending, getLatestForItem } = usePurchaseHistory(planId);
   const { mode, activeStore, savedStores, setMode } = useShoppingMode(planId);
@@ -62,12 +62,13 @@ export default function ShopScreen() {
     return { opacity, maxHeight, overflow: 'hidden' };
   });
 
-  // Pick up scanner result and refresh category order when returning to this screen
+  // Pick up scanner result and refresh items + category order when returning to this screen
   useFocusEffect(useCallback(() => {
+    reloadItems();
     reloadCategoryOrder();
     const result = takePendingScanResult();
     if (result) setPendingScan(result);
-  }, [reloadCategoryOrder]));
+  }, [reloadItems, reloadCategoryOrder]));
 
   const {
     uncheckedItems,
