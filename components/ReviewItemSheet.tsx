@@ -13,10 +13,13 @@ import {
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { colors, font, radius, spacing } from "../constants/tokens";
 import type { AddPurchaseData } from "../hooks/usePurchaseHistory";
+import { useIngredientSuggestions } from "../hooks/useIngredientSuggestions";
 import type { ScanResult } from "../lib/barcodeScanResult";
 import { formatPrice } from "../lib/format";
+import type { Suggestion } from "../lib/suggestions/types";
 import type { PurchaseHistoryRow, QtyUnit, ShoppingItemRow } from "../types/db";
 import { PriceHistoryChart } from "./PriceHistoryChart";
+import { SuggestionDropdown } from "./SuggestionDropdown";
 import { AppText } from "./ui/AppText";
 
 const QTY_UNITS: QtyUnit[] = ["g", "kg", "mL", "L", "units"];
@@ -74,6 +77,42 @@ export function ReviewItemSheet({
   const [isSale, setIsSale] = useState(false);
   const [barcode, setBarcode] = useState("");
   const [unitPickerOpen, setUnitPickerOpen] = useState(false);
+
+  const { query: querySuggestions } = useIngredientSuggestions();
+  const [brandFocused, setBrandFocused] = useState(false);
+  const [productFocused, setProductFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [dropdownHeight, setDropdownHeight] = useState(0);
+
+  const ingredientName = item?.name ?? "";
+
+  useEffect(() => {
+    if (!visible) { setSuggestions([]); return; }
+    if (!brandFocused && !productFocused) { setSuggestions([]); return; }
+    if (!ingredientName.trim()) { setSuggestions([]); return; }
+
+    let cancelled = false;
+    const field = brandFocused ? 'brand' : 'product';
+    const text = field === 'brand' ? brand : productName;
+    const brandFilter = field === 'product' ? brand : undefined;
+
+    querySuggestions({ field, text, ingredientName, brandFilter }).then(s => {
+      if (!cancelled) setSuggestions(s);
+    });
+    return () => { cancelled = true; };
+  }, [visible, brandFocused, productFocused, ingredientName, brand, productName, querySuggestions]);
+
+  function handlePickBrand(s: Suggestion) {
+    setBrand(s.brand);
+    setBrandFocused(false);
+    setSuggestions([]);
+  }
+  function handlePickProduct(s: Suggestion) {
+    if (!brand) setBrand(s.brand);
+    setProductName(s.productName ?? '');
+    setProductFocused(false);
+    setSuggestions([]);
+  }
 
   const baselinePrice =
     latestRecord && !latestRecord.is_sale ? latestRecord.price : null;
@@ -188,6 +227,11 @@ export function ReviewItemSheet({
             showsVerticalScrollIndicator={false}
             style={styles.fields}
             keyboardShouldPersistTaps="handled"
+            bottomOffset={
+              (brandFocused || productFocused) && suggestions.length > 0
+                ? dropdownHeight + spacing[3]
+                : 0
+            }
           >
             {/* Brand */}
             <FieldLabel>BRAND</FieldLabel>
@@ -197,7 +241,18 @@ export function ReviewItemSheet({
               onChangeText={setBrand}
               placeholder="e.g. Coles, Macro, Lilydale"
               placeholderTextColor={colors.textTertiary}
+              onFocus={() => { setBrandFocused(true); setProductFocused(false); }}
+              onBlur={() => setBrandFocused(false)}
             />
+            {brandFocused && (
+              <SuggestionDropdown
+                suggestions={suggestions}
+                showBrandInSecondary={false}
+                hideEmblem
+                onPick={handlePickBrand}
+                onLayoutHeight={setDropdownHeight}
+              />
+            )}
 
             {/* Product name */}
             <FieldLabel top>PRODUCT NAME</FieldLabel>
@@ -207,7 +262,18 @@ export function ReviewItemSheet({
               onChangeText={setProductName}
               placeholder="e.g. RSPCA Chicken Breast"
               placeholderTextColor={colors.textTertiary}
+              onFocus={() => { setProductFocused(true); setBrandFocused(false); }}
+              onBlur={() => setProductFocused(false)}
             />
+            {productFocused && (
+              <SuggestionDropdown
+                suggestions={suggestions}
+                showBrandInSecondary={brand.trim() === ''}
+                hideEmblem
+                onPick={handlePickProduct}
+                onLayoutHeight={setDropdownHeight}
+              />
+            )}
 
             {/* Qty + Price row */}
             <View style={styles.twoCol}>
