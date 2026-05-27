@@ -48,8 +48,7 @@ export interface PurchaseHistoryRow {
   plan_id: string | null;
   item_name: string;
   store_id: string | null;
-  brand: string | null;
-  product_name: string | null;
+  product_id: string | null;
   qty_amount: number | null;
   qty_unit: QtyUnit | null;
   price: number | null;
@@ -57,6 +56,11 @@ export interface PurchaseHistoryRow {
   barcode: string | null;
   purchased_at: string;
   status: 'pending' | 'confirmed';
+}
+
+export interface PurchaseHistoryRowWithProduct extends PurchaseHistoryRow {
+  brand: string | null;
+  product_name: string | null;
 }
 
 export interface PricePoint {
@@ -73,11 +77,11 @@ export interface StoreRow {
   created_at: string;
 }
 
-export interface FoodNutritionRow {
+export interface ProductRow {
   id: string;
+  brand: string;
+  product_name: string;
   item_name: string;
-  brand: string | null;
-  product_name: string | null;
   basis: 'per_100g' | 'per_100mL' | 'per_unit';
   cal_per_basis: number | null;
   protein_per_basis: number | null;
