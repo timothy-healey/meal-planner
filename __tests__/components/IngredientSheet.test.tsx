@@ -84,4 +84,36 @@ describe('IngredientSheet', () => {
     );
     expect(getByDisplayValue('Brown rice')).toBeTruthy();
   });
+
+  it('pre-fills the amount value and unit from initialIngredient', () => {
+    const { getByDisplayValue, getByText } = render(
+      <IngredientSheet
+        visible={true}
+        mode="edit"
+        initialIngredient={{ item: 'Honey', amount: { kind: 'measured', value: 70, unit: 'g' } }}
+        existingEntry={null}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    );
+    expect(getByDisplayValue('70')).toBeTruthy();
+    expect(getByText('grams (g)')).toBeTruthy();
+  });
+
+  it('pre-fills the custom unit when amount is custom', () => {
+    const { getByDisplayValue } = render(
+      <IngredientSheet
+        visible={true}
+        mode="edit"
+        initialIngredient={{ item: 'Garlic', amount: { kind: 'custom', value: 3, unit: 'cloves' } }}
+        existingEntry={null}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    );
+    expect(getByDisplayValue('3')).toBeTruthy();
+    expect(getByDisplayValue('cloves')).toBeTruthy();
+  });
 });
