@@ -11,7 +11,7 @@ import { IngredientSheet } from '../../components/IngredientSheet';
 import { AddIngredientRow } from '../../components/AddIngredientRow';
 import { RecipeNotesSheet } from '../../components/RecipeNotesSheet';
 import { useRecipes } from '../../hooks/useRecipes';
-import { useFoodNutrition } from '../../hooks/useFoodNutrition';
+import { useProducts } from '../../hooks/useProducts';
 import { useRecipeIngredients } from '../../hooks/useRecipeIngredients';
 import { rollupMacros } from '../../lib/rollupMacros';
 import { formatAmount } from '../../lib/amount';
@@ -19,15 +19,15 @@ import { formatCookTime } from '../../lib/format';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../constants/tokens';
 import * as Haptics from 'expo-haptics';
-import type { FoodNutritionRow } from '../../types/db';
-import type { FoodNutritionData } from '../../hooks/useFoodNutrition';
+import type { ProductRow } from '../../types/db';
+import type { ProductInput } from '../../hooks/useProducts';
 import type { Ingredient } from '../../meal_plan.types';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { recipes, updateNotes } = useRecipes();
   const recipe = recipes.find((r) => r.id === id) ?? null;
-  const { upsert, linkIngredient, getLinksForRecipe } = useFoodNutrition();
+  const { upsert, getNutritionForIngredients } = useProducts();
   const { updateIngredient, addIngredient, deleteIngredient } = useRecipeIngredients();
 
   type SheetState =
@@ -36,15 +36,14 @@ export default function RecipeDetailScreen() {
     | null;
 
   const [copied, setCopied] = useState(false);
-  const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
+  const [links, setLinks] = useState<Record<number, ProductRow>>({});
   const [sheet, setSheet] = useState<SheetState>(null);
-  const [linksKey, setLinksKey] = useState(0);
   const [notesSheetVisible, setNotesSheetVisible] = useState(false);
 
   useEffect(() => {
-    if (!recipe?.id) return;
-    getLinksForRecipe(recipe.id).then(setLinks);
-  }, [recipe?.id, linksKey, getLinksForRecipe]);
+    if (!recipe) { setLinks({}); return; }
+    getNutritionForIngredients(recipe.ingredients).then(setLinks);
+  }, [recipe?.id, recipe?.ingredients, getNutritionForIngredients]);
 
   if (!recipe) {
     return (
@@ -66,36 +65,27 @@ export default function RecipeDetailScreen() {
   async function handleSheetSave({
     ingredient,
     nutrition,
-    foodNutritionId,
   }: {
     ingredient: Ingredient;
-    nutrition: FoodNutritionData | null;
-    foodNutritionId: string | null;
+    nutrition: ProductInput | null;
   }) {
     if (!sheet) return;
-
-    if (sheet.mode === 'edit') {
-      await updateIngredient(recipe!.id, sheet.index, ingredient);
-      if (nutrition) {
-        const existingId = foodNutritionId ?? links[sheet.index]?.id;
-        const upsertedId = await upsert({ ...nutrition, id: existingId });
-        await linkIngredient(recipe!.id, sheet.index, upsertedId);
-      }
-    } else {
-      const newIndex = await addIngredient(recipe!.id, ingredient);
-      if (nutrition) {
-        const upsertedId = await upsert({ ...nutrition, id: foodNutritionId ?? undefined });
-        await linkIngredient(recipe!.id, newIndex, upsertedId);
-      }
+    let nextIngredient: Ingredient = ingredient;
+    if (nutrition) {
+      const productId = await upsert(nutrition);
+      nextIngredient = { ...ingredient, product_id: productId };
     }
-    setLinksKey(k => k + 1);
+    if (sheet.mode === 'edit') {
+      await updateIngredient(recipe!.id, sheet.index, nextIngredient);
+    } else {
+      await addIngredient(recipe!.id, nextIngredient);
+    }
     setSheet(null);
   }
 
   async function handleSheetDelete() {
     if (sheet?.mode !== 'edit') return;
     await deleteIngredient(recipe!.id, sheet.index);
-    setLinksKey(k => k + 1);
     setSheet(null);
   }
 

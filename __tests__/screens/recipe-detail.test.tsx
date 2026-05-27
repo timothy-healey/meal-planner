@@ -2,7 +2,8 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 const mockUpdateNotes = jest.fn().mockResolvedValue(undefined);
-const mockGetLinksForRecipe = jest.fn().mockResolvedValue({});
+const mockGetNutritionForIngredients = jest.fn().mockResolvedValue({});
+const mockUpsert = jest.fn().mockResolvedValue('new-product-id');
 
 const mockRecipeBase = {
   id: 'r1',
@@ -33,11 +34,12 @@ jest.mock('../../hooks/useRecipes', () => ({
   }),
 }));
 
-jest.mock('../../hooks/useFoodNutrition', () => ({
-  useFoodNutrition: () => ({
-    upsert: jest.fn(),
-    linkIngredient: jest.fn(),
-    getLinksForRecipe: mockGetLinksForRecipe,
+jest.mock('../../hooks/useProducts', () => ({
+  useProducts: () => ({
+    upsert: mockUpsert,
+    getById: jest.fn().mockResolvedValue(null),
+    getByKey: jest.fn().mockResolvedValue(null),
+    getNutritionForIngredients: mockGetNutritionForIngredients,
   }),
 }));
 
@@ -144,19 +146,19 @@ import { act } from '@testing-library/react-native';
 // (c) the second render has flushed. After this, rollup reflects the configured
 // links and handleCopy will read the post-link state.
 async function flushLinks() {
-  await waitFor(() => expect(mockGetLinksForRecipe).toHaveBeenCalled());
+  await waitFor(() => expect(mockGetNutritionForIngredients).toHaveBeenCalled());
   await act(async () => { await Promise.resolve(); });
 }
 
 describe('RecipeDetailScreen — copy recipe', () => {
   beforeEach(() => {
     (Clipboard.setStringAsync as jest.Mock).mockClear();
-    mockGetLinksForRecipe.mockReset().mockResolvedValue({});
+    mockGetNutritionForIngredients.mockReset().mockResolvedValue({});
     setNotes(null);
   });
 
   it('produces the legacy 2-macro line when no nutrition links exist', async () => {
-    mockGetLinksForRecipe.mockResolvedValue({});
+    mockGetNutritionForIngredients.mockResolvedValue({});
     const { getByLabelText } = render(<RecipeDetailScreen />);
     await flushLinks();
     fireEvent.press(getByLabelText('Copy recipe to clipboard'));
@@ -167,9 +169,9 @@ describe('RecipeDetailScreen — copy recipe', () => {
   });
 
   it('produces all four macros when rollup is available', async () => {
-    mockGetLinksForRecipe.mockResolvedValue({
+    mockGetNutritionForIngredients.mockResolvedValue({
       0: {
-        id: 'fn1', item_name: 'Chicken', brand: null, product_name: null,
+        id: 'fn1', brand: '', product_name: 'Chicken', item_name: 'Chicken',
         basis: 'per_100g',
         cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
         updated_at: '2026-05-24',
@@ -194,9 +196,9 @@ describe('RecipeDetailScreen — copy recipe', () => {
         { item: 'Broccoli', amount: { kind: 'measured', value: 300, unit: 'g' } },
       ],
     }];
-    mockGetLinksForRecipe.mockResolvedValue({
+    mockGetNutritionForIngredients.mockResolvedValue({
       0: {
-        id: 'fn1', item_name: 'Chicken', brand: null, product_name: null,
+        id: 'fn1', brand: '', product_name: 'Chicken', item_name: 'Chicken',
         basis: 'per_100g',
         cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
         updated_at: '2026-05-24',
