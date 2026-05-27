@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.1",
+      "const": "1.2",
       "description": "Schema version. Must match for app compatibility."
     },
     "meta": {
@@ -295,8 +295,38 @@
                   "type": "string"
                 },
                 "amount": {
-                  "type": "string",
-                  "description": "Metric units only: g/kg for weight, mL/L for volume. Unit counts (e.g. '1 head', '3', '5 scoops') are fine. Never use cups, tbsp, tsp, oz, or lb."
+                  "description": "Structured amount. Use `measured` for canonical metric units, `custom` for cooking-speak units (cloves, slices, cans), `note` for unmeasured (to taste, a pinch).",
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": ["kind", "value", "unit"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind":  { "const": "measured" },
+                        "value": { "type": "number", "exclusiveMinimum": 0 },
+                        "unit":  { "enum": ["g", "kg", "mL", "L", "unit"] }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": ["kind", "value", "unit"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind":  { "const": "custom" },
+                        "value": { "type": "number", "exclusiveMinimum": 0 },
+                        "unit":  { "type": "string", "minLength": 1 }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": ["kind", "text"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": { "const": "note" },
+                        "text": { "type": "string", "minLength": 1 }
+                      }
+                    }
+                  ]
                 }
               }
             }

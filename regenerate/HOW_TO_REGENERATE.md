@@ -31,7 +31,11 @@ Constraints:
   special meaningfully changes the math on a high-cost item)
 - Budget: ~$140 AUD/week for groceries including some household items
 - Region: Adelaide, South Australia
-- Units: metric only — use g/kg for weight, mL/L for volume. Never use cups, tbsp, tsp, oz, or lb. Unit counts (e.g. "1 head", "3", "5 scoops") are fine for things that can't be weighed or measured by volume.
+- Units: every `ingredients[*].amount` is an object, one of three kinds:
+  - `{ "kind": "measured", "value": number, "unit": "g" | "kg" | "mL" | "L" | "unit" }` for canonical metric or count amounts
+  - `{ "kind": "custom", "value": number, "unit": string }` for cooking-speak units like "cloves", "slices", "cans"
+  - `{ "kind": "note", "text": string }` for unmeasured items like "to taste" or "a pinch"
+  Never use cups, tbsp, tsp, oz, or lb — convert to metric (g or mL) before emitting.
 
 Before you build:
 1. Search the web for current Woolworths and Coles weekly specials so prices are realistic.
@@ -93,11 +97,21 @@ The app lets Tim reorder shopping categories to match his store's aisle layout. 
 
 ## Schema version
 
-The current schema is **v1.1**. Key changes from v1.0:
-- `method: string` → replaced by `method_steps: string[]` on every recipe.
-  The app renders these as a numbered list. Always use `method_steps`.
-- `method` is still accepted by the app for old v1.0 imports (backward compat),
-  but new plans must not use it.
+The current schema is **v1.2**. Key changes from v1.1:
+- `ingredients[*].amount: string` → replaced by a tagged union object (`measured` | `custom` | `note`).
+  See the Units bullet above for the three valid shapes and examples below.
+- v1.1 string amounts are still accepted by the app's import path for backward compatibility — they are
+  parsed into the new structure on import. New plans must emit the structured shape.
+
+Examples:
+- `{ "item": "Beef chuck, cubed", "amount": { "kind": "measured", "value": 900, "unit": "g" } }`
+- `{ "item": "Olive oil",         "amount": { "kind": "measured", "value": 60, "unit": "mL" } }`
+- `{ "item": "Garlic",            "amount": { "kind": "custom", "value": 3, "unit": "cloves" } }`
+- `{ "item": "Salt",              "amount": { "kind": "note", "text": "to taste" } }`
+
+Key changes from v1.0:
+- `method: string` → `method_steps: string[]`. The app renders a numbered list. Always use `method_steps`.
+- `method` is still accepted for legacy v1.0 imports.
 
 When adding future features (meal swaps, adherence tracking, freezer state, etc.):
 1. Update `meal_plan.schema.json` and bump the version string
