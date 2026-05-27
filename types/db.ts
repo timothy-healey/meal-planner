@@ -12,6 +12,7 @@ export interface RecipeRow {
   method_steps_json: string;
   is_favourite: 0 | 1;
   source: 'imported' | 'user';
+  notes: string | null;
   created_at: string;
 }
 

@@ -126,4 +126,13 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     } catch {}
     await db.execAsync('PRAGMA user_version = 4');
   }
+
+  if (version < 5) {
+    // Fresh installs already get the column via SCHEMA_SQL — the ALTER is wrapped
+    // in try/catch so re-running on a fresh DB is a no-op.
+    try {
+      await db.execAsync('ALTER TABLE recipes ADD COLUMN notes TEXT');
+    } catch {}
+    await db.execAsync('PRAGMA user_version = 5');
+  }
 }

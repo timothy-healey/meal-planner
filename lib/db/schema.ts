@@ -13,6 +13,7 @@ export const SCHEMA_SQL = `
     method_steps_json   TEXT NOT NULL,
     is_favourite        INTEGER DEFAULT 0,
     source              TEXT DEFAULT 'imported',
+    notes               TEXT,
     created_at          TEXT NOT NULL
   );
 
