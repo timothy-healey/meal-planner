@@ -14,10 +14,11 @@ import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyb
 import { colors, font, radius, spacing } from "../constants/tokens";
 import type { AddPurchaseData } from "../hooks/usePurchaseHistory";
 import { useIngredientSuggestions } from "../hooks/useIngredientSuggestions";
+import { useProducts } from "../hooks/useProducts";
 import type { ScanResult } from "../lib/barcodeScanResult";
 import { formatPrice } from "../lib/format";
 import type { Suggestion } from "../lib/suggestions/types";
-import type { PurchaseHistoryRow, QtyUnit, ShoppingItemRow } from "../types/db";
+import type { PurchaseHistoryRowWithProduct, QtyUnit, ShoppingItemRow } from "../types/db";
 import { PriceHistoryChart } from "./PriceHistoryChart";
 import { SuggestionDropdown } from "./SuggestionDropdown";
 import { AppText } from "./ui/AppText";
@@ -48,8 +49,8 @@ interface Props {
   item: ShoppingItemRow | null;
   store: string;          // chain
   branch: string;         // may be ''
-  latestRecord: PurchaseHistoryRow | null;
-  pendingRow: PurchaseHistoryRow | null;
+  latestRecord: PurchaseHistoryRowWithProduct | null;
+  pendingRow: PurchaseHistoryRowWithProduct | null;
   pendingScan: ScanResult | null;
   onSave: (data: AddPurchaseData, pendingRowId: string | null) => void;
   onClose: () => void;
@@ -79,6 +80,8 @@ export function ReviewItemSheet({
   const [unitPickerOpen, setUnitPickerOpen] = useState(false);
 
   const { query: querySuggestions } = useIngredientSuggestions();
+  const { upsert, getByKey } = useProducts();
+  const [resolvedProductId, setResolvedProductId] = useState<string | null>(null);
   const [brandFocused, setBrandFocused] = useState(false);
   const [productFocused, setProductFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -171,16 +174,45 @@ export function ReviewItemSheet({
     onPendingScanConsumed();
   }, [pendingScan]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleSave() {
+  // Keep `resolvedProductId` in sync with the current brand+product. Powers the
+  // price-history chart preview and seeds handleSave when both fields are filled.
+  useEffect(() => {
+    const b = brand.trim();
+    const p = productName.trim();
+    if (!p) { setResolvedProductId(null); return; }
+    let cancelled = false;
+    getByKey(b, p).then(row => {
+      if (!cancelled) setResolvedProductId(row?.id ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [brand, productName, getByKey]);
+
+  async function handleSave() {
     if (!item) return;
+    const brandTrim = brand.trim();
+    const productTrim = productName.trim();
+
+    let productId: string | null = null;
+    if (productTrim) {
+      productId = await upsert({
+        brand: brandTrim,
+        product_name: productTrim,
+        item_name: item.name,
+        basis: 'per_100g',
+        cal_per_basis: null,
+        protein_per_basis: null,
+        carbs_per_basis: null,
+        fat_per_basis: null,
+      });
+    }
+
     onSave(
       {
         plan_id: item.plan_id,
         item_name: item.name,
         store,
         branch,
-        brand: brand.trim() || null,
-        product_name: productName.trim() || null,
+        product_id: productId,
         qty_amount: qtyAmount ? parseFloat(qtyAmount) : null,
         qty_unit: qtyUnit,
         price: price ? parseFloat(price) : null,
@@ -412,12 +444,9 @@ export function ReviewItemSheet({
               </TouchableOpacity>
             </View>
 
-            {brand.trim() && productName.trim() && (
+            {resolvedProductId && (
               <View style={{ marginTop: spacing[4], marginHorizontal: -spacing[4] }}>
-                <PriceHistoryChart
-                  brand={brand.trim()}
-                  productName={productName.trim()}
-                />
+                <PriceHistoryChart productId={resolvedProductId} />
               </View>
             )}
 

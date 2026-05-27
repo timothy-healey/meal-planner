@@ -1,8 +1,8 @@
-import type { PurchaseHistoryRow } from '../types/db';
+import type { PurchaseHistoryRowWithProduct } from '../types/db';
 
 export interface ScanResult {
   barcode: string;
-  record: PurchaseHistoryRow | null;
+  record: PurchaseHistoryRowWithProduct | null;
 }
 
 let pending: ScanResult | null = null;
