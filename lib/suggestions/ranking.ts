@@ -79,3 +79,20 @@ export function projectBrands(candidates: Candidate[]): Suggestion[] {
     matches: [],
   }));
 }
+
+export function rankEmptyQuery(
+  targets: Suggestion[],
+  ingredientName: string,
+  lookupItemName: (foodNutritionId: string) => string | null,
+): Suggestion[] {
+  const scored = targets.map(t => {
+    const itemName = t.foodNutritionId ? lookupItemName(t.foodNutritionId) : null;
+    const isMatch = itemNameMatches(itemName, ingredientName);
+    return { t, matchRank: isMatch ? 0 : 1 };
+  });
+  scored.sort((a, b) => {
+    if (a.matchRank !== b.matchRank) return a.matchRank - b.matchRank;
+    return b.t.lastUsedAt.localeCompare(a.t.lastUsedAt);
+  });
+  return scored.slice(0, 5).map(s => ({ ...s.t, matches: [] }));
+}
