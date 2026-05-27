@@ -1,12 +1,28 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { IngredientSheet } from '../../components/IngredientSheet';
+import { useIngredientSuggestions } from '../../hooks/useIngredientSuggestions';
+import { useFoodNutrition } from '../../hooks/useFoodNutrition';
 import type { FoodNutritionRow } from '../../types/db';
 import type { Ingredient } from '../../meal_plan.types';
 
 jest.mock('../../components/PriceHistoryChart', () => ({
   PriceHistoryChart: () => null,
 }));
+
+jest.mock('../../hooks/useIngredientSuggestions');
+jest.mock('../../hooks/useFoodNutrition');
+
+// Default safe mocks. Specific tests override via mockReturnValue.
+beforeEach(() => {
+  (useIngredientSuggestions as jest.Mock).mockReturnValue({
+    query: jest.fn().mockResolvedValue([]),
+    invalidate: jest.fn(),
+  });
+  (useFoodNutrition as jest.Mock).mockReturnValue({
+    getById: jest.fn(),
+  });
+});
 
 const EXISTING: FoodNutritionRow = {
   id: 'test-id',
@@ -135,5 +151,50 @@ describe('IngredientSheet', () => {
       ingredient: { item: 'Honey', amount: { kind: 'measured', value: 70, unit: 'g' } },
       nutrition: expect.objectContaining({ brand: 'Vitasoy' }),
     }));
+  });
+});
+
+describe('IngredientSheet × suggestions', () => {
+  beforeEach(() => {
+    (useIngredientSuggestions as jest.Mock).mockReturnValue({
+      query: jest.fn().mockResolvedValue([
+        {
+          kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
+          lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+        },
+      ]),
+      invalidate: jest.fn(),
+    });
+  });
+
+  it('does not show the dropdown when ingredient name is empty', async () => {
+    const { queryByText, getByPlaceholderText } = render(
+      <IngredientSheet
+        visible={true}
+        mode="add"
+        initialIngredient={null}
+        existingEntry={null}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+      />
+    );
+    fireEvent(getByPlaceholderText('e.g. Vitasoy'), 'focus');
+    await new Promise(r => setTimeout(r, 0));
+    expect(queryByText('Oat Milk Barista')).toBeNull();
+  });
+
+  it('shows the dropdown after name has ≥1 char and brand field is focused', async () => {
+    const { findByText, getByPlaceholderText } = render(
+      <IngredientSheet
+        visible={true}
+        mode="add"
+        initialIngredient={{ item: 'milk', amount: { kind: 'measured', value: 250, unit: 'mL' } }}
+        existingEntry={null}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+      />
+    );
+    fireEvent(getByPlaceholderText('e.g. Vitasoy'), 'focus');
+    expect(await findByText('Oat Milk Barista')).toBeTruthy();
   });
 });

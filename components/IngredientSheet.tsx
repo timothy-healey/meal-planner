@@ -12,11 +12,15 @@ import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyb
 import { Ionicons } from "@expo/vector-icons";
 import { colors, font, radius, shadow, spacing } from "../constants/tokens";
 import type { FoodNutritionData } from "../hooks/useFoodNutrition";
+import { useFoodNutrition } from "../hooks/useFoodNutrition";
+import { useIngredientSuggestions } from "../hooks/useIngredientSuggestions";
 import type { FoodNutritionRow } from "../types/db";
 import type { Ingredient, Unit } from "../meal_plan.types";
+import type { Suggestion } from "../lib/suggestions/types";
 import { amountToBasis } from "../lib/amount";
 import { AppText } from "./ui/AppText";
 import { PriceHistoryChart } from "./PriceHistoryChart";
+import { SuggestionDropdown } from "./SuggestionDropdown";
 
 type Basis = "per_100g" | "per_100mL" | "per_unit";
 
@@ -63,6 +67,32 @@ export function IngredientSheet({
   const [fat, setFat] = useState("");
   // tracks whether the current cal value was auto-calculated (so macros can update it)
   const calIsAuto = useRef(false);
+
+  const { query: querySuggestions, invalidate: invalidateSuggestions } = useIngredientSuggestions();
+  const { getById: getFoodNutritionById } = useFoodNutrition();
+  const [brandFocused, setBrandFocused] = useState(false);
+  const [productFocused, setProductFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [dropdownHeight, setDropdownHeight] = useState(0);
+  // id from a chosen has-nutrition suggestion (add mode) or the existing row (edit mode);
+  // cleared in add mode whenever the user edits brand or product after picking
+  const autofilledFoodNutritionId = useRef<string | null>(existingEntry?.id ?? null);
+
+  useEffect(() => {
+    if (!visible) { setSuggestions([]); return; }
+    if (name.trim().length === 0) { setSuggestions([]); return; }
+    if (!brandFocused && !productFocused) { setSuggestions([]); return; }
+
+    let cancelled = false;
+    const field = brandFocused ? 'brand' : 'product';
+    const text = field === 'brand' ? brand : productName;
+    const brandFilter = field === 'product' ? brand : undefined;
+
+    querySuggestions({ field, text, ingredientName: name, brandFilter }).then(s => {
+      if (!cancelled) setSuggestions(s);
+    });
+    return () => { cancelled = true; };
+  }, [visible, brandFocused, productFocused, name, brand, productName, querySuggestions]);
 
   useEffect(() => {
     if (!visible) return;
@@ -314,7 +344,17 @@ export function IngredientSheet({
               onChangeText={setBrand}
               placeholder="e.g. Vitasoy"
               placeholderTextColor={colors.textTertiary}
+              onFocus={() => { setBrandFocused(true); setProductFocused(false); }}
+              onBlur={() => setBrandFocused(false)}
             />
+            {brandFocused && (
+              <SuggestionDropdown
+                suggestions={suggestions}
+                showBrandInSecondary={false}
+                onPick={() => { /* wired in next task */ }}
+                onLayoutHeight={setDropdownHeight}
+              />
+            )}
 
             <FieldLabel top>PRODUCT NAME</FieldLabel>
             <TextInput
@@ -323,7 +363,17 @@ export function IngredientSheet({
               onChangeText={setProductName}
               placeholder="e.g. Oat Milk Barista"
               placeholderTextColor={colors.textTertiary}
+              onFocus={() => { setProductFocused(true); setBrandFocused(false); }}
+              onBlur={() => setProductFocused(false)}
             />
+            {productFocused && (
+              <SuggestionDropdown
+                suggestions={suggestions}
+                showBrandInSecondary={brand.trim() === ''}
+                onPick={() => { /* wired in next task */ }}
+                onLayoutHeight={setDropdownHeight}
+              />
+            )}
 
             <View style={styles.basisRow}>
               <AppText weight="bold" size="xs" color="textTertiary" style={{ letterSpacing: font.tracking.caps }}>
