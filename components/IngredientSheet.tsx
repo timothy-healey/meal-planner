@@ -11,10 +11,10 @@ import {
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, font, radius, shadow, spacing } from "../constants/tokens";
-import type { FoodNutritionData } from "../hooks/useFoodNutrition";
-import { useFoodNutrition } from "../hooks/useFoodNutrition";
+import type { ProductInput } from "../hooks/useProducts";
+import { useProducts } from "../hooks/useProducts";
 import { useIngredientSuggestions } from "../hooks/useIngredientSuggestions";
-import type { FoodNutritionRow } from "../types/db";
+import type { ProductRow } from "../types/db";
 import type { Ingredient, Unit } from "../meal_plan.types";
 import type { Suggestion } from "../lib/suggestions/types";
 import { amountToBasis } from "../lib/amount";
@@ -34,11 +34,10 @@ interface Props {
   visible: boolean;
   mode: 'add' | 'edit';
   initialIngredient: Ingredient | null;
-  existingEntry: FoodNutritionRow | null;
+  existingEntry: ProductRow | null;
   onSave: (data: {
     ingredient: Ingredient;
-    nutrition: FoodNutritionData | null;
-    foodNutritionId: string | null;
+    nutrition: ProductInput | null;
   }) => void;
   onDelete?: () => void;
   onClose: () => void;
@@ -73,14 +72,14 @@ export function IngredientSheet({
   const calIsAuto = useRef(false);
 
   const { query: querySuggestions, invalidate: invalidateSuggestions } = useIngredientSuggestions();
-  const { getById: getFoodNutritionById } = useFoodNutrition();
+  const { getById } = useProducts();
   const [brandFocused, setBrandFocused] = useState(false);
   const [productFocused, setProductFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [dropdownHeight, setDropdownHeight] = useState(0);
   // id from a chosen has-nutrition suggestion (add mode) or the existing row (edit mode);
   // cleared in add mode whenever the user edits brand or product after picking
-  const autofilledFoodNutritionId = useRef<string | null>(existingEntry?.id ?? null);
+  const autofilledProductId = useRef<string | null>(existingEntry?.id ?? null);
 
   useEffect(() => {
     if (!visible) { setSuggestions([]); return; }
@@ -139,8 +138,8 @@ export function IngredientSheet({
 
     if (existingEntry) {
       setBasis(existingEntry.basis);
-      setBrand(existingEntry.brand ?? "");
-      setProductName(existingEntry.product_name ?? "");
+      setBrand(existingEntry.brand);
+      setProductName(existingEntry.product_name);
       setCal(
         existingEntry.cal_per_basis != null
           ? String(existingEntry.cal_per_basis)
@@ -190,11 +189,11 @@ export function IngredientSheet({
 
   function handleBrandChange(v: string) {
     setBrand(v);
-    if (mode === 'add') autofilledFoodNutritionId.current = null;
+    if (mode === 'add') autofilledProductId.current = null;
   }
   function handleProductChange(v: string) {
     setProductName(v);
-    if (mode === 'add') autofilledFoodNutritionId.current = null;
+    if (mode === 'add') autofilledProductId.current = null;
   }
 
   function handlePickBrand(s: Suggestion) {
@@ -206,8 +205,8 @@ export function IngredientSheet({
   async function handlePickProduct(s: Suggestion) {
     if (!brand) setBrand(s.brand);
     setProductName(s.productName ?? '');
-    if (s.foodNutritionId) {
-      const row = await getFoodNutritionById(s.foodNutritionId);
+    if (s.productId && s.hasNutrition) {
+      const row = await getById(s.productId);
       if (row) {
         setBasis(row.basis);
         setCal(row.cal_per_basis != null ? String(row.cal_per_basis) : '');
@@ -215,7 +214,7 @@ export function IngredientSheet({
         setCarbs(row.carbs_per_basis != null ? String(row.carbs_per_basis) : '');
         setFat(row.fat_per_basis != null ? String(row.fat_per_basis) : '');
         calIsAuto.current = false;
-        autofilledFoodNutritionId.current = row.id;
+        autofilledProductId.current = row.id;
       }
     }
     setProductFocused(false);
@@ -241,16 +240,19 @@ export function IngredientSheet({
       }
     }
 
+    // The new model requires brand+product_name to attach nutrition (brand may be '').
+    // If product_name is empty, the ingredient has no product link regardless of other fields.
+    const trimmedProductName = productName.trim();
     const hasNutritionInput =
-      brand.trim() !== "" ||
-      productName.trim() !== "" ||
-      cal !== "" || protein !== "" || carbs !== "" || fat !== "";
+      trimmedProductName !== "" &&
+      (brand.trim() !== "" || trimmedProductName !== "" ||
+       cal !== "" || protein !== "" || carbs !== "" || fat !== "");
 
-    const nutrition: FoodNutritionData | null = hasNutritionInput
+    const nutrition: ProductInput | null = hasNutritionInput
       ? {
+          brand: brand.trim(),
+          product_name: trimmedProductName,
           item_name: trimmedName.toLowerCase(),
-          brand: brand.trim() || null,
-          product_name: productName.trim() || null,
           basis,
           cal_per_basis:     cal     ? parseFloat(cal)     : null,
           protein_per_basis: protein ? parseFloat(protein) : null,
@@ -262,7 +264,6 @@ export function IngredientSheet({
     onSave({
       ingredient: { item: trimmedName, amount },
       nutrition,
-      foodNutritionId: autofilledFoodNutritionId.current,
     });
     if (nutrition) invalidateSuggestions();
   }
@@ -498,11 +499,8 @@ export function IngredientSheet({
 
             <View style={{ height: spacing[3] }} />
 
-            {existingEntry?.brand && existingEntry?.product_name && (
-              <PriceHistoryChart
-                brand={existingEntry.brand}
-                productName={existingEntry.product_name}
-              />
+            {existingEntry?.id && (
+              <PriceHistoryChart productId={existingEntry.id} />
             )}
 
             <View style={{ height: spacing[4] }} />

@@ -2,8 +2,8 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { IngredientSheet } from '../../components/IngredientSheet';
 import { useIngredientSuggestions } from '../../hooks/useIngredientSuggestions';
-import { useFoodNutrition } from '../../hooks/useFoodNutrition';
-import type { FoodNutritionRow } from '../../types/db';
+import { useProducts } from '../../hooks/useProducts';
+import type { ProductRow } from '../../types/db';
 import type { Ingredient } from '../../meal_plan.types';
 
 jest.mock('../../components/PriceHistoryChart', () => ({
@@ -11,7 +11,7 @@ jest.mock('../../components/PriceHistoryChart', () => ({
 }));
 
 jest.mock('../../hooks/useIngredientSuggestions');
-jest.mock('../../hooks/useFoodNutrition');
+jest.mock('../../hooks/useProducts');
 
 // Default safe mocks. Specific tests override via mockReturnValue.
 beforeEach(() => {
@@ -19,16 +19,16 @@ beforeEach(() => {
     query: jest.fn().mockResolvedValue([]),
     invalidate: jest.fn(),
   });
-  (useFoodNutrition as jest.Mock).mockReturnValue({
+  (useProducts as jest.Mock).mockReturnValue({
     getById: jest.fn(),
   });
 });
 
-const EXISTING: FoodNutritionRow = {
+const EXISTING: ProductRow = {
   id: 'test-id',
-  item_name: 'oat milk',
   brand: 'Vitasoy',
   product_name: 'Oat Milk Barista',
+  item_name: 'oat milk',
   basis: 'per_100mL',
   cal_per_basis: 45,
   protein_per_basis: 1,
@@ -149,7 +149,7 @@ describe('IngredientSheet', () => {
     fireEvent.press(getByText('Done'));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       ingredient: { item: 'Honey', amount: { kind: 'measured', value: 70, unit: 'g' } },
-      nutrition: expect.objectContaining({ brand: 'Vitasoy' }),
+      nutrition: expect.objectContaining({ brand: 'Vitasoy', product_name: 'Oat Milk Barista' }),
     }));
   });
 });
@@ -160,7 +160,7 @@ describe('IngredientSheet × suggestions', () => {
       query: jest.fn().mockResolvedValue([
         {
           kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
-          lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+          lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [],
         },
       ]),
       invalidate: jest.fn(),
@@ -205,14 +205,14 @@ describe('IngredientSheet × selection', () => {
       query: jest.fn().mockResolvedValue([
         {
           kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
-          lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+          lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [],
         },
       ]),
       invalidate: jest.fn(),
     });
-    (useFoodNutrition as jest.Mock).mockReturnValue({
+    (useProducts as jest.Mock).mockReturnValue({
       getById: jest.fn().mockResolvedValue({
-        id: 'fn-1', item_name: 'oat milk', brand: 'Vitasoy', product_name: 'Oat Milk Barista',
+        id: 'fn-1', brand: 'Vitasoy', product_name: 'Oat Milk Barista', item_name: 'oat milk',
         basis: 'per_100mL', cal_per_basis: 50, protein_per_basis: 1.2, carbs_per_basis: 4.6, fat_per_basis: 1.5,
         updated_at: '2026-05-25T00:00:00Z',
       }),
@@ -239,25 +239,25 @@ describe('IngredientSheet × selection', () => {
   });
 });
 
-describe('IngredientSheet × autofill id plumbing', () => {
+describe('IngredientSheet × autofill flow', () => {
   beforeEach(() => {
     (useIngredientSuggestions as jest.Mock).mockReturnValue({
       query: jest.fn().mockResolvedValue([
         { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
-          lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [] },
+          lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [] },
       ]),
       invalidate: jest.fn(),
     });
-    (useFoodNutrition as jest.Mock).mockReturnValue({
+    (useProducts as jest.Mock).mockReturnValue({
       getById: jest.fn().mockResolvedValue({
-        id: 'fn-1', item_name: 'oat milk', brand: 'Vitasoy', product_name: 'Oat Milk Barista',
+        id: 'fn-1', brand: 'Vitasoy', product_name: 'Oat Milk Barista', item_name: 'oat milk',
         basis: 'per_100mL', cal_per_basis: 50, protein_per_basis: 1, carbs_per_basis: 5, fat_per_basis: 1,
         updated_at: '2026-05-25T00:00:00Z',
       }),
     });
   });
 
-  it('save after autofill passes the autofilled foodNutritionId', async () => {
+  it('save after autofill emits a nutrition payload with the picked brand/product', async () => {
     const onSave = jest.fn();
     const { findByText, getByPlaceholderText, getByText } = render(
       <IngredientSheet
@@ -273,10 +273,15 @@ describe('IngredientSheet × autofill id plumbing', () => {
     fireEvent.press(await findByText('Oat Milk Barista'));
     await waitFor(() => expect(getByPlaceholderText('e.g. Oat Milk Barista').props.value).toBe('Oat Milk Barista'));
     fireEvent.press(getByText('Done'));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ foodNutritionId: 'fn-1' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      nutrition: expect.objectContaining({
+        brand: 'Vitasoy',
+        product_name: 'Oat Milk Barista',
+      }),
+    }));
   });
 
-  it('editing brand after autofill clears the foodNutritionId in onSave', async () => {
+  it('editing brand after autofill emits the edited brand in nutrition payload', async () => {
     const onSave = jest.fn();
     const { findByText, getByPlaceholderText, getByText, getByDisplayValue } = render(
       <IngredientSheet
@@ -293,6 +298,11 @@ describe('IngredientSheet × autofill id plumbing', () => {
     await waitFor(() => getByDisplayValue('Vitasoy'));
     fireEvent.changeText(getByDisplayValue('Vitasoy'), 'Vitasoy Plus');
     fireEvent.press(getByText('Done'));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ foodNutritionId: null }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      nutrition: expect.objectContaining({
+        brand: 'Vitasoy Plus',
+        product_name: 'Oat Milk Barista',
+      }),
+    }));
   });
 });
