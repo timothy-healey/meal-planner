@@ -14,8 +14,7 @@ const makeRow = (overrides = {}) => ({
   plan_id: null,
   item_name: 'Oats',
   store_id: 's1',
-  brand: 'Woolworths',
-  product_name: 'Rolled Oats 1kg',
+  product_id: 'p1',
   qty_amount: 1000,
   qty_unit: 'g',
   price: 4.50,
@@ -32,54 +31,44 @@ describe('usePriceHistory', () => {
     mockDb.getAllAsync.mockResolvedValue([]);
   });
 
-  it('returns empty array when brand or productName is null', async () => {
-    const { result } = renderHook(() => usePriceHistory(null, null));
+  it('returns empty array when productId is null', async () => {
+    const { result } = renderHook(() => usePriceHistory(null));
     await waitFor(() => expect(result.current.points).toEqual([]));
     expect(mockDb.getAllAsync).not.toHaveBeenCalled();
   });
 
-  it('queries by brand and product_name', async () => {
+  it('queries by product_id', async () => {
     mockDb.getAllAsync.mockResolvedValue([makeRow()]);
-    const { result } = renderHook(() =>
-      usePriceHistory('Woolworths', 'Rolled Oats 1kg'),
-    );
+    const { result } = renderHook(() => usePriceHistory('p1'));
     await waitFor(() => expect(result.current.points).toHaveLength(1));
     expect(mockDb.getAllAsync).toHaveBeenCalledWith(
-      expect.stringContaining('ph.brand = ?'),
-      ['Woolworths', 'Rolled Oats 1kg'],
+      expect.stringContaining('ph.product_id = ?'),
+      ['p1'],
     );
   });
 
   it('normalises g price to ¢/100g', async () => {
     mockDb.getAllAsync.mockResolvedValue([makeRow({ price: 4.50, qty_amount: 1000, qty_unit: 'g' })]);
-    const { result } = renderHook(() =>
-      usePriceHistory('Woolworths', 'Rolled Oats 1kg'),
-    );
+    const { result } = renderHook(() => usePriceHistory('p1'));
     await waitFor(() => expect(result.current.points).toHaveLength(1));
     expect(result.current.points[0].normalisedPrice).toBeCloseTo(0.45);
   });
 
   it('maps isOnSale correctly', async () => {
     mockDb.getAllAsync.mockResolvedValue([makeRow({ is_sale: 1 })]);
-    const { result } = renderHook(() =>
-      usePriceHistory('Woolworths', 'Rolled Oats 1kg'),
-    );
+    const { result } = renderHook(() => usePriceHistory('p1'));
     await waitFor(() => expect(result.current.points).toHaveLength(1));
     expect(result.current.points[0].isOnSale).toBe(true);
   });
 
   it('exposes a reload function', async () => {
-    const { result } = renderHook(() =>
-      usePriceHistory('Woolworths', 'Rolled Oats 1kg'),
-    );
+    const { result } = renderHook(() => usePriceHistory('p1'));
     await waitFor(() => expect(result.current.points).toBeDefined());
     expect(typeof result.current.reload).toBe('function');
   });
 
   it('queries only confirmed purchase rows', async () => {
-    const { result } = renderHook(() =>
-      usePriceHistory('Woolworths', 'Rolled Oats 1kg'),
-    );
+    const { result } = renderHook(() => usePriceHistory('p1'));
     await waitFor(() => expect(result.current.points).toEqual([]));
     const sqlCalls = mockDb.getAllAsync.mock.calls.map((c: any[]) => c[0] as string);
     expect(sqlCalls.some(s => /status = 'confirmed'/.test(s))).toBe(true);

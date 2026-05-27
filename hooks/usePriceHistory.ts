@@ -6,14 +6,13 @@ import type { PricePoint, PurchaseHistoryRow, QtyUnit } from '../types/db';
 type PurchaseWithChain = PurchaseHistoryRow & { chain: string };
 
 export function usePriceHistory(
-  brand: string | null,
-  productName: string | null,
+  productId: string | null,
 ): { points: PricePoint[]; reload: () => void } {
   const db = useDb();
   const [points, setPoints] = useState<PricePoint[]>([]);
 
   const load = useCallback(async () => {
-    if (!brand || !productName) {
+    if (!productId) {
       setPoints([]);
       return;
     }
@@ -21,13 +20,13 @@ export function usePriceHistory(
       `SELECT ph.*, s.chain
        FROM purchase_history ph
        JOIN stores s ON ph.store_id = s.id
-       WHERE ph.brand = ? AND ph.product_name = ?
+       WHERE ph.product_id = ?
          AND ph.price IS NOT NULL
          AND ph.qty_amount IS NOT NULL
          AND ph.qty_unit IS NOT NULL
          AND ph.status = 'confirmed'
        ORDER BY ph.purchased_at ASC`,
-      [brand, productName],
+      [productId],
     );
     setPoints(
       rows.map(row => ({
@@ -41,7 +40,7 @@ export function usePriceHistory(
         isOnSale: row.is_sale === 1,
       })),
     );
-  }, [brand, productName, db]);
+  }, [productId, db]);
 
   useEffect(() => { load(); }, [load]);
 
