@@ -2,10 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
-  ScrollView,
   StyleSheet,
   Switch,
   TextInput,
@@ -13,6 +10,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { colors, font, radius, spacing } from "../constants/tokens";
 import type { AddPurchaseData } from "../hooks/usePurchaseHistory";
 import type { ScanResult } from "../lib/barcodeScanResult";
@@ -159,7 +157,7 @@ export function ReviewItemSheet({
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
       >
         <TouchableOpacity
           style={styles.backdrop}
@@ -186,7 +184,7 @@ export function ReviewItemSheet({
             </View>
           )}
 
-          <ScrollView
+          <KeyboardAwareScrollView
             showsVerticalScrollIndicator={false}
             style={styles.fields}
             keyboardShouldPersistTaps="handled"
@@ -348,7 +346,7 @@ export function ReviewItemSheet({
             )}
 
             <View style={{ height: spacing[3] }} />
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           <TouchableOpacity
             style={styles.doneBtn}
