@@ -42,13 +42,30 @@ export const SCHEMA_SQL = `
     is_checked       INTEGER DEFAULT 0
   );
 
+  CREATE TABLE IF NOT EXISTS products (
+    id                TEXT PRIMARY KEY,
+    brand             TEXT NOT NULL,
+    product_name      TEXT NOT NULL,
+    item_name         TEXT NOT NULL,
+    basis             TEXT NOT NULL DEFAULT 'per_100g'
+                        CHECK (basis IN ('per_100g', 'per_100mL', 'per_unit')),
+    cal_per_basis     REAL,
+    protein_per_basis REAL,
+    carbs_per_basis   REAL,
+    fat_per_basis     REAL,
+    updated_at        TEXT NOT NULL,
+    UNIQUE (brand, product_name)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_products_item_name
+    ON products(item_name);
+
   CREATE TABLE IF NOT EXISTS purchase_history (
     id              TEXT PRIMARY KEY,
     plan_id         TEXT REFERENCES weekly_plans(id),
     item_name       TEXT NOT NULL,
     store_id        TEXT REFERENCES stores(id),
-    brand           TEXT,
-    product_name    TEXT,
+    product_id      TEXT REFERENCES products(id),
     qty_amount      REAL,
     qty_unit        TEXT CHECK (qty_unit IN ('g', 'kg', 'mL', 'L', 'units')),
     price           REAL,
@@ -103,29 +120,5 @@ export const SCHEMA_SQL = `
     item_name   TEXT NOT NULL,
     aisle_id    TEXT NOT NULL REFERENCES store_aisles(id),
     updated_at  TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS food_nutrition (
-    id TEXT PRIMARY KEY,
-    item_name TEXT NOT NULL,
-    brand TEXT,
-    product_name TEXT,
-    basis TEXT NOT NULL DEFAULT 'per_100g'
-      CHECK (basis IN ('per_100g', 'per_100mL', 'per_unit')),
-    cal_per_basis REAL,
-    protein_per_basis REAL,
-    carbs_per_basis REAL,
-    fat_per_basis REAL,
-    updated_at TEXT NOT NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_food_nutrition_item_name
-    ON food_nutrition(item_name);
-
-  CREATE TABLE IF NOT EXISTS ingredient_nutrition_link (
-    recipe_id TEXT NOT NULL,
-    ingredient_index INTEGER NOT NULL,
-    food_nutrition_id TEXT NOT NULL REFERENCES food_nutrition(id),
-    PRIMARY KEY (recipe_id, ingredient_index)
   );
 `;

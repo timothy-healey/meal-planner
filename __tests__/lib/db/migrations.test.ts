@@ -37,11 +37,41 @@ describe('runMigrations', () => {
     expect(allSql).not.toContain('DROP COLUMN');
   });
 
-  it('calls execAsync with SQL containing the two new nutrition tables', async () => {
+  it('calls execAsync with SQL containing the products table', async () => {
     await runMigrations(mockDb as any);
     const sql: string = mockDb.execAsync.mock.calls[0][0];
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS food_nutrition');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS ingredient_nutrition_link');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS products');
+    expect(sql).toContain('UNIQUE (brand, product_name)');
+  });
+
+  it('does not declare food_nutrition or ingredient_nutrition_link', async () => {
+    await runMigrations(mockDb as any);
+    const sql: string = mockDb.execAsync.mock.calls[0][0];
+    expect(sql).not.toContain('food_nutrition');
+    expect(sql).not.toContain('ingredient_nutrition_link');
+  });
+
+  it('declares purchase_history with product_id and no brand/product_name', async () => {
+    await runMigrations(mockDb as any);
+    const sql: string = mockDb.execAsync.mock.calls[0][0];
+    const phBlock = sql.split('CREATE TABLE IF NOT EXISTS purchase_history')[1].split('CREATE TABLE')[0];
+    expect(phBlock).toContain('product_id');
+    expect(phBlock).not.toMatch(/^\s*brand\s+TEXT/m);
+    expect(phBlock).not.toMatch(/^\s*product_name\s+TEXT/m);
+  });
+
+  it('runs version-6 migration on a v5 database', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 5 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).toContain('user_version = 6');
+  });
+
+  it('skips version-6 migration when already at version 6', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 6 }]);
+    await runMigrations(mockDb as any);
+    const allSql = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(allSql).not.toContain('user_version = 6');
   });
 
   it('runs version-2 migration on a v1 database', async () => {
