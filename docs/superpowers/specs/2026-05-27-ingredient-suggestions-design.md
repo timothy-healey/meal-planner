@@ -81,12 +81,22 @@ Rendered inline beneath the focused input (not absolutely positioned), inside th
 
 ### Styling
 
-- Container: `marginTop: 6`, `backgroundColor: colors.card`, `borderWidth: 1.5`, `borderColor: colors.divider`, `borderRadius: radius.md`, plus `shadow.card` for elevation.
-- Each row: `paddingHorizontal: spacing[3] + 2`, `paddingVertical: 11dp`, `flexDirection: row`, `alignItems: center`, `gap: spacing[3]`, `borderBottomWidth: 1`, `borderBottomColor: colors.divider`. Last row drops the bottom border.
-- Primary text: `font.family.bold`, `font.size.md` (13dp), `colors.textPrimary`.
-- Secondary text: `font.family.medium`, `font.size.sm` (11dp), `colors.textTertiary`, `marginTop: 2`.
-- Pie-slice emblem: width 16, `colors.green`.
-- Matched substring inside primary text: see Match highlight above.
+All tokens from `constants/tokens.ts`. Hex callouts are for reference only; never inline them in the component.
+
+- **Container:** `marginTop: 6`, `backgroundColor: colors.card`, `borderWidth: 1.5`, `borderColor: colors.divider`, `borderRadius: radius.md` (10dp), `overflow: 'hidden'` (so the row dividers don't bleed past the rounded corners). Custom shadow inline (no token covers this case — `shadow.card` is too subtle and `shadow.sheet` casts upward):
+  ```ts
+  shadowColor:   colors.green,
+  shadowOffset:  { width: 0, height: 4 },
+  shadowOpacity: 0.10,
+  shadowRadius:  12,
+  elevation:     3,
+  ```
+- **Each row:** `TouchableOpacity` with `activeOpacity: 0.7`. `paddingHorizontal: spacing[3] + 2` (14dp), `paddingVertical: 11`, `flexDirection: 'row'`, `alignItems: 'center'`, `gap: spacing[3]` (12dp), `borderBottomWidth: 1`, `borderBottomColor: colors.divider`. The last row drops the bottom border.
+- **Primary text:** `font.family.bold`, `font.size.md` (13dp), `colors.textPrimary`, single line (`numberOfLines: 1`).
+- **Secondary text:** `font.family.medium`, `font.size.sm` (11dp), `colors.textTertiary`, `marginTop: 2`, single line.
+- **Brand mention inside product-row secondary** (only when product field has no brand filter active): the brand portion is `font.family.bold`, `colors.green`. The rest of the secondary text (the `·` separator and relative time) keeps the default secondary styling above.
+- **Pie-slice emblem** (product rows where `foodNutritionId != null`): `<Ionicons name="pie-chart" size={16} color={colors.green} />`. The icon container reserves `width: 16` even when absent so primary-text wrapping is consistent across rows.
+- **Matched substring inside primary text:** see Match highlight above.
 
 ## Data hook
 
