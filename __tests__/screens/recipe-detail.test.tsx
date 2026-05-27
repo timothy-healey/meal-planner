@@ -136,3 +136,99 @@ describe('RecipeDetailScreen — notes', () => {
     await waitFor(() => expect(mockUpdateNotes).toHaveBeenCalledWith('r1', null));
   });
 });
+
+import * as Clipboard from 'expo-clipboard';
+import { act } from '@testing-library/react-native';
+
+// Wait for: (a) the effect has fired, (b) the .then microtask has resolved,
+// (c) the second render has flushed. After this, rollup reflects the configured
+// links and handleCopy will read the post-link state.
+async function flushLinks() {
+  await waitFor(() => expect(mockGetLinksForRecipe).toHaveBeenCalled());
+  await act(async () => { await Promise.resolve(); });
+}
+
+describe('RecipeDetailScreen — copy recipe', () => {
+  beforeEach(() => {
+    (Clipboard.setStringAsync as jest.Mock).mockClear();
+    mockGetLinksForRecipe.mockReset().mockResolvedValue({});
+    setNotes(null);
+  });
+
+  it('produces the legacy 2-macro line when no nutrition links exist', async () => {
+    mockGetLinksForRecipe.mockResolvedValue({});
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    expect(text).toMatch(/Serves 3 \| 480 kcal \| P 38g \| stir-fry/);
+    expect(text).not.toContain('Notes:');
+  });
+
+  it('produces all four macros when rollup is available', async () => {
+    mockGetLinksForRecipe.mockResolvedValue({
+      0: {
+        id: 'fn1', item_name: 'Chicken', brand: null, product_name: null,
+        basis: 'per_100g',
+        cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
+        updated_at: '2026-05-24',
+      },
+    });
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    // 600g chicken @ 165cal/100g across 3 servings = 330cal/serve.
+    // Only one ingredient, fully linked → isPartial = false (no `~`).
+    expect(text).toMatch(/\| 330 kcal \| P 62g \| C 0g \| F 7g \|/);
+    expect(text).not.toContain('~');
+  });
+
+  it('marks every macro with ~ when rollup is partial', async () => {
+    mockRecipesState.current = [{
+      ...mockRecipeBase,
+      ingredients: [
+        { item: 'Chicken', amount: { kind: 'measured', value: 600, unit: 'g' } },
+        { item: 'Broccoli', amount: { kind: 'measured', value: 300, unit: 'g' } },
+      ],
+    }];
+    mockGetLinksForRecipe.mockResolvedValue({
+      0: {
+        id: 'fn1', item_name: 'Chicken', brand: null, product_name: null,
+        basis: 'per_100g',
+        cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
+        updated_at: '2026-05-24',
+      },
+      // broccoli intentionally unlinked → isPartial = true
+    });
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    expect(text).toMatch(/\| ~330 kcal \| P ~62g \| C ~0g \| F ~7g \|/);
+  });
+
+  it('appends a Notes: block when notes are present', async () => {
+    setNotes('sauce too thin — try cornstarch slurry');
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    expect(text).toContain('\n\nNotes:\nsauce too thin — try cornstarch slurry');
+    expect(text.endsWith('sauce too thin — try cornstarch slurry')).toBe(true);
+  });
+
+  it('omits Notes: when notes is whitespace-only', async () => {
+    setNotes('   ');
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    expect(text).not.toContain('Notes:');
+  });
+});
