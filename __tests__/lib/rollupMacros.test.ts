@@ -19,8 +19,8 @@ function makeEntry(overrides: Partial<FoodNutritionRow> = {}): FoodNutritionRow 
 }
 
 const TWO_INGREDIENTS: Ingredient[] = [
-  { item: 'chicken breast', amount: '200g' },
-  { item: 'brown rice', amount: '150g' },
+  { item: 'chicken breast', amount: { kind: 'measured', value: 200, unit: 'g' } },
+  { item: 'brown rice',     amount: { kind: 'measured', value: 150, unit: 'g' } },
 ];
 
 describe('rollupMacros', () => {
@@ -36,50 +36,71 @@ describe('rollupMacros', () => {
     const result = rollupMacros(TWO_INGREDIENTS, links, 2);
     expect(result).not.toBeNull();
     expect(result!.isPartial).toBe(false);
-    // chicken: 200/100*165=330, rice: 150/100*130=195 → total 525, /2 = 262.5
     expect(result!.perServe.cal).toBeCloseTo(262.5);
-    // chicken: 200/100*31=62, rice: 150/100*2.7=4.05 → 66.05, /2 = 33.025
     expect(result!.perServe.protein_g).toBeCloseTo(33.025);
   });
 
   it('sets isPartial true when only some ingredients have links', () => {
-    const links = { 0: makeEntry() }; // only ingredient 0 linked
+    const links = { 0: makeEntry() };
     const result = rollupMacros(TWO_INGREDIENTS, links, 2);
-    expect(result).not.toBeNull();
     expect(result!.isPartial).toBe(true);
   });
 
   it('populates contributions keyed by ingredient index', () => {
-    const links = { 0: makeEntry({ protein_per_basis: 31 }) }; // 200g chicken
+    const links = { 0: makeEntry({ protein_per_basis: 31 }) };
     const result = rollupMacros(TWO_INGREDIENTS, links, 2);
-    // 200/100 * 31 = 62g protein for ingredient 0
     expect(result!.contributions[0].protein_g).toBeCloseTo(62);
     expect(result!.contributions[1]).toBeUndefined();
   });
 
-  it('handles per_100mL basis', () => {
-    const ingredients: Ingredient[] = [{ item: 'oat milk', amount: '250mL' }];
+  it('handles per_100mL basis with measured mL', () => {
+    const ingredients: Ingredient[] = [
+      { item: 'oat milk', amount: { kind: 'measured', value: 250, unit: 'mL' } },
+    ];
     const links = {
-      0: makeEntry({ basis: 'per_100mL', cal_per_basis: 45, protein_per_basis: 1, carbs_per_basis: 4.5, fat_per_basis: 1.5 }),
+      0: makeEntry({ basis: 'per_100mL', cal_per_basis: 45 }),
     };
     const result = rollupMacros(ingredients, links, 1);
-    // 250/100 * 45 = 112.5
     expect(result!.perServe.cal).toBeCloseTo(112.5);
   });
 
-  it('handles per_unit basis', () => {
-    const ingredients: Ingredient[] = [{ item: 'egg', amount: '2 eggs' }];
+  it('handles per_unit basis with measured unit', () => {
+    const ingredients: Ingredient[] = [
+      { item: 'egg', amount: { kind: 'measured', value: 2, unit: 'unit' } },
+    ];
     const links = {
       0: makeEntry({ basis: 'per_unit', cal_per_basis: 72, protein_per_basis: 6, carbs_per_basis: 0, fat_per_basis: 5 }),
     };
     const result = rollupMacros(ingredients, links, 1);
-    // 2 * 72 = 144
     expect(result!.perServe.cal).toBeCloseTo(144);
   });
 
-  it('treats unparseable amount as 0 contribution', () => {
-    const ingredients: Ingredient[] = [{ item: 'salt', amount: '1 tsp' }];
-    const links = { 0: makeEntry({ cal_per_basis: 0, protein_per_basis: 0, carbs_per_basis: 0, fat_per_basis: 0 }) };
+  it('handles per_unit basis with custom amount (multiplier = value)', () => {
+    const ingredients: Ingredient[] = [
+      { item: 'garlic', amount: { kind: 'custom', value: 3, unit: 'cloves' } },
+    ];
+    const links = {
+      0: makeEntry({ basis: 'per_unit', cal_per_basis: 5, protein_per_basis: 0.2, carbs_per_basis: 1, fat_per_basis: 0 }),
+    };
+    const result = rollupMacros(ingredients, links, 1);
+    expect(result!.perServe.cal).toBeCloseTo(15);
+  });
+
+  it('contributes 0 on basis-unit mismatch (e.g. mL amount with per_100g nutrition)', () => {
+    const ingredients: Ingredient[] = [
+      { item: 'honey', amount: { kind: 'measured', value: 50, unit: 'mL' } },
+    ];
+    const links = { 0: makeEntry({ basis: 'per_100g', cal_per_basis: 304 }) };
+    const result = rollupMacros(ingredients, links, 1);
+    expect(result!.perServe.cal).toBeCloseTo(0);
+    expect(result!.isPartial).toBe(false); // link exists, just contributes 0
+  });
+
+  it('contributes 0 for note amounts', () => {
+    const ingredients: Ingredient[] = [
+      { item: 'salt', amount: { kind: 'note', text: 'to taste' } },
+    ];
+    const links = { 0: makeEntry({ basis: 'per_100g', cal_per_basis: 0 }) };
     const result = rollupMacros(ingredients, links, 1);
     expect(result!.perServe.cal).toBeCloseTo(0);
   });
