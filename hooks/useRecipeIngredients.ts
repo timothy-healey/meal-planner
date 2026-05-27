@@ -4,27 +4,11 @@ import type { Ingredient } from '../meal_plan.types';
 import type { RecipeRow } from '../types/db';
 import { parseAmountString } from '../lib/amount';
 
-// Coerce legacy v1.1 string amounts. Mirrors useRecipes.coerceIngredient.
 function coerceIngredient(raw: { item: string; amount: unknown }): Ingredient {
   if (typeof raw.amount === 'string') {
     return { item: raw.item, amount: parseAmountString(raw.amount) };
   }
   return raw as Ingredient;
-}
-
-// Pure helper, exported for unit testing.
-export function reindexLinksOnDelete(
-  linkIndices: Record<number, unknown>,
-  deletedIndex: number,
-): { toDelete: number[]; toShift: { from: number; to: number }[] } {
-  const indices = Object.keys(linkIndices).map(Number).sort((a, b) => a - b);
-  const toDelete: number[] = [];
-  const toShift: { from: number; to: number }[] = [];
-  for (const i of indices) {
-    if (i === deletedIndex) toDelete.push(i);
-    else if (i > deletedIndex) toShift.push({ from: i, to: i - 1 });
-  }
-  return { toDelete, toShift };
 }
 
 export function useRecipeIngredients() {
@@ -79,32 +63,9 @@ export function useRecipeIngredients() {
     const current = await readIngredients(recipeId);
     if (index < 0 || index >= current.length) return;
     const next = current.filter((_, i) => i !== index);
-
-    await db.withTransactionAsync(async () => {
-      await writeIngredients(recipeId, next);
-      const links = await db.getAllAsync<{ ingredient_index: number }>(
-        'SELECT ingredient_index FROM ingredient_nutrition_link WHERE recipe_id = ?',
-        [recipeId],
-      );
-      const linkMap: Record<number, true> = {};
-      for (const l of links) linkMap[l.ingredient_index] = true;
-      const plan = reindexLinksOnDelete(linkMap, index);
-      for (const i of plan.toDelete) {
-        await db.runAsync(
-          'DELETE FROM ingredient_nutrition_link WHERE recipe_id = ? AND ingredient_index = ?',
-          [recipeId, i],
-        );
-      }
-      // Shift downward — apply in ascending order to avoid colliding with unmoved rows.
-      for (const { from, to } of plan.toShift) {
-        await db.runAsync(
-          'UPDATE ingredient_nutrition_link SET ingredient_index = ? WHERE recipe_id = ? AND ingredient_index = ?',
-          [to, recipeId, from],
-        );
-      }
-    });
+    await writeIngredients(recipeId, next);
     bumpPlanVersion();
-  }, [readIngredients, writeIngredients, bumpPlanVersion, db]);
+  }, [readIngredients, writeIngredients, bumpPlanVersion]);
 
   return { updateIngredient, addIngredient, deleteIngredient };
 }
