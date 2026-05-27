@@ -110,16 +110,24 @@ export default function RecipeDetailScreen() {
   }
 
   const handleCopy = async () => {
+    const macroStr = rollup
+      ? `Serves ${recipe.servings} | ${prefix}${Math.round(rollup.perServe.cal)} kcal | P ${prefix}${Math.round(rollup.perServe.protein_g)}g | C ${prefix}${Math.round(rollup.perServe.carbs_g)}g | F ${prefix}${Math.round(rollup.perServe.fat_g)}g | ${recipe.cook_method} | ${timeLabel}`
+      : `Serves ${recipe.servings} | ${recipe.calories_per_serve} kcal | P ${recipe.protein_per_serve_g}g | ${recipe.cook_method} | ${timeLabel}`;
+
+    const trimmedNotes = recipe.notes?.trim();
+    const notesBlock = trimmedNotes ? `\n\nNotes:\n${trimmedNotes}` : '';
+
     const text = [
       recipe.title,
-      `Serves ${recipe.servings} | ${recipe.calories_per_serve} cal | ${recipe.protein_per_serve_g}g protein | ${recipe.cook_method} | ${timeLabel}`,
+      macroStr,
       '',
       'Ingredients:',
       ...recipe.ingredients.map((i) => `- ${formatAmount(i.amount)} ${i.item}`),
       '',
       'Method:',
       ...recipe.method_steps.map((s, idx) => `${idx + 1}. ${s}`),
-    ].join('\n');
+    ].join('\n') + notesBlock;
+
     await Clipboard.setStringAsync(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
