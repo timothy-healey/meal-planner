@@ -13,7 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, font, radius, shadow, spacing } from "../constants/tokens";
 import type { FoodNutritionData } from "../hooks/useFoodNutrition";
 import type { FoodNutritionRow } from "../types/db";
-import type { Ingredient } from "../meal_plan.types";
+import type { Ingredient, Unit } from "../meal_plan.types";
+import { amountToBasis } from "../lib/amount";
 import { AppText } from "./ui/AppText";
 import { PriceHistoryChart } from "./PriceHistoryChart";
 
@@ -46,6 +47,11 @@ export function IngredientSheet({
 }: Props) {
   const { height: windowHeight } = useWindowDimensions();
   const [name, setName] = useState("");
+  const [amountValue, setAmountValue] = useState("");
+  const [unit, setUnit] = useState<Unit>('g');
+  const [customUnitMode, setCustomUnitMode] = useState(false);
+  const [customUnit, setCustomUnit] = useState("");
+  const [unitPickerVisible, setUnitPickerVisible] = useState(false);
   const [basis, setBasis] = useState<Basis>("per_100g");
   const [brand, setBrand] = useState("");
   const [productName, setProductName] = useState("");
@@ -60,6 +66,34 @@ export function IngredientSheet({
     if (!visible) return;
     calIsAuto.current = false;
     setName(initialIngredient?.item ?? "");
+
+    // Seed amount/unit/customUnit from initialIngredient
+    if (initialIngredient) {
+      const a = initialIngredient.amount;
+      if (a.kind === 'custom') {
+        setCustomUnitMode(true);
+        setCustomUnit(a.unit);
+        setAmountValue(String(a.value));
+        setUnit('unit');
+      } else if (a.kind === 'measured') {
+        setCustomUnitMode(false);
+        setCustomUnit("");
+        setAmountValue(String(a.value));
+        setUnit(a.unit);
+      } else {
+        // note — Task 11 introduces note mode UI; for now show empty amount.
+        setCustomUnitMode(false);
+        setCustomUnit("");
+        setAmountValue("");
+        setUnit('g');
+      }
+    } else {
+      setCustomUnitMode(false);
+      setCustomUnit("");
+      setAmountValue("");
+      setUnit('g');
+    }
+
     if (existingEntry) {
       setBasis(existingEntry.basis);
       setBrand(existingEntry.brand ?? "");
@@ -179,6 +213,44 @@ export function IngredientSheet({
             )}
           </View>
 
+          <View style={styles.amtRow}>
+            <TextInput
+              style={styles.amtInput}
+              value={amountValue}
+              onChangeText={setAmountValue}
+              placeholder="0"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="decimal-pad"
+            />
+            {customUnitMode ? (
+              <View style={styles.customUnitWrap}>
+                <TextInput
+                  style={styles.customUnitInput}
+                  value={customUnit}
+                  onChangeText={setCustomUnit}
+                  placeholder="cloves"
+                  placeholderTextColor={colors.textTertiary}
+                />
+                <TouchableOpacity
+                  onPress={() => { setCustomUnitMode(false); setCustomUnit(""); setUnit('g'); }}
+                  style={styles.customUnitClear}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.unitSelect}
+                onPress={() => setUnitPickerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <AppText weight="semibold" size="md" color="textPrimary">{unitLabel(unit)}</AppText>
+                <Ionicons name="chevron-down" size={14} color={colors.textTertiary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <KeyboardAwareScrollView
             style={styles.fields}
             showsVerticalScrollIndicator={false}
@@ -274,8 +346,55 @@ export function IngredientSheet({
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={unitPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUnitPickerVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.pickerScrim}
+          activeOpacity={1}
+          onPress={() => setUnitPickerVisible(false)}
+        >
+          <View style={styles.pickerCard}>
+            {(['g', 'kg', 'mL', 'L', 'unit'] as const).map((u) => (
+              <TouchableOpacity
+                key={u}
+                style={styles.pickerOpt}
+                onPress={() => { setUnit(u); setUnitPickerVisible(false); }}
+                activeOpacity={0.7}
+              >
+                <AppText weight={unit === u ? 'bold' : 'semibold'} size="md" color="textPrimary">
+                  {unitLabel(u)}
+                </AppText>
+                {unit === u && <Ionicons name="checkmark" size={18} color={colors.green} />}
+              </TouchableOpacity>
+            ))}
+            <View style={styles.pickerDivider} />
+            <TouchableOpacity
+              style={styles.pickerOpt}
+              onPress={() => { setCustomUnitMode(true); setUnit('unit'); setUnitPickerVisible(false); }}
+              activeOpacity={0.7}
+            >
+              <AppText weight="semibold" size="md" color="green">Custom…</AppText>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </Modal>
   );
+}
+
+function unitLabel(u: Unit): string {
+  switch (u) {
+    case 'g':    return 'grams (g)';
+    case 'kg':   return 'kilograms (kg)';
+    case 'mL':   return 'millilitres (mL)';
+    case 'L':    return 'litres (L)';
+    case 'unit': return 'count (unit)';
+  }
 }
 
 function FieldLabel({ children, top }: { children: string; top?: boolean }) {
@@ -349,6 +468,82 @@ const styles = StyleSheet.create({
     borderColor: colors.divider,
     alignItems: "center",
     justifyContent: "center",
+  },
+  amtRow: {
+    flexDirection: "row",
+    gap: spacing[2],
+    marginBottom: spacing[3],
+  },
+  amtInput: {
+    flexBasis: 110,
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[3] + 2,
+    paddingVertical: 10,
+    fontFamily: font.family.semibold,
+    fontSize: font.size.lg,
+    color: colors.textPrimary,
+    textAlign: 'right',
+  },
+  unitSelect: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[3] + 2,
+    paddingVertical: 10,
+  },
+  customUnitWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[3] + 2,
+  },
+  customUnitInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontFamily: font.family.semibold,
+    fontSize: font.size.lg,
+    color: colors.textPrimary,
+  },
+  customUnitClear: {
+    paddingHorizontal: spacing[1],
+  },
+  pickerScrim: {
+    flex: 1,
+    backgroundColor: colors.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    paddingVertical: spacing[2],
+    width: 260,
+    ...shadow.sheet,
+  },
+  pickerOpt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    minHeight: 44,
+  },
+  pickerDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing[1],
   },
   unitToggle: {
     flexDirection: "row",
