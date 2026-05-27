@@ -102,6 +102,7 @@ export type Amount =
 export interface Ingredient {
   item: string;
   amount: Amount;
+  product_id?: string;
 }
 
 export interface PantryStaple {
