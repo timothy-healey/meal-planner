@@ -46,7 +46,7 @@ export function SuggestionDropdown({
             </View>
             {!hideEmblem && (
               <View style={styles.emblemSlot}>
-                {s.kind === 'product' && s.foodNutritionId && (
+                {s.kind === 'product' && s.hasNutrition && (
                   <Ionicons
                     testID="suggestion-emblem"
                     name="pie-chart"
