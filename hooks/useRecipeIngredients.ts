@@ -2,6 +2,15 @@ import { useCallback } from 'react';
 import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import type { Ingredient } from '../meal_plan.types';
 import type { RecipeRow } from '../types/db';
+import { parseAmountString } from '../lib/amount';
+
+// Coerce legacy v1.1 string amounts. Mirrors useRecipes.coerceIngredient.
+function coerceIngredient(raw: { item: string; amount: unknown }): Ingredient {
+  if (typeof raw.amount === 'string') {
+    return { item: raw.item, amount: parseAmountString(raw.amount) };
+  }
+  return raw as Ingredient;
+}
 
 // Pure helper, exported for unit testing.
 export function reindexLinksOnDelete(
@@ -28,7 +37,8 @@ export function useRecipeIngredients() {
       [recipeId],
     );
     if (!row) return [];
-    return JSON.parse(row.ingredients_json);
+    const raw = JSON.parse(row.ingredients_json);
+    return raw.map(coerceIngredient);
   }, [db]);
 
   const writeIngredients = useCallback(async (recipeId: string, ingredients: Ingredient[]) => {
