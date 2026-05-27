@@ -10,6 +10,15 @@ jest.mock('../../components/PriceHistoryChart', () => ({
 
 jest.mock('../../hooks/useIngredientSuggestions');
 
+jest.mock('../../hooks/useProducts', () => ({
+  useProducts: () => ({
+    upsert: jest.fn().mockResolvedValue('product-1'),
+    getById: jest.fn().mockResolvedValue(null),
+    getByKey: jest.fn().mockResolvedValue(null),
+    getNutritionForIngredients: jest.fn().mockResolvedValue({}),
+  }),
+}));
+
 beforeEach(() => {
   (useIngredientSuggestions as jest.Mock).mockReturnValue({
     query: jest.fn().mockResolvedValue([]),
@@ -52,7 +61,7 @@ describe('ReviewItemSheet × suggestions', () => {
       query: jest.fn().mockResolvedValue([
         { kind: 'brand', brand: 'Pauls', productName: null, productCount: 2,
           latestProductName: 'Full Cream', lastUsedAt: '2026-05-26T00:00:00Z',
-          foodNutritionId: null, matches: [] },
+          productId: null, hasNutrition: false, matches: [] },
       ]),
       invalidate: jest.fn(),
     });
@@ -66,7 +75,7 @@ describe('ReviewItemSheet × suggestions', () => {
     (useIngredientSuggestions as jest.Mock).mockReturnValue({
       query: jest.fn().mockResolvedValue([
         { kind: 'product', brand: 'Pauls', productName: 'Full Cream',
-          lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: 'fn-1', matches: [] },
+          lastUsedAt: '2026-05-26T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [] },
       ]),
       invalidate: jest.fn(),
     });
@@ -82,7 +91,7 @@ describe('ReviewItemSheet × suggestions', () => {
     (useIngredientSuggestions as jest.Mock).mockReturnValue({
       query: jest.fn().mockResolvedValue([
         { kind: 'product', brand: 'Pauls', productName: 'Full Cream',
-          lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: 'fn-1', matches: [] },
+          lastUsedAt: '2026-05-26T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [] },
       ]),
       invalidate: jest.fn(),
     });

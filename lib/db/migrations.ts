@@ -21,8 +21,9 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   }
 
   if (version < 2) {
-    // food_nutrition and ingredient_nutrition_link are created by SCHEMA_SQL above (IF NOT EXISTS).
-    // Nothing destructive to run — just bump the version.
+    // v2 originally introduced food_nutrition + ingredient_nutrition_link. Both
+    // tables were removed in the v6 products refactor; this block remains as a
+    // version marker for installs that linger at v1.
     await db.execAsync('PRAGMA user_version = 2');
   }
 

@@ -29,6 +29,7 @@ describe('buildClaudeContext', () => {
   it('resolves nutrition from barcode_nutrition for purchases with a barcode', async () => {
     mockDb.getAllAsync.mockResolvedValue([{
       item_name: 'oat milk', brand: 'Vitasoy', product_name: 'Oat Milk Barista',
+      product_id: 'prod-1',
       store: 'Coles', qty_amount: 1000, qty_unit: 'mL', price: 2.80,
       is_sale: 0, barcode: '9310123456789',
     }]);
@@ -46,15 +47,16 @@ describe('buildClaudeContext', () => {
     expect(parsed.purchases[0].barcode).toBe('9310123456789');
   });
 
-  it('falls back to food_nutrition lookup when no barcode', async () => {
+  it('falls back to products lookup via product_id when no barcode', async () => {
     mockDb.getAllAsync.mockResolvedValue([{
-      item_name: 'chicken breast', brand: 'Lilydale', product_name: null,
+      item_name: 'chicken breast', brand: 'Lilydale', product_name: 'Free Range',
+      product_id: 'prod-1',
       store: 'Coles', qty_amount: 500, qty_unit: 'g', price: 12.50,
       is_sale: 0, barcode: null,
     }]);
     mockDb.getFirstAsync.mockImplementation((sql: string) => {
       if (sql.includes('weekly_plans')) return Promise.resolve({ week_starting: '2026-05-18' });
-      if (sql.includes('food_nutrition')) return Promise.resolve({
+      if (sql.includes('FROM products')) return Promise.resolve({
         basis: 'per_100g', cal_per_basis: 165, protein_per_basis: 31,
         carbs_per_basis: 0, fat_per_basis: 3.6,
       });
@@ -68,7 +70,7 @@ describe('buildClaudeContext', () => {
 
   it('omits nutrition key when no match found for a purchase', async () => {
     mockDb.getAllAsync.mockResolvedValue([{
-      item_name: 'mystery herb', brand: null, product_name: null,
+      item_name: 'mystery herb', brand: null, product_name: null, product_id: null,
       store: 'Coles', qty_amount: null, qty_unit: null, price: 1.00,
       is_sale: 0, barcode: null,
     }]);
