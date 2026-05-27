@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
 import { colors, spacing, radius, font } from '../constants/tokens';
 
@@ -18,7 +19,7 @@ export function AddIngredientRow({ onPress }: Props) {
       accessibilityLabel="Add ingredient"
     >
       <View style={styles.plus}>
-        <AppText weight="extrabold" size="md" color="cream">+</AppText>
+        <Ionicons name="add" size={16} color={colors.cream} />
       </View>
       <AppText weight="bold" size="md" color="green" style={styles.label}>
         Add ingredient
