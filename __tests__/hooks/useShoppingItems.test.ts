@@ -61,3 +61,44 @@ describe('useShoppingItems.resetAll', () => {
     expect(mockDb.runAsync).not.toHaveBeenCalled();
   });
 });
+
+describe('useShoppingItems.deleteChecked', () => {
+  beforeEach(() => {
+    mockDb.getAllAsync.mockReset();
+    mockDb.runAsync.mockReset().mockResolvedValue(undefined);
+    mockDb.getAllAsync.mockResolvedValue(rows);
+  });
+
+  it('issues DELETE scoped to checked rows for the active plan_id', async () => {
+    const { result } = renderHook(() => useShoppingItems(planId));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.deleteChecked(); });
+
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      'DELETE FROM shopping_items WHERE plan_id = ? AND is_checked = 1',
+      [planId],
+    );
+  });
+
+  it('removes checked items from local state, keeping unchecked ones', async () => {
+    const { result } = renderHook(() => useShoppingItems(planId));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.items).toHaveLength(3);
+
+    await act(async () => { await result.current.deleteChecked(); });
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].id).toBe('c');
+    expect(result.current.items[0].isChecked).toBe(false);
+  });
+
+  it('is a no-op when planId is null (does not issue SQL)', async () => {
+    const { result } = renderHook(() => useShoppingItems(null));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.deleteChecked(); });
+
+    expect(mockDb.runAsync).not.toHaveBeenCalled();
+  });
+});

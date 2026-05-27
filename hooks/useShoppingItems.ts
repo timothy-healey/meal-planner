@@ -40,6 +40,15 @@ export function useShoppingItems(planId: string | null) {
     setItems((prev) => prev.map((i) => ({ ...i, isChecked: false, is_checked: 0 })));
   }, [planId, db]);
 
+  const deleteChecked = useCallback(async () => {
+    if (!planId) return;
+    await db.runAsync(
+      'DELETE FROM shopping_items WHERE plan_id = ? AND is_checked = 1',
+      [planId],
+    );
+    setItems((prev) => prev.filter((i) => i.isChecked === false));
+  }, [planId, db]);
+
   const addItem = useCallback(async (data: {
     name: string;
     qty: string;
@@ -128,5 +137,5 @@ export function useShoppingItems(planId: string | null) {
     );
   }, [items, db]);
 
-  return { items, loading, reload: load, toggleItem, resetAll, addItem, updateItem, deleteItem };
+  return { items, loading, reload: load, toggleItem, resetAll, deleteChecked, addItem, updateItem, deleteItem };
 }

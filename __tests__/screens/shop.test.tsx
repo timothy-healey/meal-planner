@@ -22,7 +22,7 @@ const mockTwoChecked = [
     name: 'Rice', qty: '1kg', estimated_price: 4, is_oneoff: 0, note: null, is_checked: 1, isChecked: true },
 ];
 
-const mockResetAll = jest.fn().mockResolvedValue(undefined);
+const mockDeleteChecked = jest.fn().mockResolvedValue(undefined);
 const mockSetMode = jest.fn().mockResolvedValue(undefined);
 
 // Mutable state read by the mock factories at call time. Tests mutate these
@@ -45,7 +45,8 @@ jest.mock('../../hooks/useShoppingItems', () => ({
     addItem: jest.fn(),
     updateItem: jest.fn(),
     deleteItem: jest.fn(),
-    resetAll: mockResetAll,
+    resetAll: jest.fn(),
+    deleteChecked: mockDeleteChecked,
   }),
 }));
 
@@ -115,7 +116,7 @@ function setState(opts: {
 
 describe('ShopScreen — Clear basket CTA', () => {
   beforeEach(() => {
-    mockResetAll.mockClear();
+    mockDeleteChecked.mockClear();
     mockSetMode.mockClear();
     setState({ mode: 'quick', checked: 'none', pending: 0, activeStore: null });
   });
@@ -146,13 +147,13 @@ describe('ShopScreen — Clear basket CTA', () => {
 
     expect(alertSpy).toHaveBeenCalledWith(
       'Clear basket?',
-      'All 2 items will move back to your list.',
+      "Remove 2 items from this week's list?",
       expect.any(Array),
     );
     alertSpy.mockRestore();
   });
 
-  it('calls resetAll when the destructive Clear button is confirmed', async () => {
+  it('calls deleteChecked when the destructive Clear button is confirmed', async () => {
     setState({ mode: 'quick', checked: 'two' });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
       const clear = (buttons ?? []).find((b: any) => b.text === 'Clear');
@@ -162,11 +163,11 @@ describe('ShopScreen — Clear basket CTA', () => {
     const { findByText } = render(<ShopScreen />);
     fireEvent.press(await findByText('Clear basket · 2 items'));
 
-    await waitFor(() => expect(mockResetAll).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockDeleteChecked).toHaveBeenCalledTimes(1));
     alertSpy.mockRestore();
   });
 
-  it('does not call resetAll when the alert is cancelled', async () => {
+  it('does not call deleteChecked when the alert is cancelled', async () => {
     setState({ mode: 'quick', checked: 'two' });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
       const cancel = (buttons ?? []).find((b: any) => b.text === 'Cancel');
@@ -177,7 +178,7 @@ describe('ShopScreen — Clear basket CTA', () => {
     fireEvent.press(await findByText('Clear basket · 2 items'));
 
     await new Promise((r) => setTimeout(r, 0));
-    expect(mockResetAll).not.toHaveBeenCalled();
+    expect(mockDeleteChecked).not.toHaveBeenCalled();
     alertSpy.mockRestore();
   });
 

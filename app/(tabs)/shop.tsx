@@ -39,7 +39,7 @@ export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { plan, loading: planLoading } = usePlan();
   const planId = plan?.row.id ?? null;
-  const { items, loading: itemsLoading, reload: reloadItems, toggleItem, addItem, updateItem, deleteItem, resetAll } = useShoppingItems(planId);
+  const { items, loading: itemsLoading, reload: reloadItems, toggleItem, addItem, updateItem, deleteItem, deleteChecked } = useShoppingItems(planId);
   const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
   const { pendingRecords, addRecord, deletePending, getLatestForItem, reload: reloadPending } = usePurchaseHistory(planId);
   const { mode, activeStore, savedStores, setMode, reload: reloadMode } = useShoppingMode(planId);
@@ -152,14 +152,14 @@ export default function ShopScreen() {
     const n = checkedItems.length;
     Alert.alert(
       'Clear basket?',
-      `All ${n} ${n === 1 ? 'item' : 'items'} will move back to your list.`,
+      `Remove ${n} ${n === 1 ? 'item' : 'items'} from this week's list?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
-            await resetAll();
+            await deleteChecked();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           },
         },
