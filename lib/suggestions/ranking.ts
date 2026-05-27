@@ -1,4 +1,19 @@
+import Fuse from 'fuse.js';
 import type { Candidate, Suggestion } from './types';
+
+const DAY_MS = 86_400_000;
+
+export function recencyMultiplier(lastUsedAtIso: string, now: number = Date.now()): number {
+  const days = Math.max(0, (now - Date.parse(lastUsedAtIso)) / DAY_MS);
+  return 1 - 0.2 * Math.exp(-days / 30);
+}
+
+export function itemNameMatches(candidateItemName: string | null, ingredientName: string): boolean {
+  if (!candidateItemName || !ingredientName.trim()) return false;
+  const fuse = new Fuse([candidateItemName], { threshold: 0.4, ignoreLocation: true });
+  return fuse.search(ingredientName).length > 0;
+}
+
 
 function normKey(brand: string, productName: string | null): string {
   return `${brand.trim().toLowerCase()}::${(productName ?? '').trim().toLowerCase()}`;
