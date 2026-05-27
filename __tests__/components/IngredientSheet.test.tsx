@@ -238,3 +238,61 @@ describe('IngredientSheet × selection', () => {
     await waitFor(() => expect(getByDisplayValue('50')).toBeTruthy());
   });
 });
+
+describe('IngredientSheet × autofill id plumbing', () => {
+  beforeEach(() => {
+    (useIngredientSuggestions as jest.Mock).mockReturnValue({
+      query: jest.fn().mockResolvedValue([
+        { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
+          lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [] },
+      ]),
+      invalidate: jest.fn(),
+    });
+    (useFoodNutrition as jest.Mock).mockReturnValue({
+      getById: jest.fn().mockResolvedValue({
+        id: 'fn-1', item_name: 'oat milk', brand: 'Vitasoy', product_name: 'Oat Milk Barista',
+        basis: 'per_100mL', cal_per_basis: 50, protein_per_basis: 1, carbs_per_basis: 5, fat_per_basis: 1,
+        updated_at: '2026-05-25T00:00:00Z',
+      }),
+    });
+  });
+
+  it('save after autofill passes the autofilled foodNutritionId', async () => {
+    const onSave = jest.fn();
+    const { findByText, getByPlaceholderText, getByText } = render(
+      <IngredientSheet
+        visible={true}
+        mode="add"
+        initialIngredient={{ item: 'milk', amount: { kind: 'measured', value: 250, unit: 'mL' } }}
+        existingEntry={null}
+        onSave={onSave}
+        onClose={jest.fn()}
+      />
+    );
+    fireEvent(getByPlaceholderText('e.g. Oat Milk Barista'), 'focus');
+    fireEvent.press(await findByText('Oat Milk Barista'));
+    await waitFor(() => expect(getByPlaceholderText('e.g. Oat Milk Barista').props.value).toBe('Oat Milk Barista'));
+    fireEvent.press(getByText('Done'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ foodNutritionId: 'fn-1' }));
+  });
+
+  it('editing brand after autofill clears the foodNutritionId in onSave', async () => {
+    const onSave = jest.fn();
+    const { findByText, getByPlaceholderText, getByText, getByDisplayValue } = render(
+      <IngredientSheet
+        visible={true}
+        mode="add"
+        initialIngredient={{ item: 'milk', amount: { kind: 'measured', value: 250, unit: 'mL' } }}
+        existingEntry={null}
+        onSave={onSave}
+        onClose={jest.fn()}
+      />
+    );
+    fireEvent(getByPlaceholderText('e.g. Oat Milk Barista'), 'focus');
+    fireEvent.press(await findByText('Oat Milk Barista'));
+    await waitFor(() => getByDisplayValue('Vitasoy'));
+    fireEvent.changeText(getByDisplayValue('Vitasoy'), 'Vitasoy Plus');
+    fireEvent.press(getByText('Done'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ foodNutritionId: null }));
+  });
+});

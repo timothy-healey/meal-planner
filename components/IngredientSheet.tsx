@@ -35,7 +35,11 @@ interface Props {
   mode: 'add' | 'edit';
   initialIngredient: Ingredient | null;
   existingEntry: FoodNutritionRow | null;
-  onSave: (data: { ingredient: Ingredient; nutrition: FoodNutritionData | null }) => void;
+  onSave: (data: {
+    ingredient: Ingredient;
+    nutrition: FoodNutritionData | null;
+    foodNutritionId: string | null;
+  }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
@@ -184,6 +188,15 @@ export function IngredientSheet({
     }
   }, [protein, carbs, fat]);
 
+  function handleBrandChange(v: string) {
+    setBrand(v);
+    if (mode === 'add') autofilledFoodNutritionId.current = null;
+  }
+  function handleProductChange(v: string) {
+    setProductName(v);
+    if (mode === 'add') autofilledFoodNutritionId.current = null;
+  }
+
   function handlePickBrand(s: Suggestion) {
     setBrand(s.brand);
     setBrandFocused(false);
@@ -246,7 +259,12 @@ export function IngredientSheet({
         }
       : null;
 
-    onSave({ ingredient: { item: trimmedName, amount }, nutrition });
+    onSave({
+      ingredient: { item: trimmedName, amount },
+      nutrition,
+      foodNutritionId: autofilledFoodNutritionId.current,
+    });
+    if (nutrition) invalidateSuggestions();
   }
 
   return (
@@ -366,7 +384,7 @@ export function IngredientSheet({
             <TextInput
               style={styles.input}
               value={brand}
-              onChangeText={setBrand}
+              onChangeText={handleBrandChange}
               placeholder="e.g. Vitasoy"
               placeholderTextColor={colors.textTertiary}
               onFocus={() => { setBrandFocused(true); setProductFocused(false); }}
@@ -385,7 +403,7 @@ export function IngredientSheet({
             <TextInput
               style={styles.input}
               value={productName}
-              onChangeText={setProductName}
+              onChangeText={handleProductChange}
               placeholder="e.g. Oat Milk Barista"
               placeholderTextColor={colors.textTertiary}
               onFocus={() => { setProductFocused(true); setBrandFocused(false); }}
