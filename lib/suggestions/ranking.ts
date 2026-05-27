@@ -1,4 +1,4 @@
-import type { Candidate } from './types';
+import type { Candidate, Suggestion } from './types';
 
 function normKey(brand: string, productName: string | null): string {
   return `${brand.trim().toLowerCase()}::${(productName ?? '').trim().toLowerCase()}`;
@@ -26,4 +26,41 @@ export function dedupCandidates(rows: Candidate[]): Candidate[] {
     byKey.set(key, merged);
   }
   return Array.from(byKey.values());
+}
+
+export function projectBrands(candidates: Candidate[]): Suggestion[] {
+  const byBrand = new Map<string, {
+    brand: string;
+    products: Set<string>;
+    latestProductName: string | null;
+    lastUsedAt: string;
+  }>();
+  for (const c of candidates) {
+    const key = c.brand.trim().toLowerCase();
+    const existing = byBrand.get(key);
+    if (!existing) {
+      byBrand.set(key, {
+        brand: c.brand,
+        products: new Set(c.productName ? [c.productName] : []),
+        latestProductName: c.productName,
+        lastUsedAt: c.lastUsedAt,
+      });
+      continue;
+    }
+    if (c.productName) existing.products.add(c.productName);
+    if (c.lastUsedAt > existing.lastUsedAt) {
+      existing.lastUsedAt = c.lastUsedAt;
+      existing.latestProductName = c.productName;
+    }
+  }
+  return Array.from(byBrand.values()).map<Suggestion>(b => ({
+    kind: 'brand',
+    brand: b.brand,
+    productName: null,
+    productCount: b.products.size,
+    latestProductName: b.latestProductName,
+    lastUsedAt: b.lastUsedAt,
+    foodNutritionId: null,
+    matches: [],
+  }));
 }
