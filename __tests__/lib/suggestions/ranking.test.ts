@@ -57,3 +57,46 @@ describe('projectBrands', () => {
     expect(projectBrands(input)[0].brand).toBe('Vitasoy');
   });
 });
+
+import { recencyMultiplier, itemNameMatches } from '../../../lib/suggestions/ranking';
+
+describe('recencyMultiplier', () => {
+  it('returns 0.8 for today (max boost)', () => {
+    const now = Date.parse('2026-05-27T12:00:00Z');
+    expect(recencyMultiplier('2026-05-27T12:00:00Z', now)).toBeCloseTo(0.8, 2);
+  });
+
+  it('returns ~0.93 for 30 days ago', () => {
+    const now = Date.parse('2026-05-27T12:00:00Z');
+    const thirtyDaysAgo = '2026-04-27T12:00:00Z';
+    const m = recencyMultiplier(thirtyDaysAgo, now);
+    expect(m).toBeGreaterThan(0.92);
+    expect(m).toBeLessThan(0.94);
+  });
+
+  it('approaches 1.0 for ancient dates', () => {
+    const now = Date.parse('2026-05-27T12:00:00Z');
+    expect(recencyMultiplier('2020-01-01T00:00:00Z', now)).toBeCloseTo(1.0, 2);
+  });
+
+  it('clamps negative deltas (future dates) to 0 days', () => {
+    const now = Date.parse('2026-05-27T12:00:00Z');
+    expect(recencyMultiplier('2026-12-01T00:00:00Z', now)).toBeCloseTo(0.8, 2);
+  });
+});
+
+describe('itemNameMatches', () => {
+  it('returns true on a close fuzzy match', () => {
+    expect(itemNameMatches('oat milk', 'milk')).toBe(true);
+    expect(itemNameMatches('rolled oats', 'oats')).toBe(true);
+  });
+
+  it('returns false on dissimilar strings', () => {
+    expect(itemNameMatches('chicken thigh', 'milk')).toBe(false);
+  });
+
+  it('returns false when either side is null or empty', () => {
+    expect(itemNameMatches(null, 'milk')).toBe(false);
+    expect(itemNameMatches('milk', '')).toBe(false);
+  });
+});
