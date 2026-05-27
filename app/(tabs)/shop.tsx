@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -39,7 +39,7 @@ export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { plan, loading: planLoading } = usePlan();
   const planId = plan?.row.id ?? null;
-  const { items, loading: itemsLoading, reload: reloadItems, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(planId);
+  const { items, loading: itemsLoading, reload: reloadItems, toggleItem, addItem, updateItem, deleteItem, resetAll } = useShoppingItems(planId);
   const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
   const { pendingRecords, addRecord, deletePending, getLatestForItem, reload: reloadPending } = usePurchaseHistory(planId);
   const { mode, activeStore, savedStores, setMode, reload: reloadMode } = useShoppingMode(planId);
@@ -105,7 +105,8 @@ export default function ShopScreen() {
     () => pendingRecords.reduce((sum, r) => sum + (r.price ?? 0), 0),
     [pendingRecords],
   );
-  const showCompleteCta = mode === 'review' && pendingCount > 0;
+  const showReviewCta = mode === 'review' && pendingCount > 0;
+  const showClearCta = mode === 'quick' && checkedItems.length > 0;
 
   async function handleToggle(itemId: string) {
     const item = items.find((i) => i.id === itemId);
@@ -144,6 +145,26 @@ export default function ShopScreen() {
   function handleStoreConfirm(store: { chain: string; branch: string }) {
     setStorePickerVisible(false);
     setMode('review', store);
+  }
+
+  function handleClearBasketPress() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const n = checkedItems.length;
+    Alert.alert(
+      'Clear basket?',
+      `All ${n} ${n === 1 ? 'item' : 'items'} will move back to your list.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await resetAll();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ],
+    );
   }
 
   if (planLoading || itemsLoading) {
@@ -218,7 +239,7 @@ export default function ShopScreen() {
             )}
           </View>
 
-          {showCompleteCta && (
+          {showReviewCta && (
             <TouchableOpacity
               style={styles.completeCta}
               onPress={() => {
@@ -234,6 +255,20 @@ export default function ShopScreen() {
               </AppText>
               <AppText weight="extrabold" size="sm" color="onGreen">
                 {`${formatPrice(pendingTotal)} ›`}
+              </AppText>
+            </TouchableOpacity>
+          )}
+
+          {showClearCta && (
+            <TouchableOpacity
+              style={styles.completeCta}
+              onPress={handleClearBasketPress}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={`Clear basket — ${checkedItems.length} ${checkedItems.length === 1 ? 'item' : 'items'}`}
+            >
+              <AppText weight="extrabold" size="sm" color="onGreen">
+                {`Clear basket · ${checkedItems.length} ${checkedItems.length === 1 ? 'item' : 'items'}`}
               </AppText>
             </TouchableOpacity>
           )}
