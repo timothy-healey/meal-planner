@@ -91,6 +91,17 @@ jest.mock('../../hooks/useIngredientSuggestions', () => ({
   }),
 }));
 
+// ReviewItemSheet uses useProducts.upsert + getByKey. Provide a stub so
+// rendering the (invisible) sheet doesn't reach for a real database connection.
+jest.mock('../../hooks/useProducts', () => ({
+  useProducts: () => ({
+    upsert: jest.fn().mockResolvedValue('product-1'),
+    getById: jest.fn().mockResolvedValue(null),
+    getByKey: jest.fn().mockResolvedValue(null),
+    getNutritionForIngredients: jest.fn().mockResolvedValue({}),
+  }),
+}));
+
 // `__mocks__/expo-router.js` already stubs useFocusEffect as a NOOP. That's fine:
 // the focus effect only triggers reload methods on the hooks, which are jest.fn()
 // and irrelevant to the CTA assertions. No additional expo-router mocking needed.

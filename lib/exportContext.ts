@@ -30,6 +30,7 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
     item_name: string;
     brand: string | null;
     product_name: string | null;
+    product_id: string | null;
     store: string | null;
     qty_amount: number | null;
     qty_unit: string | null;
@@ -37,10 +38,12 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
     is_sale: number;
     barcode: string | null;
   }>(
-    `SELECT ph.item_name, ph.brand, ph.product_name, s.chain AS store,
+    `SELECT ph.item_name, p.brand AS brand, p.product_name AS product_name,
+            ph.product_id, s.chain AS store,
             ph.qty_amount, ph.qty_unit, ph.price, ph.is_sale, ph.barcode
      FROM purchase_history ph
      LEFT JOIN stores s ON ph.store_id = s.id
+     LEFT JOIN products p ON p.id = ph.product_id
      WHERE ph.plan_id = ? AND ph.status = 'confirmed' ORDER BY ph.purchased_at ASC`,
     [planId]
   );
@@ -88,7 +91,7 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
       }
     }
 
-    if (!nutrition) {
+    if (!nutrition && p.product_id) {
       const fn = await db.getFirstAsync<{
         basis: string;
         cal_per_basis: number;
@@ -97,13 +100,8 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
         fat_per_basis: number;
       }>(
         `SELECT basis, cal_per_basis, protein_per_basis, carbs_per_basis, fat_per_basis
-         FROM food_nutrition
-         WHERE LOWER(TRIM(item_name)) = LOWER(TRIM(?))
-           AND COALESCE(brand, '') = COALESCE(?, '')
-           AND COALESCE(product_name, '') = COALESCE(?, '')
-         ORDER BY updated_at DESC
-         LIMIT 1`,
-        [p.item_name, p.brand, p.product_name]
+         FROM products WHERE id = ? LIMIT 1`,
+        [p.product_id]
       );
       if (fn) {
         nutrition = {
