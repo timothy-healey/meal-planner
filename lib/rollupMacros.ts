@@ -1,5 +1,5 @@
 import { amountMultiplier } from './amount';
-import type { FoodNutritionRow } from '../types/db';
+import type { ProductRow } from '../types/db';
 import type { Ingredient } from '../meal_plan.types';
 
 export interface MacroTotals {
@@ -17,7 +17,7 @@ export interface RollupResult {
 
 export function rollupMacros(
   ingredients: Ingredient[],
-  links: Record<number, FoodNutritionRow>,
+  links: Record<number, ProductRow>,
   servings: number,
 ): RollupResult | null {
   if (Object.keys(links).length === 0) return null;
