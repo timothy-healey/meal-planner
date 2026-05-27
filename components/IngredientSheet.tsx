@@ -184,6 +184,31 @@ export function IngredientSheet({
     }
   }, [protein, carbs, fat]);
 
+  function handlePickBrand(s: Suggestion) {
+    setBrand(s.brand);
+    setBrandFocused(false);
+    setSuggestions([]);
+  }
+
+  async function handlePickProduct(s: Suggestion) {
+    if (!brand) setBrand(s.brand);
+    setProductName(s.productName ?? '');
+    if (s.foodNutritionId) {
+      const row = await getFoodNutritionById(s.foodNutritionId);
+      if (row) {
+        setBasis(row.basis);
+        setCal(row.cal_per_basis != null ? String(row.cal_per_basis) : '');
+        setProtein(row.protein_per_basis != null ? String(row.protein_per_basis) : '');
+        setCarbs(row.carbs_per_basis != null ? String(row.carbs_per_basis) : '');
+        setFat(row.fat_per_basis != null ? String(row.fat_per_basis) : '');
+        calIsAuto.current = false;
+        autofilledFoodNutritionId.current = row.id;
+      }
+    }
+    setProductFocused(false);
+    setSuggestions([]);
+  }
+
   function handleSave() {
     const trimmedName = name.trim();
     if (!trimmedName) return;
@@ -351,7 +376,7 @@ export function IngredientSheet({
               <SuggestionDropdown
                 suggestions={suggestions}
                 showBrandInSecondary={false}
-                onPick={() => { /* wired in next task */ }}
+                onPick={handlePickBrand}
                 onLayoutHeight={setDropdownHeight}
               />
             )}
@@ -370,7 +395,7 @@ export function IngredientSheet({
               <SuggestionDropdown
                 suggestions={suggestions}
                 showBrandInSecondary={brand.trim() === ''}
-                onPick={() => { /* wired in next task */ }}
+                onPick={handlePickProduct}
                 onLayoutHeight={setDropdownHeight}
               />
             )}

@@ -198,3 +198,43 @@ describe('IngredientSheet × suggestions', () => {
     expect(await findByText('Oat Milk Barista')).toBeTruthy();
   });
 });
+
+describe('IngredientSheet × selection', () => {
+  beforeEach(() => {
+    (useIngredientSuggestions as jest.Mock).mockReturnValue({
+      query: jest.fn().mockResolvedValue([
+        {
+          kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
+          lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+        },
+      ]),
+      invalidate: jest.fn(),
+    });
+    (useFoodNutrition as jest.Mock).mockReturnValue({
+      getById: jest.fn().mockResolvedValue({
+        id: 'fn-1', item_name: 'oat milk', brand: 'Vitasoy', product_name: 'Oat Milk Barista',
+        basis: 'per_100mL', cal_per_basis: 50, protein_per_basis: 1.2, carbs_per_basis: 4.6, fat_per_basis: 1.5,
+        updated_at: '2026-05-25T00:00:00Z',
+      }),
+    });
+  });
+
+  it('tapping a product suggestion fills brand + product + nutrition fields', async () => {
+    const { findByText, getByPlaceholderText, getByDisplayValue } = render(
+      <IngredientSheet
+        visible={true}
+        mode="add"
+        initialIngredient={{ item: 'milk', amount: { kind: 'measured', value: 250, unit: 'mL' } }}
+        existingEntry={null}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+      />
+    );
+    fireEvent(getByPlaceholderText('e.g. Oat Milk Barista'), 'focus');
+    const row = await findByText('Oat Milk Barista');
+    fireEvent.press(row);
+    await waitFor(() => expect(getByDisplayValue('Vitasoy')).toBeTruthy());
+    await waitFor(() => expect(getByDisplayValue('Oat Milk Barista')).toBeTruthy());
+    await waitFor(() => expect(getByDisplayValue('50')).toBeTruthy());
+  });
+});
