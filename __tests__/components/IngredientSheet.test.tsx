@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { FoodNutritionSheet } from '../../components/FoodNutritionSheet';
+import { IngredientSheet } from '../../components/IngredientSheet';
 import type { FoodNutritionRow } from '../../types/db';
 
 jest.mock('../../components/PriceHistoryChart', () => ({
@@ -20,10 +20,10 @@ const EXISTING: FoodNutritionRow = {
   updated_at: '2026-05-24T00:00:00.000Z',
 };
 
-describe('FoodNutritionSheet', () => {
+describe('IngredientSheet', () => {
   it('pre-fills brand and product name from existingEntry', () => {
     const { getByDisplayValue } = render(
-      <FoodNutritionSheet
+      <IngredientSheet
         visible={true}
         ingredientName="Oat milk"
         ingredientAmount="240mL"
@@ -38,7 +38,7 @@ describe('FoodNutritionSheet', () => {
 
   it('pre-fills calorie value from existingEntry', () => {
     const { getByDisplayValue } = render(
-      <FoodNutritionSheet
+      <IngredientSheet
         visible={true}
         ingredientName="Oat milk"
         ingredientAmount="240mL"
@@ -52,7 +52,7 @@ describe('FoodNutritionSheet', () => {
 
   it('shows empty inputs when existingEntry is null', () => {
     const { queryByDisplayValue } = render(
-      <FoodNutritionSheet
+      <IngredientSheet
         visible={true}
         ingredientName="Brown rice"
         ingredientAmount="200g"
@@ -67,7 +67,7 @@ describe('FoodNutritionSheet', () => {
 
   it('displays the ingredient name as heading', () => {
     const { getByText } = render(
-      <FoodNutritionSheet
+      <IngredientSheet
         visible={true}
         ingredientName="Brown rice"
         ingredientAmount="200g"

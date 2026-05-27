@@ -32,7 +32,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function FoodNutritionSheet({
+export function IngredientSheet({
   visible,
   ingredientName,
   ingredientAmount,

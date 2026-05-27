@@ -7,7 +7,7 @@ import { AppText } from '../../components/ui/AppText';
 import { CategoryHeader } from '../../components/ui/CategoryHeader';
 import { StepList } from '../../components/ui/StepList';
 import { IngredientRow } from '../../components/IngredientRow';
-import { FoodNutritionSheet } from '../../components/FoodNutritionSheet';
+import { IngredientSheet } from '../../components/IngredientSheet';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useFoodNutrition } from '../../hooks/useFoodNutrition';
 import { rollupMacros } from '../../lib/rollupMacros';
@@ -175,7 +175,7 @@ export default function RecipeDetailScreen() {
         </View>
       </ScrollView>
 
-      <FoodNutritionSheet
+      <IngredientSheet
         visible={sheetIngredient !== null}
         ingredientName={sheetIngredient?.name ?? ''}
         ingredientAmount={sheetIngredient?.amount ?? ''}
