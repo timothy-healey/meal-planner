@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Modal, TouchableOpacity, TextInput,
-  ScrollView, StyleSheet, KeyboardAvoidingView, Platform,
+  StyleSheet,
 } from 'react-native';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
 import { colors, font, spacing, radius } from '../constants/tokens';
@@ -51,7 +52,7 @@ export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props)
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
         <View style={styles.sheet}>
@@ -63,7 +64,11 @@ export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props)
             Saved with your purchases for this trip
           </AppText>
 
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+          <KeyboardAwareScrollView
+            style={styles.list}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {stores.map((s) => {
               const key = storeKey(s);
               return (
@@ -122,7 +127,7 @@ export function StorePickerSheet({ visible, stores, onConfirm, onClose }: Props)
                 </AppText>
               </TouchableOpacity>
             )}
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           <TouchableOpacity
             style={[styles.confirmBtn, !canSave && styles.confirmBtnDisabled]}
