@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { IngredientSheet } from '../../components/IngredientSheet';
 import type { FoodNutritionRow } from '../../types/db';
 import type { Ingredient } from '../../meal_plan.types';
@@ -115,5 +115,25 @@ describe('IngredientSheet', () => {
     );
     expect(getByDisplayValue('3')).toBeTruthy();
     expect(getByDisplayValue('cloves')).toBeTruthy();
+  });
+
+  it('emits unified onSave with ingredient + nutrition on Done press', () => {
+    const onSave = jest.fn();
+    const { getByText } = render(
+      <IngredientSheet
+        visible={true}
+        mode="edit"
+        initialIngredient={{ item: 'Honey', amount: { kind: 'measured', value: 70, unit: 'g' } }}
+        existingEntry={EXISTING}
+        onSave={onSave}
+        onClose={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    );
+    fireEvent.press(getByText('Done'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      ingredient: { item: 'Honey', amount: { kind: 'measured', value: 70, unit: 'g' } },
+      nutrition: expect.objectContaining({ brand: 'Vitasoy' }),
+    }));
   });
 });

@@ -51,6 +51,8 @@ export function IngredientSheet({
   const [unit, setUnit] = useState<Unit>('g');
   const [customUnitMode, setCustomUnitMode] = useState(false);
   const [customUnit, setCustomUnit] = useState("");
+  const [noteMode, setNoteMode] = useState(false);
+  const [noteText, setNoteText] = useState("");
   const [unitPickerVisible, setUnitPickerVisible] = useState(false);
   const [basis, setBasis] = useState<Basis>("per_100g");
   const [brand, setBrand] = useState("");
@@ -67,27 +69,34 @@ export function IngredientSheet({
     calIsAuto.current = false;
     setName(initialIngredient?.item ?? "");
 
-    // Seed amount/unit/customUnit from initialIngredient
+    // Seed amount/unit/customUnit/note from initialIngredient
     if (initialIngredient) {
       const a = initialIngredient.amount;
-      if (a.kind === 'custom') {
+      if (a.kind === 'note') {
+        setNoteMode(true);
+        setNoteText(a.text);
+        setAmountValue("");
+        setUnit('g');
+        setCustomUnitMode(false);
+        setCustomUnit("");
+      } else if (a.kind === 'custom') {
+        setNoteMode(false);
+        setNoteText("");
         setCustomUnitMode(true);
         setCustomUnit(a.unit);
         setAmountValue(String(a.value));
         setUnit('unit');
-      } else if (a.kind === 'measured') {
+      } else {
+        setNoteMode(false);
+        setNoteText("");
         setCustomUnitMode(false);
         setCustomUnit("");
         setAmountValue(String(a.value));
         setUnit(a.unit);
-      } else {
-        // note — Task 11 introduces note mode UI; for now show empty amount.
-        setCustomUnitMode(false);
-        setCustomUnit("");
-        setAmountValue("");
-        setUnit('g');
       }
     } else {
+      setNoteMode(false);
+      setNoteText("");
       setCustomUnitMode(false);
       setCustomUnit("");
       setAmountValue("");
@@ -119,7 +128,7 @@ export function IngredientSheet({
           : "",
       );
     } else {
-      setBasis("per_100g");
+      setBasis(initialIngredient ? amountToBasis(initialIngredient.amount) : "per_100g");
       setBrand("");
       setProductName("");
       setCal("");
@@ -148,21 +157,40 @@ export function IngredientSheet({
   function handleSave() {
     const trimmedName = name.trim();
     if (!trimmedName) return;
-    // Ingredient amount is reintroduced in Task 10/11; for now we preserve the existing amount
-    // when editing, or fall back to a placeholder for add mode (replaced in Task 11).
-    const amount: Ingredient['amount'] =
-      initialIngredient?.amount ?? { kind: 'measured', value: 0, unit: 'g' };
 
-    const nutrition: FoodNutritionData = {
-      item_name: trimmedName.toLowerCase(),
-      brand: brand.trim() || null,
-      product_name: productName.trim() || null,
-      basis,
-      cal_per_basis: cal ? parseFloat(cal) : null,
-      protein_per_basis: protein ? parseFloat(protein) : null,
-      carbs_per_basis: carbs ? parseFloat(carbs) : null,
-      fat_per_basis: fat ? parseFloat(fat) : null,
-    };
+    let amount: Ingredient['amount'];
+    if (noteMode) {
+      amount = { kind: 'note', text: noteText.trim() };
+    } else {
+      const value = parseFloat(amountValue);
+      if (isNaN(value) || value <= 0) return;
+      if (customUnitMode) {
+        const u = customUnit.trim();
+        if (!u) return;
+        amount = { kind: 'custom', value, unit: u };
+      } else {
+        amount = { kind: 'measured', value, unit };
+      }
+    }
+
+    const hasNutritionInput =
+      brand.trim() !== "" ||
+      productName.trim() !== "" ||
+      cal !== "" || protein !== "" || carbs !== "" || fat !== "";
+
+    const nutrition: FoodNutritionData | null = hasNutritionInput
+      ? {
+          item_name: trimmedName.toLowerCase(),
+          brand: brand.trim() || null,
+          product_name: productName.trim() || null,
+          basis,
+          cal_per_basis:     cal     ? parseFloat(cal)     : null,
+          protein_per_basis: protein ? parseFloat(protein) : null,
+          carbs_per_basis:   carbs   ? parseFloat(carbs)   : null,
+          fat_per_basis:     fat     ? parseFloat(fat)     : null,
+        }
+      : null;
+
     onSave({ ingredient: { item: trimmedName, amount }, nutrition });
   }
 
@@ -213,6 +241,7 @@ export function IngredientSheet({
             )}
           </View>
 
+          {!noteMode && (
           <View style={styles.amtRow}>
             <TextInput
               style={styles.amtInput}
@@ -250,6 +279,28 @@ export function IngredientSheet({
               </TouchableOpacity>
             )}
           </View>
+          )}
+
+          {noteMode && (
+            <View style={styles.noteWrap}>
+              <TextInput
+                style={styles.input}
+                value={noteText}
+                onChangeText={setNoteText}
+                placeholder="to taste"
+                placeholderTextColor={colors.textTertiary}
+              />
+              <TouchableOpacity
+                style={styles.noteToMeasured}
+                onPress={() => { setNoteMode(false); setNoteText(""); setAmountValue("0"); setUnit('g'); }}
+                activeOpacity={0.7}
+              >
+                <AppText weight="bold" size="xs" color="green" style={{ letterSpacing: font.tracking.label }}>
+                  Add measurement
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <KeyboardAwareScrollView
             style={styles.fields}
@@ -274,7 +325,31 @@ export function IngredientSheet({
               placeholderTextColor={colors.textTertiary}
             />
 
-            <FieldLabel top>CALORIES</FieldLabel>
+            <View style={styles.basisRow}>
+              <AppText weight="bold" size="xs" color="textTertiary" style={{ letterSpacing: font.tracking.caps }}>
+                NUTRITION PER
+              </AppText>
+              <View style={styles.unitToggle}>
+                {BASIS_LABELS.map(({ value, label }) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[styles.unitOpt, basis === value && styles.unitOptActive]}
+                    onPress={() => setBasis(value)}
+                    activeOpacity={0.7}
+                  >
+                    <AppText
+                      weight={basis === value ? "bold" : "semibold"}
+                      size="2xs"
+                      color={basis === value ? "green" : "textTertiary"}
+                    >
+                      {label}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <FieldLabel>CALORIES</FieldLabel>
             <TextInput
               style={styles.input}
               value={cal}
@@ -373,6 +448,13 @@ export function IngredientSheet({
               </TouchableOpacity>
             ))}
             <View style={styles.pickerDivider} />
+            <TouchableOpacity
+              style={styles.pickerOpt}
+              onPress={() => { setNoteMode(true); setUnitPickerVisible(false); }}
+              activeOpacity={0.7}
+            >
+              <AppText weight="semibold" size="md" color="green">Note (no measurement)</AppText>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.pickerOpt}
               onPress={() => { setCustomUnitMode(true); setUnit('unit'); setUnitPickerVisible(false); }}
@@ -518,6 +600,21 @@ const styles = StyleSheet.create({
   },
   customUnitClear: {
     paddingHorizontal: spacing[1],
+  },
+  noteWrap: {
+    marginBottom: spacing[3],
+    gap: spacing[2],
+  },
+  noteToMeasured: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing[1],
+  },
+  basisRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing[3],
+    marginBottom: spacing[2],
   },
   pickerScrim: {
     flex: 1,
