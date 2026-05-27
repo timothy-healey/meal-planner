@@ -1,8 +1,9 @@
 export type Candidate = {
   brand: string;
-  productName: string | null;
-  itemName: string | null;
-  foodNutritionId: string | null;
+  productName: string;
+  itemName: string;
+  productId: string;
+  hasNutrition: boolean;
   lastUsedAt: string;
 };
 
@@ -15,7 +16,8 @@ export type Suggestion = {
   productCount?: number;
   latestProductName?: string | null;
   lastUsedAt: string;
-  foodNutritionId: string | null;
+  productId: string | null;
+  hasNutrition: boolean;
   matches: { field: SuggestionKind; indices: [number, number][] }[];
 };
 

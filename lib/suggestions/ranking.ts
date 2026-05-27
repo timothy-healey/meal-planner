@@ -15,11 +15,13 @@ export function itemNameMatches(candidateItemName: string | null, ingredientName
 }
 
 
-function normKey(brand: string, productName: string | null): string {
-  return `${brand.trim().toLowerCase()}::${(productName ?? '').trim().toLowerCase()}`;
+function normKey(brand: string, productName: string): string {
+  return `${brand.trim().toLowerCase()}::${productName.trim().toLowerCase()}`;
 }
 
 export function dedupCandidates(rows: Candidate[]): Candidate[] {
+  // Rows from the products-anchored query are already unique by (brand, product_name).
+  // Keep the function as a defensive pass-through to preserve callers' expectations.
   const byKey = new Map<string, Candidate>();
   for (const row of rows) {
     const key = normKey(row.brand, row.productName);
@@ -28,17 +30,12 @@ export function dedupCandidates(rows: Candidate[]): Candidate[] {
       byKey.set(key, row);
       continue;
     }
-    const winningId = existing.foodNutritionId ?? row.foodNutritionId;
-    const winningItem = existing.itemName ?? row.itemName;
-    const merged: Candidate = {
-      brand: existing.brand,
-      productName: existing.productName,
-      itemName: winningItem,
-      foodNutritionId: winningId,
+    byKey.set(key, {
+      ...existing,
+      hasNutrition: existing.hasNutrition || row.hasNutrition,
       lastUsedAt:
         existing.lastUsedAt >= row.lastUsedAt ? existing.lastUsedAt : row.lastUsedAt,
-    };
-    byKey.set(key, merged);
+    });
   }
   return Array.from(byKey.values());
 }
@@ -49,6 +46,7 @@ export function projectBrands(candidates: Candidate[]): Suggestion[] {
     products: Set<string>;
     latestProductName: string | null;
     lastUsedAt: string;
+    hasNutrition: boolean;
   }>();
   for (const c of candidates) {
     const key = c.brand.trim().toLowerCase();
@@ -56,13 +54,15 @@ export function projectBrands(candidates: Candidate[]): Suggestion[] {
     if (!existing) {
       byBrand.set(key, {
         brand: c.brand,
-        products: new Set(c.productName ? [c.productName] : []),
+        products: new Set([c.productName]),
         latestProductName: c.productName,
         lastUsedAt: c.lastUsedAt,
+        hasNutrition: c.hasNutrition,
       });
       continue;
     }
-    if (c.productName) existing.products.add(c.productName);
+    existing.products.add(c.productName);
+    if (c.hasNutrition) existing.hasNutrition = true;
     if (c.lastUsedAt > existing.lastUsedAt) {
       existing.lastUsedAt = c.lastUsedAt;
       existing.latestProductName = c.productName;
@@ -75,7 +75,8 @@ export function projectBrands(candidates: Candidate[]): Suggestion[] {
     productCount: b.products.size,
     latestProductName: b.latestProductName,
     lastUsedAt: b.lastUsedAt,
-    foodNutritionId: null,
+    productId: null,
+    hasNutrition: b.hasNutrition,
     matches: [],
   }));
 }
@@ -83,10 +84,10 @@ export function projectBrands(candidates: Candidate[]): Suggestion[] {
 export function rankEmptyQuery(
   targets: Suggestion[],
   ingredientName: string,
-  lookupItemName: (foodNutritionId: string) => string | null,
+  lookupItemName: (productId: string) => string | null,
 ): Suggestion[] {
   const scored = targets.map(t => {
-    const itemName = t.foodNutritionId ? lookupItemName(t.foodNutritionId) : null;
+    const itemName = t.productId ? lookupItemName(t.productId) : null;
     const isMatch = itemNameMatches(itemName, ingredientName);
     return { t, matchRank: isMatch ? 0 : 1 };
   });
@@ -102,7 +103,7 @@ export function rankFuzzyQuery(
   text: string,
   field: SuggestionKind,
   ingredientName: string,
-  lookupItemName: (foodNutritionId: string) => string | null,
+  lookupItemName: (productId: string) => string | null,
   now: number = Date.now(),
 ): Suggestion[] {
   const fuseKey = field === 'brand' ? 'brand' : 'productName';
@@ -116,7 +117,7 @@ export function rankFuzzyQuery(
   const hits = fuse.search(text);
   const scored = hits.map(hit => {
     const t = hit.item;
-    const itemName = t.foodNutritionId ? lookupItemName(t.foodNutritionId) : null;
+    const itemName = t.productId ? lookupItemName(t.productId) : null;
     const itemMul = itemNameMatches(itemName, ingredientName) ? 0.5 : 1.0;
     const fuseScore = hit.score ?? 1;
     const finalScore = fuseScore * recencyMultiplier(t.lastUsedAt, now) * itemMul;

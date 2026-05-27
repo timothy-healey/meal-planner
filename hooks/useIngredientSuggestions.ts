@@ -9,23 +9,24 @@ import {
 import type { Candidate, QueryParams, Suggestion } from '../lib/suggestions/types';
 
 interface Row {
+  product_id: string;
   brand: string;
-  product_name: string | null;
-  item_name: string | null;
-  food_nutrition_id: string | null;
+  product_name: string;
+  item_name: string;
+  has_nutrition: 0 | 1;
   last_used_at: string;
 }
 
 const SQL = `
-  SELECT brand, product_name, item_name, id AS food_nutrition_id, updated_at AS last_used_at
-  FROM food_nutrition
-  WHERE brand IS NOT NULL AND TRIM(brand) <> ''
-  UNION ALL
-  SELECT brand, product_name, NULL AS item_name, NULL AS food_nutrition_id,
-         MAX(purchased_at) AS last_used_at
-  FROM purchase_history
-  WHERE brand IS NOT NULL AND TRIM(brand) <> ''
-  GROUP BY brand, product_name
+  SELECT p.id AS product_id, p.brand, p.product_name, p.item_name,
+         CASE WHEN p.cal_per_basis IS NOT NULL OR p.protein_per_basis IS NOT NULL
+                OR p.carbs_per_basis IS NOT NULL OR p.fat_per_basis IS NOT NULL
+              THEN 1 ELSE 0 END AS has_nutrition,
+         COALESCE(MAX(ph.purchased_at), p.updated_at) AS last_used_at
+  FROM products p
+  LEFT JOIN purchase_history ph ON ph.product_id = p.id
+  WHERE p.brand <> ''
+  GROUP BY p.id
 `;
 
 export function useIngredientSuggestions() {
@@ -39,7 +40,8 @@ export function useIngredientSuggestions() {
       brand: r.brand,
       productName: r.product_name,
       itemName: r.item_name,
-      foodNutritionId: r.food_nutrition_id,
+      productId: r.product_id,
+      hasNutrition: r.has_nutrition === 1,
       lastUsedAt: r.last_used_at,
     }));
     const deduped = dedupCandidates(candidates);
@@ -61,14 +63,13 @@ export function useIngredientSuggestions() {
           brand: c.brand,
           productName: c.productName,
           lastUsedAt: c.lastUsedAt,
-          foodNutritionId: c.foodNutritionId,
+          productId: c.productId,
+          hasNutrition: c.hasNutrition,
           matches: [],
         }));
 
     const itemNameById = new Map<string, string>();
-    for (const c of filtered) {
-      if (c.foodNutritionId && c.itemName) itemNameById.set(c.foodNutritionId, c.itemName);
-    }
+    for (const c of filtered) itemNameById.set(c.productId, c.itemName);
     const lookup = (id: string) => itemNameById.get(id) ?? null;
 
     if (p.text.trim() === '') {
