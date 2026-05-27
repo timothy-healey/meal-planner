@@ -25,7 +25,7 @@ import { useShoppingItems } from '../../hooks/useShoppingItems';
 import { usePurchaseHistory } from '../../hooks/usePurchaseHistory';
 import { useShoppingMode } from '../../hooks/useShoppingMode';
 import { takePendingScanResult } from '../../lib/barcodeScanResult';
-import type { ShoppingItemRow, PurchaseHistoryRow } from '../../types/db';
+import type { ShoppingItemRow, PurchaseHistoryRowWithProduct } from '../../types/db';
 import type { ScanResult } from '../../lib/barcodeScanResult';
 import type { AddPurchaseData } from '../../hooks/usePurchaseHistory';
 import { useCategoryOrder } from '../../hooks/useCategoryOrder';
@@ -47,7 +47,7 @@ export default function ShopScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingItemRow | null>(null);
   const [reviewItem, setReviewItem] = useState<ShoppingItemRow | null>(null);
-  const [reviewLatest, setReviewLatest] = useState<PurchaseHistoryRow | null>(null);
+  const [reviewLatest, setReviewLatest] = useState<PurchaseHistoryRowWithProduct | null>(null);
   const [storePickerVisible, setStorePickerVisible] = useState(false);
   const [pendingScan, setPendingScan] = useState<ScanResult | null>(null);
 

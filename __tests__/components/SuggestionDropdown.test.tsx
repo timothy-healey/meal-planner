@@ -7,16 +7,16 @@ const NOW = Date.parse('2026-05-27T12:00:00Z');
 
 const PRODUCT_WITH_NUTRITION: Suggestion = {
   kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
-  lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+  lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [],
 };
 const PRODUCT_NO_NUTRITION: Suggestion = {
   kind: 'product', brand: 'Vitasoy', productName: 'Calci-Plus Bar',
-  lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: null, matches: [],
+  lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-2', hasNutrition: false, matches: [],
 };
 const BRAND: Suggestion = {
   kind: 'brand', brand: 'Vitasoy', productName: null,
   productCount: 4, latestProductName: 'Oat Milk Barista',
-  lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: null, matches: [],
+  lastUsedAt: '2026-05-25T00:00:00Z', productId: null, hasNutrition: false, matches: [],
 };
 
 describe('SuggestionDropdown', () => {
@@ -34,7 +34,7 @@ describe('SuggestionDropdown', () => {
     expect(getByText('Calci-Plus Bar')).toBeTruthy();
   });
 
-  it('renders pie-chart emblem only on product rows with foodNutritionId', () => {
+  it('renders pie-chart emblem only on product rows with hasNutrition', () => {
     const { queryAllByTestId } = render(
       <SuggestionDropdown
         suggestions={[PRODUCT_WITH_NUTRITION, PRODUCT_NO_NUTRITION, BRAND]}
@@ -93,7 +93,7 @@ describe('SuggestionDropdown match highlight', () => {
   it('renders matched substring with the highlight style', () => {
     const withMatches: Suggestion = {
       kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
-      lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1',
+      lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-1', hasNutrition: true,
       matches: [{ field: 'product', indices: [[9, 11]] }],   // "Bar" in "Oat Milk Barista"
     };
     const { getByText } = render(
@@ -115,7 +115,7 @@ describe('SuggestionDropdown hideEmblem', () => {
   it('hides the pie-chart emblem even on has-nutrition rows when hideEmblem is true', () => {
     const withNutrition: Suggestion = {
       kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
-      lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+      lastUsedAt: '2026-05-25T00:00:00Z', productId: 'fn-1', hasNutrition: true, matches: [],
     };
     const { queryAllByTestId } = render(
       <SuggestionDropdown

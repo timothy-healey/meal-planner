@@ -4,42 +4,34 @@ import type { Candidate } from '../../../lib/suggestions/types';
 describe('dedupCandidates', () => {
   it('groups by case-insensitive trimmed (brand, productName)', () => {
     const input: Candidate[] = [
-      { brand: 'Vitasoy', productName: 'Oat Milk', itemName: 'oat milk', foodNutritionId: 'fn-1', lastUsedAt: '2026-05-20T00:00:00Z' },
-      { brand: 'vitasoy ', productName: ' oat milk', itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-25T00:00:00Z' },
+      { brand: 'Vitasoy', productName: 'Oat Milk', itemName: 'oat milk', productId: 'fn-1', hasNutrition: true, lastUsedAt: '2026-05-20T00:00:00Z' },
+      { brand: 'vitasoy ', productName: ' oat milk', itemName: 'oat milk', productId: 'fn-1', hasNutrition: false, lastUsedAt: '2026-05-25T00:00:00Z' },
     ];
     const result = dedupCandidates(input);
     expect(result).toHaveLength(1);
-    expect(result[0].foodNutritionId).toBe('fn-1');
+    expect(result[0].productId).toBe('fn-1');
     expect(result[0].itemName).toBe('oat milk');
+    // hasNutrition OR-merges to true if any input row had nutrition.
+    expect(result[0].hasNutrition).toBe(true);
     expect(result[0].lastUsedAt).toBe('2026-05-25T00:00:00Z');
   });
 
   it('keeps distinct (brand, product) pairs separate', () => {
     const input: Candidate[] = [
-      { brand: 'Vitasoy', productName: 'Oat Milk',  itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-20T00:00:00Z' },
-      { brand: 'Vitasoy', productName: 'Soy Milk',  itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-21T00:00:00Z' },
+      { brand: 'Vitasoy', productName: 'Oat Milk', itemName: 'oat milk', productId: 'a', hasNutrition: false, lastUsedAt: '2026-05-20T00:00:00Z' },
+      { brand: 'Vitasoy', productName: 'Soy Milk', itemName: 'soy milk', productId: 'b', hasNutrition: false, lastUsedAt: '2026-05-21T00:00:00Z' },
     ];
     const result = dedupCandidates(input);
     expect(result).toHaveLength(2);
-  });
-
-  it('handles null productName (brand-only purchase_history rows) by grouping per brand', () => {
-    const input: Candidate[] = [
-      { brand: 'No-Brand', productName: null, itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-20T00:00:00Z' },
-      { brand: 'No-Brand', productName: null, itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-21T00:00:00Z' },
-    ];
-    const result = dedupCandidates(input);
-    expect(result).toHaveLength(1);
-    expect(result[0].lastUsedAt).toBe('2026-05-21T00:00:00Z');
   });
 });
 
 describe('projectBrands', () => {
   it('returns one suggestion per case-insensitive brand', () => {
     const input: Candidate[] = [
-      { brand: 'Vitasoy',  productName: 'Oat Milk',  itemName: 'oat milk',   foodNutritionId: 'a', lastUsedAt: '2026-05-20T00:00:00Z' },
-      { brand: 'vitasoy',  productName: 'Soy Milk',  itemName: 'soy milk',   foodNutritionId: 'b', lastUsedAt: '2026-05-25T00:00:00Z' },
-      { brand: 'So Good',  productName: 'Almond',    itemName: 'almond milk',foodNutritionId: 'c', lastUsedAt: '2026-05-22T00:00:00Z' },
+      { brand: 'Vitasoy',  productName: 'Oat Milk',  itemName: 'oat milk',    productId: 'a', hasNutrition: true,  lastUsedAt: '2026-05-20T00:00:00Z' },
+      { brand: 'vitasoy',  productName: 'Soy Milk',  itemName: 'soy milk',    productId: 'b', hasNutrition: true,  lastUsedAt: '2026-05-25T00:00:00Z' },
+      { brand: 'So Good',  productName: 'Almond',    itemName: 'almond milk', productId: 'c', hasNutrition: false, lastUsedAt: '2026-05-22T00:00:00Z' },
     ];
     const result = projectBrands(input);
     expect(result).toHaveLength(2);
@@ -51,8 +43,8 @@ describe('projectBrands', () => {
 
   it('uses the first-seen capitalisation of the brand', () => {
     const input: Candidate[] = [
-      { brand: 'Vitasoy', productName: 'A', itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-20T00:00:00Z' },
-      { brand: 'VITASOY', productName: 'B', itemName: null, foodNutritionId: null, lastUsedAt: '2026-05-21T00:00:00Z' },
+      { brand: 'Vitasoy', productName: 'A', itemName: 'a', productId: 'a', hasNutrition: false, lastUsedAt: '2026-05-20T00:00:00Z' },
+      { brand: 'VITASOY', productName: 'B', itemName: 'b', productId: 'b', hasNutrition: false, lastUsedAt: '2026-05-21T00:00:00Z' },
     ];
     expect(projectBrands(input)[0].brand).toBe('Vitasoy');
   });
@@ -106,9 +98,9 @@ import type { Suggestion } from '../../../lib/suggestions/types';
 
 describe('rankEmptyQuery', () => {
   const baseTargets: Suggestion[] = [
-    { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',  lastUsedAt: '2026-04-20T00:00:00Z', foodNutritionId: 'a', matches: [] },
-    { kind: 'product', brand: 'So Good', productName: 'Almond Unsweetened',lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: 'b', matches: [] },
-    { kind: 'product', brand: 'Coles',   productName: 'Chicken Breast',    lastUsedAt: '2026-05-27T00:00:00Z', foodNutritionId: 'c', matches: [] },
+    { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',  lastUsedAt: '2026-04-20T00:00:00Z', productId: 'a', hasNutrition: true, matches: [] },
+    { kind: 'product', brand: 'So Good', productName: 'Almond Unsweetened',lastUsedAt: '2026-05-26T00:00:00Z', productId: 'b', hasNutrition: true, matches: [] },
+    { kind: 'product', brand: 'Coles',   productName: 'Chicken Breast',    lastUsedAt: '2026-05-27T00:00:00Z', productId: 'c', hasNutrition: true, matches: [] },
   ];
 
   it('item-name match outranks pure recency', () => {
@@ -118,21 +110,21 @@ describe('rankEmptyQuery', () => {
       ['c', 'chicken breast'],
     ]);
     const result = rankEmptyQuery(baseTargets, 'milk', id => itemNameById.get(id) ?? null);
-    expect(result[0].foodNutritionId).toBe('b');
-    expect(result[1].foodNutritionId).toBe('a');
-    expect(result[2].foodNutritionId).toBe('c');
+    expect(result[0].productId).toBe('b');
+    expect(result[1].productId).toBe('a');
+    expect(result[2].productId).toBe('c');
   });
 
   it('within matches, sorts by lastUsedAt descending', () => {
     const itemNameById = new Map([['a', 'oat milk'], ['b', 'oat milk'], ['c', 'oat milk']]);
     const result = rankEmptyQuery(baseTargets, 'oat milk', id => itemNameById.get(id) ?? null);
-    expect(result.map(r => r.foodNutritionId)).toEqual(['c', 'b', 'a']);
+    expect(result.map(r => r.productId)).toEqual(['c', 'b', 'a']);
   });
 
   it('caps results at 5', () => {
     const many: Suggestion[] = Array.from({ length: 10 }, (_, i) => ({
       kind: 'product' as const, brand: `B${i}`, productName: `P${i}`,
-      lastUsedAt: `2026-05-${10 + i}T00:00:00Z`, foodNutritionId: `id-${i}`, matches: [],
+      lastUsedAt: `2026-05-${10 + i}T00:00:00Z`, productId: `id-${i}`, hasNutrition: false, matches: [],
     }));
     expect(rankEmptyQuery(many, 'milk', () => null)).toHaveLength(5);
   });
@@ -147,20 +139,20 @@ import { rankFuzzyQuery } from '../../../lib/suggestions/ranking';
 
 describe('rankFuzzyQuery', () => {
   const targets: Suggestion[] = [
-    { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista', lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: 'a', matches: [] },
-    { kind: 'product', brand: 'Vitasoy', productName: 'Soy Milk Barista', lastUsedAt: '2026-03-01T00:00:00Z', foodNutritionId: 'b', matches: [] },
-    { kind: 'product', brand: 'Vitasoy', productName: 'Calci-Plus Bar',   lastUsedAt: '2026-02-01T00:00:00Z', foodNutritionId: 'c', matches: [] },
+    { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista', lastUsedAt: '2026-05-26T00:00:00Z', productId: 'a', hasNutrition: true, matches: [] },
+    { kind: 'product', brand: 'Vitasoy', productName: 'Soy Milk Barista', lastUsedAt: '2026-03-01T00:00:00Z', productId: 'b', hasNutrition: true, matches: [] },
+    { kind: 'product', brand: 'Vitasoy', productName: 'Calci-Plus Bar',   lastUsedAt: '2026-02-01T00:00:00Z', productId: 'c', hasNutrition: false, matches: [] },
   ];
 
   it('returns the closest fuzzy matches when scoring on productName', () => {
     const result = rankFuzzyQuery(targets, 'bar', 'product', '', () => null, Date.parse('2026-05-27T00:00:00Z'));
     expect(result.length).toBeGreaterThan(0);
-    expect(result.map(r => r.foodNutritionId)).toContain('a');
+    expect(result.map(r => r.productId)).toContain('a');
   });
 
   it('attaches matches[] with indices from Fuse', () => {
     const result = rankFuzzyQuery(targets, 'bar', 'product', '', () => null, Date.parse('2026-05-27T00:00:00Z'));
-    const oatMilk = result.find(r => r.foodNutritionId === 'a')!;
+    const oatMilk = result.find(r => r.productId === 'a')!;
     expect(oatMilk.matches.length).toBeGreaterThan(0);
     expect(oatMilk.matches[0].field).toBe('product');
     expect(oatMilk.matches[0].indices.length).toBeGreaterThan(0);
@@ -168,25 +160,25 @@ describe('rankFuzzyQuery', () => {
 
   it('boosts more recent rows when fuzzy scores are similar', () => {
     const sameScore: Suggestion[] = [
-      { kind: 'product', brand: 'A', productName: 'Barista', lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: 'recent', matches: [] },
-      { kind: 'product', brand: 'A', productName: 'Barista', lastUsedAt: '2025-01-01T00:00:00Z', foodNutritionId: 'old',    matches: [] },
+      { kind: 'product', brand: 'A', productName: 'Barista', lastUsedAt: '2026-05-26T00:00:00Z', productId: 'recent', hasNutrition: false, matches: [] },
+      { kind: 'product', brand: 'A', productName: 'Barista', lastUsedAt: '2025-01-01T00:00:00Z', productId: 'old',    hasNutrition: false, matches: [] },
     ];
     const result = rankFuzzyQuery(sameScore, 'bar', 'product', '', () => null, Date.parse('2026-05-27T00:00:00Z'));
-    expect(result[0].foodNutritionId).toBe('recent');
+    expect(result[0].productId).toBe('recent');
   });
 
   it('caps at top 5', () => {
     const many: Suggestion[] = Array.from({ length: 10 }, (_, i) => ({
       kind: 'product' as const, brand: 'A', productName: `Barista ${i}`,
-      lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: `id-${i}`, matches: [],
+      lastUsedAt: '2026-05-26T00:00:00Z', productId: `id-${i}`, hasNutrition: false, matches: [],
     }));
     expect(rankFuzzyQuery(many, 'bar', 'product', '', () => null, Date.now())).toHaveLength(5);
   });
 
   it('scores on brand field when field=brand', () => {
     const brandTargets: Suggestion[] = [
-      { kind: 'brand', brand: 'Vitasoy',  productName: null, productCount: 1, lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: null, matches: [] },
-      { kind: 'brand', brand: 'Oatly',    productName: null, productCount: 1, lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: null, matches: [] },
+      { kind: 'brand', brand: 'Vitasoy',  productName: null, productCount: 1, lastUsedAt: '2026-05-26T00:00:00Z', productId: null, hasNutrition: false, matches: [] },
+      { kind: 'brand', brand: 'Oatly',    productName: null, productCount: 1, lastUsedAt: '2026-05-26T00:00:00Z', productId: null, hasNutrition: false, matches: [] },
     ];
     const result = rankFuzzyQuery(brandTargets, 'vita', 'brand', '', () => null, Date.now());
     expect(result[0].brand).toBe('Vitasoy');

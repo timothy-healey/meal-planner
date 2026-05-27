@@ -16,6 +16,7 @@ const RECIPE: Recipe = {
   ingredients: [],
   method_steps: [],
   is_favourite: false,
+  notes: null,
 };
 
 describe('RecipeCard', () => {

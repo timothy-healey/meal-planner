@@ -1,13 +1,13 @@
 import { rollupMacros } from '../../lib/rollupMacros';
-import type { FoodNutritionRow } from '../../types/db';
+import type { ProductRow } from '../../types/db';
 import type { Ingredient } from '../../meal_plan.types';
 
-function makeEntry(overrides: Partial<FoodNutritionRow> = {}): FoodNutritionRow {
+function makeEntry(overrides: Partial<ProductRow> = {}): ProductRow {
   return {
     id: 'test-id',
+    brand: '',
+    product_name: 'chicken breast',
     item_name: 'chicken breast',
-    brand: null,
-    product_name: null,
     basis: 'per_100g',
     cal_per_basis: 165,
     protein_per_basis: 31,

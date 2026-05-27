@@ -14,7 +14,7 @@ import { useShoppingItems } from '../hooks/useShoppingItems';
 import { colors, spacing, radius } from '../constants/tokens';
 import { formatPrice } from '../lib/format';
 import type { AddPurchaseData } from '../hooks/usePurchaseHistory';
-import type { PurchaseHistoryRow, ShoppingItemRow } from '../types/db';
+import type { PurchaseHistoryRowWithProduct, ShoppingItemRow } from '../types/db';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -29,12 +29,12 @@ function formatDateTime(iso: string): string {
   return `${dd} ${mmm} ${yyyy} · ${hh}:${mm} ${ampm}`;
 }
 
-function formatQty(amount: number, unit: PurchaseHistoryRow['qty_unit']): string {
+function formatQty(amount: number, unit: PurchaseHistoryRowWithProduct['qty_unit']): string {
   if (unit === 'units') return amount === 1 ? '1 unit' : `${amount} units`;
   return `${amount}${unit}`;
 }
 
-function rowSubtitle(row: PurchaseHistoryRow): string | null {
+function rowSubtitle(row: PurchaseHistoryRowWithProduct): string | null {
   const parts: string[] = [];
   if (row.qty_amount != null && row.qty_unit != null) {
     parts.push(formatQty(row.qty_amount, row.qty_unit));
@@ -57,7 +57,7 @@ export default function ShopReceiptScreen() {
     confirmShop,
   } = usePurchaseHistory(planId);
 
-  const [editing, setEditing] = useState<PurchaseHistoryRow | null>(null);
+  const [editing, setEditing] = useState<PurchaseHistoryRowWithProduct | null>(null);
 
   const earliestPurchasedAt = useMemo(() => {
     if (pendingRecords.length === 0) return new Date().toISOString();
@@ -73,13 +73,13 @@ export default function ShopReceiptScreen() {
   const branch = activeStore?.branch ?? '';
   const isEmpty = pendingRecords.length === 0;
 
-  function findItemFor(row: PurchaseHistoryRow): ShoppingItemRow | undefined {
+  function findItemFor(row: PurchaseHistoryRowWithProduct): ShoppingItemRow | undefined {
     return items.find(
       i => i.name.toLowerCase() === row.item_name.toLowerCase(),
     );
   }
 
-  async function handleRemove(row: PurchaseHistoryRow) {
+  async function handleRemove(row: PurchaseHistoryRowWithProduct) {
     if (!planId) return;
     const item = findItemFor(row);
     await deletePending(planId, row.item_name);
