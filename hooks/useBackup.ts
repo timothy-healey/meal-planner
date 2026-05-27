@@ -95,7 +95,7 @@ export function useBackup(onRestore?: () => void) {
       const inserts: Array<[string, any[]]> = [
         ...insertRows('recipes', backup.recipes ?? [], ['id','title','meal_type','servings',
           'calories_per_serve','protein_per_serve_g','cook_method','prep_minutes','cook_minutes',
-          'ingredients_json','method_steps_json','is_favourite','source','created_at']),
+          'ingredients_json','method_steps_json','is_favourite','source','notes','created_at']),
         ...insertRows('weekly_plans', backup.weekly_plans ?? [], ['id','week_starting','is_active',
           'meta_json','strategy_json','days_json','batch_plan_json','created_at']),
         ...insertRows('shopping_items', backup.shopping_items ?? [], ['id','plan_id','category',
