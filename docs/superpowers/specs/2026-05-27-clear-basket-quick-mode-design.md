@@ -29,16 +29,16 @@ It occupies the same slot as the existing Review-mode CTA. The two are mutually 
 A native `Alert.alert` (no new sheet):
 
 - Title: `Clear basket?`
-- Message: `All {N} items will move back to your list.` (`All 1 item` when `N === 1`.)
+- Message: `Remove {N} items from this week's list?` (`Remove 1 item …` when `N === 1`.)
 - Buttons:
   - `Cancel` — `style: 'cancel'`, no-op.
-  - `Clear` — `style: 'destructive'`, fires the uncheck-all action.
+  - `Clear` — `style: 'destructive'`, deletes the items.
 
 ### On confirm
 
 - Light haptic was already triggered on initial press; on confirm fire `Haptics.notificationAsync(NotificationFeedbackType.Success)`.
-- Unticks all currently-checked items for the active plan via a single SQL update.
-- After the update completes, `useShoppingItems` reloads and the basket empties. The CTA disappears (because `checkedItems.length === 0`).
+- **Permanently removes** all currently-checked items from the active plan via a single SQL delete. The items are gone from this week's plan — they don't move back to the unchecked sections. (The user can re-add via the FAB if needed; next week's import from a fresh meal-plan JSON brings recurring items back automatically.)
+- After the delete completes, `useShoppingItems` reloads and the basket empties. The CTA disappears (because `checkedItems.length === 0`).
 
 ## CTA gating in the shop screen
 
@@ -81,14 +81,14 @@ function handleClearBasketPress() {
   const n = checkedItems.length;
   Alert.alert(
     'Clear basket?',
-    `All ${n} ${n === 1 ? 'item' : 'items'} will move back to your list.`,
+    `Remove ${n} ${n === 1 ? 'item' : 'items'} from this week's list?`,
     [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear',
         style: 'destructive',
         onPress: async () => {
-          await resetAll();
+          await deleteChecked();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
       },
@@ -101,15 +101,28 @@ function handleClearBasketPress() {
 
 ## Data hook
 
-`useShoppingItems` already exposes `resetAll` ([useShoppingItems.ts:37-41](hooks/useShoppingItems.ts#L37-L41)), which runs `UPDATE shopping_items SET is_checked = 0 WHERE plan_id = ?` and updates local state in place. It's currently in the return surface but unused. Reuse it — no new hook method needed.
+Add a new method `deleteChecked` to `useShoppingItems`. It runs a single SQL delete scoped to the active plan's checked rows and refreshes the in-memory list.
+
+```ts
+const deleteChecked = useCallback(async () => {
+  if (!planId) return;
+  await db.runAsync(
+    'DELETE FROM shopping_items WHERE plan_id = ? AND is_checked = 1',
+    [planId],
+  );
+  setItems((prev) => prev.filter((i) => i.isChecked === false));
+}, [planId, db]);
+```
+
+Exposed alongside the existing `toggleItem`, `addItem`, `updateItem`, `deleteItem`, `resetAll`. The existing `resetAll` stays in place (still unused after this work) — removing it is out of scope for this spec.
 
 Pulled into the shop screen via the existing destructure:
 
 ```ts
-const { items, ..., toggleItem, addItem, updateItem, deleteItem, resetAll } = useShoppingItems(planId);
+const { items, ..., toggleItem, addItem, updateItem, deleteItem, deleteChecked } = useShoppingItems(planId);
 ```
 
-The press handler calls `resetAll()` (no arg — the hook already knows `planId` via its closure).
+The press handler calls `deleteChecked()` (no arg — the hook already knows `planId` via its closure).
 
 ## Interaction with existing flows
 
@@ -125,15 +138,16 @@ The press handler calls `resetAll()` (no arg — the hook already knows `planId`
 
 ## Testing
 
-- **`useShoppingItems.resetAll` unit test** (the existing method is currently uncovered):
-  - Three items, two checked, one unchecked → `resetAll()` → all three end with `is_checked = 0`.
-  - Items from a different `plan_id` are untouched.
+- **`useShoppingItems.deleteChecked` unit test:**
+  - Three items, two checked, one unchecked → `deleteChecked()` → the two checked rows are deleted; only the unchecked row remains in local state.
+  - SQL is `DELETE FROM shopping_items WHERE plan_id = ? AND is_checked = 1` with the active planId bound.
   - Calling on an empty basket is a no-op (no error).
+  - `deleteChecked()` is a no-op when `planId` is null.
 - **`shop.tsx` integration:**
   - Quick mode + 0 checked → no CTA.
   - Quick mode + ≥1 checked → CTA visible with correct count + pluralisation.
   - Tap CTA → `Alert.alert` invoked with the correct message string.
-  - Confirm `Clear` in alert → `resetAll` called, basket empties, CTA disappears.
+  - Confirm `Clear` in alert → `deleteChecked` called, basket empties, CTA disappears.
   - Cancel in alert → no state change.
   - Review mode + ≥1 pending → Review CTA visible, Clear CTA hidden.
   - Switch Quick → Review while basket has items → Clear CTA disappears immediately.
@@ -143,4 +157,4 @@ The press handler calls `resetAll()` (no arg — the hook already knows `planId`
 - Clearing the basket in Review mode (the existing Confirm-from-receipt flow already does this).
 - A "Clear" affordance inside `BasketSection` itself.
 - Multi-step undo of a clear (the confirmation alert is the protection layer).
-- Recovering items after a clear — the operation is intentionally destructive of the checked state, but items themselves are not deleted, just un-ticked.
+- Recovering items after a clear — the operation is intentionally destructive: deleted shopping_items rows are gone for this plan. Re-add via the FAB if needed. (Recurring items return on next week's plan import.)
