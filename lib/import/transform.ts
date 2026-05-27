@@ -52,6 +52,7 @@ export function transformPlan(plan: MealPlanInput): TransformResult {
     ),
     is_favourite: 0,
     source: 'imported',
+    notes: null,
     created_at: now,
   }));
 

@@ -19,14 +19,13 @@ import type { PricePoint } from '../types/db';
 import { AddPriceSheet } from './AddPriceSheet';
 
 interface Props {
-  brand: string | null;
-  productName: string | null;
+  productId: string;
 }
 
 const TIME_RANGES: TimeRange[] = ['3M', '6M', '1Y', 'All'];
 
-export function PriceHistoryChart({ brand, productName }: Props) {
-  const { points, reload } = usePriceHistory(brand, productName);
+export function PriceHistoryChart({ productId }: Props) {
+  const { points, reload } = usePriceHistory(productId);
   const [timeRange, setTimeRange] = useState<TimeRange>('6M');
   const [unit, setUnit] = useState<ChartUnit>('per100');
   const [chartWidth, setChartWidth] = useState(0);
@@ -298,8 +297,7 @@ export function PriceHistoryChart({ brand, productName }: Props) {
 
       <AddPriceSheet
         visible={addPriceVisible}
-        brand={brand}
-        productName={productName}
+        productId={productId}
         onClose={() => setAddPriceVisible(false)}
         onSaved={() => { setAddPriceVisible(false); reload(); }}
       />

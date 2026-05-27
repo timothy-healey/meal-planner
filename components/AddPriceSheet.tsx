@@ -10,19 +10,32 @@ import { AppText } from './ui/AppText';
 import { colors, font, spacing, radius } from '../constants/tokens';
 import { useStores } from '../hooks/useStores';
 import { usePurchaseHistory } from '../hooks/usePurchaseHistory';
+import { useProducts } from '../hooks/useProducts';
 import type { QtyUnit } from '../types/db';
 
 interface Props {
   visible: boolean;
-  brand: string | null;
-  productName: string | null;
+  productId: string;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }: Props) {
+export function AddPriceSheet({ visible, productId, onClose, onSaved }: Props) {
   const { stores } = useStores();
   const { addRecord } = usePurchaseHistory(null);
+  const { getById } = useProducts();
+  const [productLabel, setProductLabel] = useState<string>('');
+
+  useEffect(() => {
+    if (!visible) return;
+    getById(productId).then(row => {
+      if (row) {
+        setProductLabel(row.brand ? `${row.brand} · ${row.product_name}` : row.product_name);
+      } else {
+        setProductLabel('');
+      }
+    });
+  }, [visible, productId, getById]);
 
   const [selectedChain, setSelectedChain] = useState('');
   const [newStoreName, setNewStoreName] = useState('');
@@ -55,10 +68,9 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
       const parsedQty = parseFloat(qtyAmount);
       await addRecord({
         plan_id: null,
-        item_name: productName ?? brand ?? '',
+        item_name: productLabel,
         store: chain,
-        brand: brand ?? null,
-        product_name: productName ?? null,
+        product_id: productId,
         qty_amount: isNaN(parsedQty) ? null : parsedQty,
         qty_unit: qtyUnit,
         price: isNaN(parsedPrice) ? null : parsedPrice,
