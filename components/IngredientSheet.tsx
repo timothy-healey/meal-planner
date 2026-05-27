@@ -379,6 +379,11 @@ export function IngredientSheet({
             style={styles.fields}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            bottomOffset={
+              (brandFocused || productFocused) && suggestions.length > 0
+                ? dropdownHeight + spacing[3]
+                : 0
+            }
           >
             <FieldLabel>BRAND</FieldLabel>
             <TextInput
