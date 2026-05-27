@@ -135,4 +135,8 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     } catch {}
     await db.execAsync('PRAGMA user_version = 5');
   }
+
+  if (version < 6) {
+    await db.execAsync('PRAGMA user_version = 6');
+  }
 }
