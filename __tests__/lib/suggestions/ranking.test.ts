@@ -100,3 +100,45 @@ describe('itemNameMatches', () => {
     expect(itemNameMatches('milk', '')).toBe(false);
   });
 });
+
+import { rankEmptyQuery } from '../../../lib/suggestions/ranking';
+import type { Suggestion } from '../../../lib/suggestions/types';
+
+describe('rankEmptyQuery', () => {
+  const baseTargets: Suggestion[] = [
+    { kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',  lastUsedAt: '2026-04-20T00:00:00Z', foodNutritionId: 'a', matches: [] },
+    { kind: 'product', brand: 'So Good', productName: 'Almond Unsweetened',lastUsedAt: '2026-05-26T00:00:00Z', foodNutritionId: 'b', matches: [] },
+    { kind: 'product', brand: 'Coles',   productName: 'Chicken Breast',    lastUsedAt: '2026-05-27T00:00:00Z', foodNutritionId: 'c', matches: [] },
+  ];
+
+  it('item-name match outranks pure recency', () => {
+    const itemNameById = new Map([
+      ['a', 'oat milk'],
+      ['b', 'almond milk'],
+      ['c', 'chicken breast'],
+    ]);
+    const result = rankEmptyQuery(baseTargets, 'milk', id => itemNameById.get(id) ?? null);
+    expect(result[0].foodNutritionId).toBe('b');
+    expect(result[1].foodNutritionId).toBe('a');
+    expect(result[2].foodNutritionId).toBe('c');
+  });
+
+  it('within matches, sorts by lastUsedAt descending', () => {
+    const itemNameById = new Map([['a', 'oat milk'], ['b', 'oat milk'], ['c', 'oat milk']]);
+    const result = rankEmptyQuery(baseTargets, 'oat milk', id => itemNameById.get(id) ?? null);
+    expect(result.map(r => r.foodNutritionId)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('caps results at 5', () => {
+    const many: Suggestion[] = Array.from({ length: 10 }, (_, i) => ({
+      kind: 'product' as const, brand: `B${i}`, productName: `P${i}`,
+      lastUsedAt: `2026-05-${10 + i}T00:00:00Z`, foodNutritionId: `id-${i}`, matches: [],
+    }));
+    expect(rankEmptyQuery(many, 'milk', () => null)).toHaveLength(5);
+  });
+
+  it('all rows have empty matches array', () => {
+    const result = rankEmptyQuery(baseTargets, 'milk', () => null);
+    for (const row of result) expect(row.matches).toEqual([]);
+  });
+});
