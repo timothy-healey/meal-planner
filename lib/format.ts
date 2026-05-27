@@ -19,3 +19,14 @@ export function formatPrice(amount: number): string {
 export function formatItemCount(checked: number, total: number): string {
   return `✓ ${checked} / ${total}`;
 }
+
+export function formatRelativeTime(iso: string, now: number = Date.now()): string {
+  const ms = now - Date.parse(iso);
+  const days = Math.max(0, Math.floor(ms / 86_400_000));
+  if (days < 1)   return 'today';
+  if (days < 7)   return `${days}d ago`;
+  if (days < 14)  return 'last week';
+  if (days < 30)  return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
