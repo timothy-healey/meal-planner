@@ -4,9 +4,9 @@ import { usePurchaseHistory } from '../../hooks/usePurchaseHistory';
 const mockRows: any[] = [];
 const mockDb = {
   getAllAsync: jest.fn(async (sql: string) => {
-    if (sql.includes('plan_id = ?')) return mockRows;
-    if (sql.includes('LOWER(item_name)')) return mockRows;
-    if (sql.includes('barcode =')) return mockRows;
+    if (sql.includes('ph.plan_id = ?')) return mockRows;
+    if (sql.includes('LOWER(ph.item_name)')) return mockRows;
+    if (sql.includes('ph.barcode =')) return mockRows;
     return [];
   }),
   getFirstAsync: jest.fn().mockResolvedValue({ id: 'store-1' }),
@@ -25,17 +25,18 @@ describe('usePurchaseHistory', () => {
     mockDb.runAsync.mockClear();
     mockDb.getFirstAsync.mockResolvedValue({ id: 'store-1' });
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
-      if (sql.includes('plan_id = ?')) return mockRows;
-      if (sql.includes('LOWER(item_name)')) return mockRows;
-      if (sql.includes('barcode =')) return mockRows;
+      if (sql.includes('ph.plan_id = ?')) return mockRows;
+      if (sql.includes('LOWER(ph.item_name)')) return mockRows;
+      if (sql.includes('ph.barcode =')) return mockRows;
       return [];
     });
   });
 
   it('loads records for the current plan', async () => {
     mockRows.push({
-      id: '1', plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
-      brand: null, product_name: null, qty_amount: 500, qty_unit: 'g',
+      id: '1', plan_id: 'p1', item_name: 'Chicken', store_id: 's1',
+      product_id: 'pp1', brand: null, product_name: null,
+      qty_amount: 500, qty_unit: 'g',
       price: 12, is_sale: 0, barcode: null, purchased_at: '2026-05-12T10:00:00Z',
       status: 'confirmed',
     });
@@ -48,7 +49,7 @@ describe('usePurchaseHistory', () => {
     const { result } = renderHook(() => usePurchaseHistory('p1'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     const loadCall = mockDb.getAllAsync.mock.calls.find(
-      (c: any[]) => typeof c[0] === 'string' && c[0].includes('plan_id = ?')
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('ph.plan_id = ?')
     );
     expect(loadCall?.[0]).toMatch(/status = 'confirmed'/);
   });
@@ -56,7 +57,7 @@ describe('usePurchaseHistory', () => {
   it('getLatestForItem filters to confirmed only', async () => {
     let observedSql: string | undefined;
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
-      if (sql.includes('LOWER(item_name)')) {
+      if (sql.includes('LOWER(ph.item_name)')) {
         observedSql = sql;
         return [];
       }
@@ -71,7 +72,7 @@ describe('usePurchaseHistory', () => {
   it('getLatestForBarcode filters to confirmed only', async () => {
     let observedSql: string | undefined;
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
-      if (sql.includes('barcode =')) {
+      if (sql.includes('ph.barcode =')) {
         observedSql = sql;
         return [];
       }
@@ -88,8 +89,8 @@ describe('usePurchaseHistory', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await result.current.addRecord({
-        plan_id: 'p1', item_name: 'Chicken', store: 'Coles', brand: null,
-        product_name: null, qty_amount: null, qty_unit: null,
+        plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
+        product_id: null, qty_amount: null, qty_unit: null,
         price: 10, is_sale: 0, barcode: null,
         purchased_at: '2026-05-12T10:00:00Z',
       });
@@ -106,8 +107,8 @@ describe('usePurchaseHistory', () => {
     await act(async () => {
       await result.current.addRecord(
         {
-          plan_id: 'p1', item_name: 'Chicken', store: 'Coles', brand: null,
-          product_name: null, qty_amount: null, qty_unit: null,
+          plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
+          product_id: null, qty_amount: null, qty_unit: null,
           price: 10, is_sale: 0, barcode: null,
           purchased_at: '2026-05-12T10:00:00Z',
         },
@@ -120,7 +121,7 @@ describe('usePurchaseHistory', () => {
     expect(insert?.[1]).toContain('pending');
   });
 
-  it('addRecord inserts a row and reloads', async () => {
+  it('addRecord stores product_id and not brand/product_name', async () => {
     const { result } = renderHook(() => usePurchaseHistory('p1'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
@@ -128,47 +129,51 @@ describe('usePurchaseHistory', () => {
         plan_id: 'p1',
         item_name: 'Chicken',
         store: 'Coles',
-        brand: 'Coles',
-        product_name: 'RSPCA Chicken Breast',
+        product_id: 'prod-1',
         qty_amount: 500,
         qty_unit: 'g',
-        price: 12,
+        price: 12.50,
         is_sale: 0,
         barcode: null,
-        purchased_at: '2026-05-12T10:00:00Z',
+        purchased_at: '2026-05-28T00:00:00Z',
       });
     });
-    expect(mockDb.runAsync).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO purchase_history'),
-      expect.arrayContaining(['store-1'])
+    const insert = mockDb.runAsync.mock.calls.find(
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('INSERT INTO purchase_history')
     );
+    expect(insert?.[0]).toMatch(/INSERT INTO purchase_history[\s\S]*product_id/);
+    expect(insert?.[1]).toEqual(expect.arrayContaining(['prod-1']));
   });
 
-  it('getLatestForItem returns most recent non-sale record across all plans', async () => {
+  it('getLatestForItem returns the joined row (brand/product_name from products)', async () => {
     const record = {
-      id: '1', plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
-      brand: 'Coles', product_name: null, qty_amount: 500, qty_unit: 'g',
+      id: '1', plan_id: 'p1', item_name: 'Chicken', store_id: 'store-1',
+      product_id: 'prod-1', brand: 'Coles', product_name: 'RSPCA Chicken Breast',
+      qty_amount: 500, qty_unit: 'g',
       price: 12, is_sale: 0, barcode: null, purchased_at: '2026-05-12T10:00:00Z',
+      status: 'confirmed',
     };
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
-      if (sql.includes('LOWER(item_name)') && sql.includes('is_sale = 0')) return [record];
+      if (sql.includes('LOWER(ph.item_name)') && sql.includes('is_sale = 0')) return [record];
       return [];
     });
     const { result } = renderHook(() => usePurchaseHistory('p1'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     const found = await result.current.getLatestForItem('chicken');
     expect(found?.brand).toBe('Coles');
+    expect(found?.product_name).toBe('RSPCA Chicken Breast');
   });
 
-  it('getLatestForBarcode returns most recent record with matching barcode', async () => {
+  it('getLatestForBarcode returns the joined row with product fields', async () => {
     const record = {
-      id: '2', plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
-      brand: 'Coles', product_name: 'RSPCA', qty_amount: 500, qty_unit: 'g',
+      id: '2', plan_id: 'p1', item_name: 'Chicken', store_id: 'store-1',
+      product_id: 'prod-1', brand: 'Coles', product_name: 'RSPCA',
+      qty_amount: 500, qty_unit: 'g',
       price: 12, is_sale: 0, barcode: '9310172050024', purchased_at: '2026-05-12T10:00:00Z',
       status: 'confirmed',
     };
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
-      if (sql.includes('barcode =')) return [record];
+      if (sql.includes('ph.barcode =')) return [record];
       return [];
     });
     const { result } = renderHook(() => usePurchaseHistory('p1'));
@@ -197,8 +202,8 @@ describe('usePurchaseHistory', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await result.current.updatePending('row-1', {
-        plan_id: 'p1', item_name: 'Chicken', store: 'Coles', brand: 'Macro',
-        product_name: 'Free Range', qty_amount: 500, qty_unit: 'g',
+        plan_id: 'p1', item_name: 'Chicken', store: 'Coles',
+        product_id: 'prod-2', qty_amount: 500, qty_unit: 'g',
         price: 13.5, is_sale: 0, barcode: null,
         purchased_at: '2026-05-12T10:00:00Z',
       });
@@ -236,7 +241,7 @@ describe('usePurchaseHistory', () => {
     await act(async () => {
       await result.current.addRecord({
         plan_id: 'p1', item_name: 'Chicken', store: 'Coles', branch: 'Bondi',
-        brand: null, product_name: null, qty_amount: null, qty_unit: null,
+        product_id: null, qty_amount: null, qty_unit: null,
         price: 10, is_sale: 0, barcode: null,
         purchased_at: '2026-05-12T10:00:00Z',
       });
@@ -250,12 +255,13 @@ describe('usePurchaseHistory', () => {
   it('pendingRecords reflects pending rows for the active plan', async () => {
     const pendingRow = {
       id: '1', plan_id: 'p1', item_name: 'Chicken', store_id: 's1',
-      brand: null, product_name: null, qty_amount: null, qty_unit: null,
+      product_id: null, brand: null, product_name: null,
+      qty_amount: null, qty_unit: null,
       price: 10, is_sale: 0, barcode: null,
       purchased_at: '2026-05-12T10:00:00Z', status: 'pending',
     };
     mockDb.getAllAsync.mockImplementation(async (sql: string) => {
-      if (sql.includes("status = 'pending'") && sql.includes('plan_id = ?')) {
+      if (sql.includes("status = 'pending'") && sql.includes('ph.plan_id = ?')) {
         return [pendingRow];
       }
       return [];
