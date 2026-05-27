@@ -61,21 +61,29 @@ export default function RecipeDetailScreen() {
   const existingEntry =
     sheet?.mode === 'edit' ? (links[sheet.index] ?? null) : null;
 
-  async function handleSheetSave({ ingredient, nutrition }: { ingredient: Ingredient; nutrition: FoodNutritionData | null }) {
+  async function handleSheetSave({
+    ingredient,
+    nutrition,
+    foodNutritionId,
+  }: {
+    ingredient: Ingredient;
+    nutrition: FoodNutritionData | null;
+    foodNutritionId: string | null;
+  }) {
     if (!sheet) return;
 
     if (sheet.mode === 'edit') {
       await updateIngredient(recipe!.id, sheet.index, ingredient);
       if (nutrition) {
-        const existingId = links[sheet.index]?.id;
-        const foodNutritionId = await upsert({ ...nutrition, id: existingId });
-        await linkIngredient(recipe!.id, sheet.index, foodNutritionId);
+        const existingId = foodNutritionId ?? links[sheet.index]?.id;
+        const upsertedId = await upsert({ ...nutrition, id: existingId });
+        await linkIngredient(recipe!.id, sheet.index, upsertedId);
       }
     } else {
       const newIndex = await addIngredient(recipe!.id, ingredient);
       if (nutrition) {
-        const foodNutritionId = await upsert(nutrition);
-        await linkIngredient(recipe!.id, newIndex, foodNutritionId);
+        const upsertedId = await upsert({ ...nutrition, id: foodNutritionId ?? undefined });
+        await linkIngredient(recipe!.id, newIndex, upsertedId);
       }
     }
     setLinksKey(k => k + 1);
