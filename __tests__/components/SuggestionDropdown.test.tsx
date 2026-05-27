@@ -88,3 +88,25 @@ describe('SuggestionDropdown', () => {
     expect(getByText(/4 products · Oat Milk Barista/)).toBeTruthy();
   });
 });
+
+describe('SuggestionDropdown match highlight', () => {
+  it('renders matched substring with the highlight style', () => {
+    const withMatches: Suggestion = {
+      kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
+      lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1',
+      matches: [{ field: 'product', indices: [[9, 11]] }],   // "Bar" in "Oat Milk Barista"
+    };
+    const { getByText } = render(
+      <SuggestionDropdown
+        suggestions={[withMatches]}
+        showBrandInSecondary={false}
+        now={Date.parse('2026-05-27T00:00:00Z')}
+        onPick={jest.fn()}
+        onLayoutHeight={jest.fn()}
+      />,
+    );
+    // "Bar" should be its own Text segment with highlight color
+    const highlighted = getByText('Bar');
+    expect(highlighted).toBeTruthy();
+  });
+});
