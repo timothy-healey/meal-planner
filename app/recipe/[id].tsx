@@ -8,8 +8,10 @@ import { CategoryHeader } from '../../components/ui/CategoryHeader';
 import { StepList } from '../../components/ui/StepList';
 import { IngredientRow } from '../../components/IngredientRow';
 import { IngredientSheet } from '../../components/IngredientSheet';
+import { AddIngredientRow } from '../../components/AddIngredientRow';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useFoodNutrition } from '../../hooks/useFoodNutrition';
+import { useRecipeIngredients } from '../../hooks/useRecipeIngredients';
 import { rollupMacros } from '../../lib/rollupMacros';
 import { formatAmount } from '../../lib/amount';
 import { formatCookTime } from '../../lib/format';
@@ -25,10 +27,16 @@ export default function RecipeDetailScreen() {
   const { recipes } = useRecipes();
   const recipe = recipes.find((r) => r.id === id) ?? null;
   const { upsert, linkIngredient, getLinksForRecipe } = useFoodNutrition();
+  const { updateIngredient, addIngredient, deleteIngredient } = useRecipeIngredients();
+
+  type SheetState =
+    | { mode: 'edit'; index: number }
+    | { mode: 'add' }
+    | null;
 
   const [copied, setCopied] = useState(false);
   const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [sheet, setSheet] = useState<SheetState>(null);
   const [linksKey, setLinksKey] = useState(0);
 
   useEffect(() => {
@@ -48,18 +56,37 @@ export default function RecipeDetailScreen() {
   const rollup = rollupMacros(recipe.ingredients, links, recipe.servings);
   const prefix = rollup?.isPartial ? '~' : '';
 
-  const editingIngredient = editingIndex != null ? recipe.ingredients[editingIndex] ?? null : null;
+  const editingIngredient =
+    sheet?.mode === 'edit' ? recipe.ingredients[sheet.index] ?? null : null;
+  const existingEntry =
+    sheet?.mode === 'edit' ? (links[sheet.index] ?? null) : null;
 
-  async function handleSheetSave({ ingredient: _ingredient, nutrition }: { ingredient: Ingredient; nutrition: FoodNutritionData | null }) {
-    if (editingIndex == null) return;
-    if (nutrition) {
-      const existingId = links[editingIndex]?.id;
-      const foodNutritionId = await upsert({ ...nutrition, id: existingId });
-      await linkIngredient(recipe!.id, editingIndex, foodNutritionId);
-      setLinksKey(k => k + 1);
+  async function handleSheetSave({ ingredient, nutrition }: { ingredient: Ingredient; nutrition: FoodNutritionData | null }) {
+    if (!sheet) return;
+
+    if (sheet.mode === 'edit') {
+      await updateIngredient(recipe!.id, sheet.index, ingredient);
+      if (nutrition) {
+        const existingId = links[sheet.index]?.id;
+        const foodNutritionId = await upsert({ ...nutrition, id: existingId });
+        await linkIngredient(recipe!.id, sheet.index, foodNutritionId);
+      }
+    } else {
+      const newIndex = await addIngredient(recipe!.id, ingredient);
+      if (nutrition) {
+        const foodNutritionId = await upsert(nutrition);
+        await linkIngredient(recipe!.id, newIndex, foodNutritionId);
+      }
     }
-    // ingredient mutation lands in Task 13; for now the existing edit-without-write behaviour is preserved
-    setEditingIndex(null);
+    setLinksKey(k => k + 1);
+    setSheet(null);
+  }
+
+  async function handleSheetDelete() {
+    if (sheet?.mode !== 'edit') return;
+    await deleteIngredient(recipe!.id, sheet.index);
+    setLinksKey(k => k + 1);
+    setSheet(null);
   }
 
   const handleCopy = async () => {
@@ -150,9 +177,10 @@ export default function RecipeDetailScreen() {
                 key={idx}
                 ingredient={ing}
                 nutrition={rollup?.contributions[idx] ?? null}
-                onPress={() => setEditingIndex(idx)}
+                onPress={() => setSheet({ mode: 'edit', index: idx })}
               />
             ))}
+            <AddIngredientRow onPress={() => setSheet({ mode: 'add' })} />
           </View>
         </View>
 
@@ -182,12 +210,13 @@ export default function RecipeDetailScreen() {
       </ScrollView>
 
       <IngredientSheet
-        visible={editingIndex !== null}
-        mode="edit"
+        visible={sheet !== null}
+        mode={sheet?.mode ?? 'add'}
         initialIngredient={editingIngredient}
-        existingEntry={editingIndex !== null ? (links[editingIndex] ?? null) : null}
+        existingEntry={existingEntry}
         onSave={handleSheetSave}
-        onClose={() => setEditingIndex(null)}
+        onDelete={sheet?.mode === 'edit' ? handleSheetDelete : undefined}
+        onClose={() => setSheet(null)}
       />
     </View>
   );
