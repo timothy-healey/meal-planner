@@ -1,5 +1,6 @@
-import type { MealPlan, Recipe } from '../../meal_plan.types';
+import type { MealPlan, Recipe, Ingredient, Amount } from '../../meal_plan.types';
 import type { RecipeRow, WeeklyPlanRow, ShoppingItemRow } from '../../types/db';
+import { parseAmountString } from '../amount';
 
 interface TransformResult {
   weeklyPlan: WeeklyPlanRow;
@@ -7,7 +8,21 @@ interface TransformResult {
   shoppingItems: ShoppingItemRow[];
 }
 
-export function transformPlan(plan: MealPlan): TransformResult {
+// At the import boundary the incoming JSON may still be v1.1 with a string `amount`.
+// Loosen the type here so callers can pass either shape; we narrow before storing.
+type IngredientInput = { item: string; amount: string | Amount };
+type RecipeInput = Omit<Recipe, 'ingredients'> & { ingredients: IngredientInput[] };
+type MealPlanInput = Omit<MealPlan, 'recipes'> & { recipes: RecipeInput[] };
+
+function coerceAmount(amount: string | Amount): Amount {
+  return typeof amount === 'string' ? parseAmountString(amount) : amount;
+}
+
+function coerceIngredient(ing: IngredientInput): Ingredient {
+  return { item: ing.item, amount: coerceAmount(ing.amount) };
+}
+
+export function transformPlan(plan: MealPlanInput): TransformResult {
   const now = new Date().toISOString();
 
   const weeklyPlan: WeeklyPlanRow = {
@@ -21,7 +36,7 @@ export function transformPlan(plan: MealPlan): TransformResult {
     created_at: now,
   };
 
-  const recipes: RecipeRow[] = plan.recipes.map((r: Recipe) => ({
+  const recipes: RecipeRow[] = plan.recipes.map((r) => ({
     id: r.id,
     title: r.title,
     meal_type: r.meal_type,
@@ -31,7 +46,7 @@ export function transformPlan(plan: MealPlan): TransformResult {
     cook_method: r.cook_method,
     prep_minutes: r.prep_minutes,
     cook_minutes: r.cook_minutes,
-    ingredients_json: JSON.stringify(r.ingredients),
+    ingredients_json: JSON.stringify(r.ingredients.map(coerceIngredient)),
     method_steps_json: JSON.stringify(
       r.method_steps ?? (r.method ? [r.method] : [])
     ),
@@ -54,8 +69,6 @@ export function transformPlan(plan: MealPlan): TransformResult {
         is_oneoff: cat.is_oneoff ? 1 : 0,
         note: item.note || null,
         is_checked: 0,
-        actual_price: null,
-        store: null,
       }))
   );
 

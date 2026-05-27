@@ -30,7 +30,7 @@ const PLAN: MealPlan = {
       cook_method: 'Crockpot',
       prep_minutes: 20,
       cook_minutes: 480,
-      ingredients: [{ item: 'beef', amount: '800g' }],
+      ingredients: [{ item: 'beef', amount: { kind: 'measured', value: 800, unit: 'g' } }],
       method_steps: ['Prep everything.', 'Cook everything.'],
     },
   ],
@@ -85,5 +85,41 @@ describe('transformPlan', () => {
     const { shoppingItems } = transformPlan(PLAN);
     expect(typeof shoppingItems[0].id).toBe('string');
     expect(shoppingItems[0].id.length).toBeGreaterThan(0);
+  });
+
+  it('coerces v1.1 string amounts to structured Amount on import', () => {
+    const plan: any = {
+      ...PLAN,
+      recipes: [{
+        ...PLAN.recipes[0],
+        ingredients: [
+          { item: 'beef', amount: '800g' },
+          { item: 'oat milk', amount: '250mL' },
+          { item: 'garlic', amount: '3 cloves' },
+          { item: 'salt', amount: 'to taste' },
+        ],
+      }],
+    };
+    const { recipes } = transformPlan(plan);
+    const ings = JSON.parse(recipes[0].ingredients_json);
+    expect(ings[0].amount).toEqual({ kind: 'measured', value: 800, unit: 'g' });
+    expect(ings[1].amount).toEqual({ kind: 'measured', value: 250, unit: 'mL' });
+    expect(ings[2].amount).toEqual({ kind: 'custom', value: 3, unit: 'cloves' });
+    expect(ings[3].amount).toEqual({ kind: 'note', text: 'to taste' });
+  });
+
+  it('passes v1.2 object amounts through unchanged', () => {
+    const plan: any = {
+      ...PLAN,
+      recipes: [{
+        ...PLAN.recipes[0],
+        ingredients: [
+          { item: 'beef', amount: { kind: 'measured', value: 800, unit: 'g' } },
+        ],
+      }],
+    };
+    const { recipes } = transformPlan(plan);
+    const ings = JSON.parse(recipes[0].ingredients_json);
+    expect(ings[0].amount).toEqual({ kind: 'measured', value: 800, unit: 'g' });
   });
 });
