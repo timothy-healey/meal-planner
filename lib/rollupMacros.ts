@@ -1,4 +1,4 @@
-import { parseAmount } from './parseAmount';
+import { amountMultiplier } from './amount';
 import type { FoodNutritionRow } from '../types/db';
 import type { Ingredient } from '../meal_plan.types';
 
@@ -12,7 +12,7 @@ export interface MacroTotals {
 export interface RollupResult {
   perServe: MacroTotals;
   isPartial: boolean;
-  contributions: Record<number, MacroTotals>; // raw total per ingredient (not divided by servings)
+  contributions: Record<number, MacroTotals>;
 }
 
 export function rollupMacros(
@@ -34,31 +34,20 @@ export function rollupMacros(
     if (!entry) continue;
     linked++;
 
-    const parsed = parseAmount(ingredients[i].amount);
-    let multiplier = 0;
-
-    if (parsed) {
-      if (entry.basis === 'per_100g' && parsed.type === 'grams') {
-        multiplier = parsed.value / 100;
-      } else if (entry.basis === 'per_100mL' && parsed.type === 'mL') {
-        multiplier = parsed.value / 100;
-      } else if (entry.basis === 'per_unit' && parsed.type === 'units') {
-        multiplier = parsed.value;
-      }
-    }
+    const multiplier = amountMultiplier(ingredients[i].amount, entry.basis);
 
     const contrib: MacroTotals = {
-      cal: (entry.cal_per_basis ?? 0) * multiplier,
+      cal:       (entry.cal_per_basis ?? 0)     * multiplier,
       protein_g: (entry.protein_per_basis ?? 0) * multiplier,
-      carbs_g: (entry.carbs_per_basis ?? 0) * multiplier,
-      fat_g: (entry.fat_per_basis ?? 0) * multiplier,
+      carbs_g:   (entry.carbs_per_basis ?? 0)   * multiplier,
+      fat_g:     (entry.fat_per_basis ?? 0)     * multiplier,
     };
     contributions[i] = contrib;
 
-    totalCal += contrib.cal;
+    totalCal     += contrib.cal;
     totalProtein += contrib.protein_g;
-    totalCarbs += contrib.carbs_g;
-    totalFat += contrib.fat_g;
+    totalCarbs   += contrib.carbs_g;
+    totalFat     += contrib.fat_g;
   }
 
   const s = servings > 0 ? servings : 1;
