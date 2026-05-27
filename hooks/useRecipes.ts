@@ -17,10 +17,9 @@ export interface Recipe {
   ingredients: Ingredient[];
   method_steps: string[];
   is_favourite: boolean;
+  notes: string | null;
 }
 
-// Coerce legacy v1.1 string amounts (from rows imported before structured Amount).
-// New writes always emit the structured shape; this guards reads from older DB rows.
 function coerceIngredient(raw: { item: string; amount: unknown }): Ingredient {
   if (typeof raw.amount === 'string') {
     return { item: raw.item, amount: parseAmountString(raw.amount) };
@@ -35,12 +34,13 @@ function parseRecipe(row: RecipeRow): Recipe {
     ingredients: rawIngredients.map(coerceIngredient),
     method_steps: JSON.parse(row.method_steps_json),
     is_favourite: row.is_favourite === 1,
+    notes: row.notes ?? null,
   };
 }
 
 export function useRecipes() {
   const db = useDb();
-  const { planVersion } = usePlanVersion();
+  const { planVersion, bumpPlanVersion } = usePlanVersion();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,5 +54,13 @@ export function useRecipes() {
     return row ? parseRecipe(row) : null;
   }
 
-  return { recipes, loading, getById };
+  async function updateNotes(recipeId: string, notes: string | null): Promise<void> {
+    await db.runAsync(
+      'UPDATE recipes SET notes = ? WHERE id = ?',
+      [notes, recipeId],
+    );
+    bumpPlanVersion();
+  }
+
+  return { recipes, loading, getById, updateNotes };
 }
