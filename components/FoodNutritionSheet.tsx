@@ -10,7 +10,7 @@ import {
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { colors, font, radius, shadow, spacing } from "../constants/tokens";
 import type { FoodNutritionData } from "../hooks/useFoodNutrition";
-import { parseAmount } from "../lib/parseAmount";
+import { parseAmountString, amountToBasis } from "../lib/amount";
 import type { FoodNutritionRow } from "../types/db";
 import { AppText } from "./ui/AppText";
 import { PriceHistoryChart } from "./PriceHistoryChart";
@@ -79,10 +79,7 @@ export function FoodNutritionSheet({
           : "",
       );
     } else {
-      const parsed = parseAmount(ingredientAmount);
-      if (parsed?.type === "mL") setBasis("per_100mL");
-      else if (parsed?.type === "units") setBasis("per_unit");
-      else setBasis("per_100g");
+      setBasis(amountToBasis(parseAmountString(ingredientAmount)));
       setBrand("");
       setProductName("");
       setCal("");
