@@ -5,6 +5,7 @@ import { Divider } from './ui/Divider';
 import { colors, spacing } from '../constants/tokens';
 import * as Haptics from 'expo-haptics';
 import type { Ingredient } from '../meal_plan.types';
+import { formatAmount } from '../lib/amount';
 
 interface MacroContribution {
   protein_g: number;
@@ -54,7 +55,7 @@ export function IngredientRow({ ingredient, nutrition, onPress }: Props) {
             </AppText>
           ) : null}
         </View>
-        <AppText weight="bold" color="orange" size="md">{ingredient.amount}</AppText>
+        <AppText weight="bold" color="orange" size="md">{formatAmount(ingredient.amount)}</AppText>
       </View>
       <Divider />
     </>

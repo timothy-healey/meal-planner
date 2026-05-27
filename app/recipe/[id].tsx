@@ -11,6 +11,7 @@ import { FoodNutritionSheet } from '../../components/FoodNutritionSheet';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useFoodNutrition } from '../../hooks/useFoodNutrition';
 import { rollupMacros } from '../../lib/rollupMacros';
+import { formatAmount } from '../../lib/amount';
 import { formatCookTime } from '../../lib/format';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../constants/tokens';
@@ -61,7 +62,7 @@ export default function RecipeDetailScreen() {
       `Serves ${recipe.servings} | ${recipe.calories_per_serve} cal | ${recipe.protein_per_serve_g}g protein | ${recipe.cook_method} | ${timeLabel}`,
       '',
       'Ingredients:',
-      ...recipe.ingredients.map((i) => `- ${i.amount} ${i.item}`),
+      ...recipe.ingredients.map((i) => `- ${formatAmount(i.amount)} ${i.item}`),
       '',
       'Method:',
       ...recipe.method_steps.map((s, idx) => `${idx + 1}. ${s}`),

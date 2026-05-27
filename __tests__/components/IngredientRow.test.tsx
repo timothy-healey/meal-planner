@@ -3,13 +3,13 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { IngredientRow } from '../../components/IngredientRow';
 import type { Ingredient } from '../../meal_plan.types';
 
-const ING: Ingredient = { item: 'Chicken breast', amount: '200g' };
+const ING: Ingredient = { item: 'Chicken breast', amount: { kind: 'measured', value: 200, unit: 'g' } };
 
 describe('IngredientRow', () => {
   it('renders item name and amount', () => {
     const { getByText } = render(<IngredientRow ingredient={ING} />);
     expect(getByText('Chicken breast')).toBeTruthy();
-    expect(getByText('200g')).toBeTruthy();
+    expect(getByText('200 g')).toBeTruthy();
   });
 
   it('shows macro chip strip when nutrition provided', () => {
