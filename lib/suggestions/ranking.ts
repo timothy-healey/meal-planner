@@ -1,5 +1,5 @@
 import Fuse from 'fuse.js';
-import type { Candidate, Suggestion } from './types';
+import type { Candidate, Suggestion, SuggestionKind } from './types';
 
 const DAY_MS = 86_400_000;
 
@@ -95,4 +95,42 @@ export function rankEmptyQuery(
     return b.t.lastUsedAt.localeCompare(a.t.lastUsedAt);
   });
   return scored.slice(0, 5).map(s => ({ ...s.t, matches: [] }));
+}
+
+export function rankFuzzyQuery(
+  targets: Suggestion[],
+  text: string,
+  field: SuggestionKind,
+  ingredientName: string,
+  lookupItemName: (foodNutritionId: string) => string | null,
+  now: number = Date.now(),
+): Suggestion[] {
+  const fuseKey = field === 'brand' ? 'brand' : 'productName';
+  const fuse = new Fuse(targets, {
+    keys: [fuseKey],
+    threshold: 0.4,
+    ignoreLocation: true,
+    includeMatches: true,
+    includeScore: true,
+  });
+  const hits = fuse.search(text);
+  const scored = hits.map(hit => {
+    const t = hit.item;
+    const itemName = t.foodNutritionId ? lookupItemName(t.foodNutritionId) : null;
+    const itemMul = itemNameMatches(itemName, ingredientName) ? 0.5 : 1.0;
+    const fuseScore = hit.score ?? 1;
+    const finalScore = fuseScore * recencyMultiplier(t.lastUsedAt, now) * itemMul;
+    const matchEntries = (hit.matches ?? [])
+      .filter(m => m.key === fuseKey)
+      .map(m => ({
+        field,
+        indices: m.indices.map(([a, b]) => [a, b] as [number, number]),
+      }));
+    return { t: { ...t, matches: matchEntries }, finalScore };
+  });
+  scored.sort((a, b) => {
+    if (a.finalScore !== b.finalScore) return a.finalScore - b.finalScore;
+    return b.t.lastUsedAt.localeCompare(a.t.lastUsedAt);
+  });
+  return scored.slice(0, 5).map(s => s.t);
 }
