@@ -9,6 +9,7 @@ import { StepList } from '../../components/ui/StepList';
 import { IngredientRow } from '../../components/IngredientRow';
 import { IngredientSheet } from '../../components/IngredientSheet';
 import { AddIngredientRow } from '../../components/AddIngredientRow';
+import { RecipeNotesSheet } from '../../components/RecipeNotesSheet';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useFoodNutrition } from '../../hooks/useFoodNutrition';
 import { useRecipeIngredients } from '../../hooks/useRecipeIngredients';
@@ -24,7 +25,7 @@ import type { Ingredient } from '../../meal_plan.types';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { recipes } = useRecipes();
+  const { recipes, updateNotes } = useRecipes();
   const recipe = recipes.find((r) => r.id === id) ?? null;
   const { upsert, linkIngredient, getLinksForRecipe } = useFoodNutrition();
   const { updateIngredient, addIngredient, deleteIngredient } = useRecipeIngredients();
@@ -38,6 +39,7 @@ export default function RecipeDetailScreen() {
   const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
   const [sheet, setSheet] = useState<SheetState>(null);
   const [linksKey, setLinksKey] = useState(0);
+  const [notesSheetVisible, setNotesSheetVisible] = useState(false);
 
   useEffect(() => {
     if (!recipe?.id) return;
@@ -97,6 +99,16 @@ export default function RecipeDetailScreen() {
     setSheet(null);
   }
 
+  async function handleNotesSave(nextNotes: string | null) {
+    if (!recipe) return;
+    await updateNotes(recipe.id, nextNotes);
+  }
+
+  function openNotesSheet() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setNotesSheetVisible(true);
+  }
+
   const handleCopy = async () => {
     const text = [
       recipe.title,
@@ -117,14 +129,27 @@ export default function RecipeDetailScreen() {
     <View style={styles.container}>
       <GreenHeader>
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Recipes"
-          >
-            <AppText weight="bold" color="onGreenSubtle" size="sm">‹ Recipes</AppText>
-          </TouchableOpacity>
+          <View style={styles.topRow}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Recipes"
+            >
+              <AppText weight="bold" color="onGreenSubtle" size="sm">‹ Recipes</AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={openNotesSheet}
+              style={styles.notesPill}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={recipe.notes && recipe.notes.trim() ? 'Edit notes' : 'Add notes'}
+            >
+              <AppText weight="bold" color="onGreen" size="xs">
+                {recipe.notes && recipe.notes.trim() ? '✎ Note' : '+ Note'}
+              </AppText>
+            </TouchableOpacity>
+          </View>
           <AppText weight="extrabold" color="onGreen" size="2xl" numberOfLines={2}>
             {recipe.title}
           </AppText>
@@ -215,6 +240,25 @@ export default function RecipeDetailScreen() {
             </View>
           </View>
         </View>
+
+        {recipe.notes && recipe.notes.trim() && (
+          <View style={styles.section}>
+            <CategoryHeader label="Notes" isOneoff={false} />
+            <TouchableOpacity
+              style={styles.card}
+              onPress={openNotesSheet}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Tap to edit notes"
+            >
+              <View style={styles.notesBody}>
+                <AppText weight="regular" color="textPrimary" size="md">
+                  {recipe.notes}
+                </AppText>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       <IngredientSheet
@@ -226,6 +270,14 @@ export default function RecipeDetailScreen() {
         onDelete={sheet?.mode === 'edit' ? handleSheetDelete : undefined}
         onClose={() => setSheet(null)}
       />
+
+      <RecipeNotesSheet
+        visible={notesSheetVisible}
+        recipeTitle={recipe.title}
+        initialNotes={recipe.notes}
+        onSave={handleNotesSave}
+        onClose={() => setNotesSheetVisible(false)}
+      />
     </View>
   );
 }
@@ -234,9 +286,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.cream },
   notFound: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.cream },
   headerContent: { paddingBottom: spacing[1], gap: spacing[2] },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   backBtn: {
     paddingVertical: spacing[4], paddingRight: spacing[4],
     alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center',
+  },
+  notesPill: {
+    backgroundColor: colors.headerPill,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: radius.full,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notesBody: {
+    padding: spacing[4],
   },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   pill: {
