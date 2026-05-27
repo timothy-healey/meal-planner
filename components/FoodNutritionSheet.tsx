@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { colors, font, radius, shadow, spacing } from "../constants/tokens";
 import type { FoodNutritionData } from "../hooks/useFoodNutrition";
 import { parseAmount } from "../lib/parseAmount";
@@ -132,7 +130,7 @@ export function FoodNutritionSheet({
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
       >
         <TouchableOpacity
           style={styles.backdrop}
@@ -174,7 +172,7 @@ export function FoodNutritionSheet({
             </View>
           </View>
 
-          <ScrollView
+          <KeyboardAwareScrollView
             style={styles.fields}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -256,7 +254,7 @@ export function FoodNutritionSheet({
             )}
 
             <View style={{ height: spacing[4] }} />
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           <TouchableOpacity
             style={styles.doneBtn}
