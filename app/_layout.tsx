@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -34,19 +35,21 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <DatabaseProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="recipe/[id]" />
-          <Stack.Screen name="batch-plan" />
-          <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="category-order" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="shop-receipt" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="barcode-scanner" options={{ presentation: 'fullScreenModal', headerShown: false }} />
-        </Stack>
-      </DatabaseProvider>
-    </GestureHandlerRootView>
+      <KeyboardProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <DatabaseProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="recipe/[id]" />
+              <Stack.Screen name="batch-plan" />
+              <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="category-order" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="shop-receipt" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="barcode-scanner" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+            </Stack>
+          </DatabaseProvider>
+        </GestureHandlerRootView>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }
