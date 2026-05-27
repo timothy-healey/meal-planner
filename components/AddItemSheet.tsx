@@ -4,11 +4,11 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
   Pressable,
   Dimensions,
 } from 'react-native';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -119,7 +119,7 @@ export function AddItemSheet({ visible, categories, onAdd, onSave, onClose, init
       statusBarTranslucent
       onRequestClose={handleClose}
     >
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView style={styles.overlay} behavior="padding">
         <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, scrimStyle]} />
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
 
@@ -140,7 +140,7 @@ export function AddItemSheet({ visible, categories, onAdd, onSave, onClose, init
             </TouchableOpacity>
           </View>
 
-          <ScrollView
+          <KeyboardAwareScrollView
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
             keyboardShouldPersistTaps="handled"
@@ -253,7 +253,7 @@ export function AddItemSheet({ visible, categories, onAdd, onSave, onClose, init
                 <AppText weight="semibold" color="textSecondary" size="sm">Add note</AppText>
               </TouchableOpacity>
             )}
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           <View style={styles.footer}>
             <TouchableOpacity
@@ -271,7 +271,7 @@ export function AddItemSheet({ visible, categories, onAdd, onSave, onClose, init
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
