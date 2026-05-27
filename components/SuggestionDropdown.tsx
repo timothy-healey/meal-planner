@@ -8,13 +8,14 @@ import type { Suggestion } from '../lib/suggestions/types';
 interface Props {
   suggestions: Suggestion[];
   showBrandInSecondary: boolean;
+  hideEmblem?: boolean;
   now?: number;
   onPick: (s: Suggestion) => void;
   onLayoutHeight: (h: number) => void;
 }
 
 export function SuggestionDropdown({
-  suggestions, showBrandInSecondary, now, onPick, onLayoutHeight,
+  suggestions, showBrandInSecondary, hideEmblem = false, now, onPick, onLayoutHeight,
 }: Props) {
   if (suggestions.length === 0) return null;
   const ts = now ?? Date.now();
@@ -43,16 +44,18 @@ export function SuggestionDropdown({
               />
               <Secondary s={s} showBrand={showBrandInSecondary} now={ts} />
             </View>
-            <View style={styles.emblemSlot}>
-              {s.kind === 'product' && s.foodNutritionId && (
-                <Ionicons
-                  testID="suggestion-emblem"
-                  name="pie-chart"
-                  size={16}
-                  color={colors.green}
-                />
-              )}
-            </View>
+            {!hideEmblem && (
+              <View style={styles.emblemSlot}>
+                {s.kind === 'product' && s.foodNutritionId && (
+                  <Ionicons
+                    testID="suggestion-emblem"
+                    name="pie-chart"
+                    size={16}
+                    color={colors.green}
+                  />
+                )}
+              </View>
+            )}
           </TouchableOpacity>
         );
       })}

@@ -110,3 +110,23 @@ describe('SuggestionDropdown match highlight', () => {
     expect(highlighted).toBeTruthy();
   });
 });
+
+describe('SuggestionDropdown hideEmblem', () => {
+  it('hides the pie-chart emblem even on has-nutrition rows when hideEmblem is true', () => {
+    const withNutrition: Suggestion = {
+      kind: 'product', brand: 'Vitasoy', productName: 'Oat Milk Barista',
+      lastUsedAt: '2026-05-25T00:00:00Z', foodNutritionId: 'fn-1', matches: [],
+    };
+    const { queryAllByTestId } = render(
+      <SuggestionDropdown
+        suggestions={[withNutrition]}
+        showBrandInSecondary={false}
+        hideEmblem={true}
+        now={Date.parse('2026-05-27T00:00:00Z')}
+        onPick={jest.fn()}
+        onLayoutHeight={jest.fn()}
+      />,
+    );
+    expect(queryAllByTestId('suggestion-emblem')).toHaveLength(0);
+  });
+});
