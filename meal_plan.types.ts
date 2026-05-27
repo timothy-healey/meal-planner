@@ -92,9 +92,16 @@ export interface Recipe {
   method?: string;                // Deprecated (v1.0). Kept for backward-compat loading of old plans.
 }
 
+export type Unit = 'g' | 'kg' | 'mL' | 'L' | 'unit';
+
+export type Amount =
+  | { kind: 'measured'; value: number; unit: Unit }
+  | { kind: 'custom';   value: number; unit: string }
+  | { kind: 'note';     text: string };
+
 export interface Ingredient {
   item: string;
-  amount: string;
+  amount: Amount;
 }
 
 export interface PantryStaple {
