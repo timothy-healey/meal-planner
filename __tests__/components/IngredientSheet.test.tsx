@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { IngredientSheet } from '../../components/IngredientSheet';
 import type { FoodNutritionRow } from '../../types/db';
+import type { Ingredient } from '../../meal_plan.types';
 
 jest.mock('../../components/PriceHistoryChart', () => ({
   PriceHistoryChart: () => null,
@@ -20,16 +21,19 @@ const EXISTING: FoodNutritionRow = {
   updated_at: '2026-05-24T00:00:00.000Z',
 };
 
+const ING: Ingredient = { item: 'Oat milk', amount: { kind: 'measured', value: 240, unit: 'mL' } };
+
 describe('IngredientSheet', () => {
   it('pre-fills brand and product name from existingEntry', () => {
     const { getByDisplayValue } = render(
       <IngredientSheet
         visible={true}
-        ingredientName="Oat milk"
-        ingredientAmount="240mL"
+        mode="edit"
+        initialIngredient={ING}
         existingEntry={EXISTING}
         onSave={jest.fn()}
         onClose={jest.fn()}
+        onDelete={jest.fn()}
       />
     );
     expect(getByDisplayValue('Vitasoy')).toBeTruthy();
@@ -40,42 +44,44 @@ describe('IngredientSheet', () => {
     const { getByDisplayValue } = render(
       <IngredientSheet
         visible={true}
-        ingredientName="Oat milk"
-        ingredientAmount="240mL"
+        mode="edit"
+        initialIngredient={ING}
         existingEntry={EXISTING}
         onSave={jest.fn()}
         onClose={jest.fn()}
+        onDelete={jest.fn()}
       />
     );
     expect(getByDisplayValue('45')).toBeTruthy();
   });
 
-  it('shows empty inputs when existingEntry is null', () => {
-    const { queryByDisplayValue } = render(
+  it('shows empty name input in add mode', () => {
+    const { getByPlaceholderText } = render(
       <IngredientSheet
         visible={true}
-        ingredientName="Brown rice"
-        ingredientAmount="200g"
+        mode="add"
+        initialIngredient={null}
         existingEntry={null}
         onSave={jest.fn()}
         onClose={jest.fn()}
       />
     );
-    expect(queryByDisplayValue('Vitasoy')).toBeNull();
-    expect(queryByDisplayValue('45')).toBeNull();
+    const input = getByPlaceholderText('Ingredient name');
+    expect(input.props.value).toBe('');
   });
 
-  it('displays the ingredient name as heading', () => {
-    const { getByText } = render(
+  it('renders the editable ingredient name from initialIngredient', () => {
+    const { getByDisplayValue } = render(
       <IngredientSheet
         visible={true}
-        ingredientName="Brown rice"
-        ingredientAmount="200g"
+        mode="edit"
+        initialIngredient={{ item: 'Brown rice', amount: { kind: 'measured', value: 200, unit: 'g' } }}
         existingEntry={null}
         onSave={jest.fn()}
         onClose={jest.fn()}
+        onDelete={jest.fn()}
       />
     );
-    expect(getByText('Brown rice')).toBeTruthy();
+    expect(getByDisplayValue('Brown rice')).toBeTruthy();
   });
 });

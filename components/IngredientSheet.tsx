@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Modal,
   StyleSheet,
   TextInput,
@@ -8,10 +9,11 @@ import {
   View,
 } from "react-native";
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, font, radius, shadow, spacing } from "../constants/tokens";
 import type { FoodNutritionData } from "../hooks/useFoodNutrition";
-import { parseAmountString, amountToBasis } from "../lib/amount";
 import type { FoodNutritionRow } from "../types/db";
+import type { Ingredient } from "../meal_plan.types";
 import { AppText } from "./ui/AppText";
 import { PriceHistoryChart } from "./PriceHistoryChart";
 
@@ -25,22 +27,25 @@ const BASIS_LABELS: { value: Basis; label: string }[] = [
 
 interface Props {
   visible: boolean;
-  ingredientName: string;
-  ingredientAmount: string;
+  mode: 'add' | 'edit';
+  initialIngredient: Ingredient | null;
   existingEntry: FoodNutritionRow | null;
-  onSave: (data: FoodNutritionData) => void;
+  onSave: (data: { ingredient: Ingredient; nutrition: FoodNutritionData | null }) => void;
+  onDelete?: () => void;
   onClose: () => void;
 }
 
 export function IngredientSheet({
   visible,
-  ingredientName,
-  ingredientAmount,
+  mode,
+  initialIngredient,
   existingEntry,
   onSave,
+  onDelete,
   onClose,
 }: Props) {
   const { height: windowHeight } = useWindowDimensions();
+  const [name, setName] = useState("");
   const [basis, setBasis] = useState<Basis>("per_100g");
   const [brand, setBrand] = useState("");
   const [productName, setProductName] = useState("");
@@ -54,6 +59,7 @@ export function IngredientSheet({
   useEffect(() => {
     if (!visible) return;
     calIsAuto.current = false;
+    setName(initialIngredient?.item ?? "");
     if (existingEntry) {
       setBasis(existingEntry.basis);
       setBrand(existingEntry.brand ?? "");
@@ -79,7 +85,7 @@ export function IngredientSheet({
           : "",
       );
     } else {
-      setBasis(amountToBasis(parseAmountString(ingredientAmount)));
+      setBasis("per_100g");
       setBrand("");
       setProductName("");
       setCal("");
@@ -87,7 +93,7 @@ export function IngredientSheet({
       setCarbs("");
       setFat("");
     }
-  }, [visible, existingEntry, ingredientAmount]);
+  }, [visible, existingEntry, initialIngredient]);
 
   useEffect(() => {
     const p = parseFloat(protein);
@@ -106,8 +112,15 @@ export function IngredientSheet({
   }, [protein, carbs, fat]);
 
   function handleSave() {
-    onSave({
-      item_name: ingredientName.toLowerCase().trim(),
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    // Ingredient amount is reintroduced in Task 10/11; for now we preserve the existing amount
+    // when editing, or fall back to a placeholder for add mode (replaced in Task 11).
+    const amount: Ingredient['amount'] =
+      initialIngredient?.amount ?? { kind: 'measured', value: 0, unit: 'g' };
+
+    const nutrition: FoodNutritionData = {
+      item_name: trimmedName.toLowerCase(),
       brand: brand.trim() || null,
       product_name: productName.trim() || null,
       basis,
@@ -115,7 +128,8 @@ export function IngredientSheet({
       protein_per_basis: protein ? parseFloat(protein) : null,
       carbs_per_basis: carbs ? parseFloat(carbs) : null,
       fat_per_basis: fat ? parseFloat(fat) : null,
-    });
+    };
+    onSave({ ingredient: { item: trimmedName, amount }, nutrition });
   }
 
   return (
@@ -138,35 +152,31 @@ export function IngredientSheet({
           <View style={styles.handle} />
 
           <View style={styles.nameRow}>
-            <AppText
-              weight="extrabold"
-              size="2xl"
-              color="textPrimary"
-              style={styles.nameText}
-            >
-              {ingredientName}
-            </AppText>
-            <View style={styles.unitToggle}>
-              {BASIS_LABELS.map(({ value, label }) => (
-                <TouchableOpacity
-                  key={value}
-                  style={[
-                    styles.unitOpt,
-                    basis === value && styles.unitOptActive,
-                  ]}
-                  onPress={() => setBasis(value)}
-                  activeOpacity={0.7}
-                >
-                  <AppText
-                    weight={basis === value ? "bold" : "semibold"}
-                    size="2xs"
-                    color={basis === value ? "green" : "textTertiary"}
-                  >
-                    {label}
-                  </AppText>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TextInput
+              style={styles.nameInput}
+              value={name}
+              onChangeText={setName}
+              placeholder="Ingredient name"
+              placeholderTextColor={colors.textTertiary}
+            />
+            {mode === 'edit' && onDelete && (
+              <TouchableOpacity
+                style={styles.trashBtn}
+                onPress={() => {
+                  Alert.alert(
+                    `Remove ${initialIngredient?.item ?? 'ingredient'}?`,
+                    undefined,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: onDelete },
+                    ],
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={20} color={colors.terracotta} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <KeyboardAwareScrollView
@@ -314,11 +324,32 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: spacing[2],
-    marginBottom: spacing[4],
+    marginBottom: spacing[3],
   },
-  nameText: { flex: 1 },
+  nameInput: {
+    flex: 1,
+    height: 38,
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing[3] + 2,
+    paddingVertical: 10,
+    fontFamily: font.family.extrabold,
+    fontSize: font.size.xl,
+    color: colors.textPrimary,
+  },
+  trashBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    backgroundColor: colors.cream,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   unitToggle: {
     flexDirection: "row",
     backgroundColor: colors.divider,
