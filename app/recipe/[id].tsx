@@ -18,6 +18,7 @@ import { colors, spacing, radius } from '../../constants/tokens';
 import * as Haptics from 'expo-haptics';
 import type { FoodNutritionRow } from '../../types/db';
 import type { FoodNutritionData } from '../../hooks/useFoodNutrition';
+import type { Ingredient } from '../../meal_plan.types';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,7 +28,7 @@ export default function RecipeDetailScreen() {
 
   const [copied, setCopied] = useState(false);
   const [links, setLinks] = useState<Record<number, FoodNutritionRow>>({});
-  const [sheetIngredient, setSheetIngredient] = useState<{ index: number; name: string; amount: string } | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [linksKey, setLinksKey] = useState(0);
 
   useEffect(() => {
@@ -47,13 +48,18 @@ export default function RecipeDetailScreen() {
   const rollup = rollupMacros(recipe.ingredients, links, recipe.servings);
   const prefix = rollup?.isPartial ? '~' : '';
 
-  async function handleNutritionSave(data: FoodNutritionData) {
-    if (!sheetIngredient) return;
-    const existingId = links[sheetIngredient.index]?.id;
-    const foodNutritionId = await upsert({ ...data, id: existingId });
-    await linkIngredient(recipe!.id, sheetIngredient.index, foodNutritionId);
-    setLinksKey(k => k + 1);
-    setSheetIngredient(null);
+  const editingIngredient = editingIndex != null ? recipe.ingredients[editingIndex] ?? null : null;
+
+  async function handleSheetSave({ ingredient: _ingredient, nutrition }: { ingredient: Ingredient; nutrition: FoodNutritionData | null }) {
+    if (editingIndex == null) return;
+    if (nutrition) {
+      const existingId = links[editingIndex]?.id;
+      const foodNutritionId = await upsert({ ...nutrition, id: existingId });
+      await linkIngredient(recipe!.id, editingIndex, foodNutritionId);
+      setLinksKey(k => k + 1);
+    }
+    // ingredient mutation lands in Task 13; for now the existing edit-without-write behaviour is preserved
+    setEditingIndex(null);
   }
 
   const handleCopy = async () => {
@@ -144,7 +150,7 @@ export default function RecipeDetailScreen() {
                 key={idx}
                 ingredient={ing}
                 nutrition={rollup?.contributions[idx] ?? null}
-                onPress={() => setSheetIngredient({ index: idx, name: ing.item, amount: ing.amount })}
+                onPress={() => setEditingIndex(idx)}
               />
             ))}
           </View>
@@ -176,12 +182,12 @@ export default function RecipeDetailScreen() {
       </ScrollView>
 
       <IngredientSheet
-        visible={sheetIngredient !== null}
-        ingredientName={sheetIngredient?.name ?? ''}
-        ingredientAmount={sheetIngredient?.amount ?? ''}
-        existingEntry={sheetIngredient !== null ? (links[sheetIngredient.index] ?? null) : null}
-        onSave={handleNutritionSave}
-        onClose={() => setSheetIngredient(null)}
+        visible={editingIndex !== null}
+        mode="edit"
+        initialIngredient={editingIngredient}
+        existingEntry={editingIndex !== null ? (links[editingIndex] ?? null) : null}
+        onSave={handleSheetSave}
+        onClose={() => setEditingIndex(null)}
       />
     </View>
   );
