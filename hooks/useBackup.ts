@@ -18,26 +18,30 @@ export function useBackup(onRestore?: () => void) {
   const exportBackup = useCallback(async () => {
     setStatus({ type: 'loading' });
     try {
-      const [recipes, plans, items, prices, barcodeNutrition, barcodeStores, stores, aisles, aisleMap] =
-        await Promise.all([
-          db.getAllAsync('SELECT * FROM recipes'),
-          db.getAllAsync('SELECT * FROM weekly_plans'),
-          db.getAllAsync('SELECT * FROM shopping_items'),
-          db.getAllAsync('SELECT * FROM price_history'),
-          db.getAllAsync('SELECT * FROM barcode_nutrition'),
-          db.getAllAsync('SELECT * FROM barcode_stores'),
-          db.getAllAsync('SELECT * FROM stores'),
-          db.getAllAsync('SELECT * FROM store_aisles'),
-          db.getAllAsync('SELECT * FROM item_aisle_map'),
-        ]);
+      const [
+        recipes, plans, items, purchases, products,
+        barcodeNutrition, barcodeStores, stores, aisles, aisleMap,
+      ] = await Promise.all([
+        db.getAllAsync('SELECT * FROM recipes'),
+        db.getAllAsync('SELECT * FROM weekly_plans'),
+        db.getAllAsync('SELECT * FROM shopping_items'),
+        db.getAllAsync('SELECT * FROM purchase_history'),
+        db.getAllAsync('SELECT * FROM products'),
+        db.getAllAsync('SELECT * FROM barcode_nutrition'),
+        db.getAllAsync('SELECT * FROM barcode_stores'),
+        db.getAllAsync('SELECT * FROM stores'),
+        db.getAllAsync('SELECT * FROM store_aisles'),
+        db.getAllAsync('SELECT * FROM item_aisle_map'),
+      ]);
 
       const backup = {
-        backup_version: '1.0',
+        backup_version: '2.0',
         exported_at: new Date().toISOString(),
         recipes,
         weekly_plans: plans,
         shopping_items: items,
-        price_history: prices,
+        purchase_history: purchases,
+        products,
         barcode_nutrition: barcodeNutrition,
         barcode_stores: barcodeStores,
         stores,
@@ -85,28 +89,46 @@ export function useBackup(onRestore?: () => void) {
     setStatus({ type: 'loading' });
     try {
       await db.runAsync('BEGIN');
-      const tables = ['item_aisle_map','store_aisles','stores','price_history',
-        'shopping_items','weekly_plans','recipes','barcode_nutrition','barcode_stores'];
+      // Delete in reverse-FK order so referencing rows go before their targets.
+      const tables = [
+        'item_aisle_map', 'store_aisles', 'shopping_items', 'purchase_history',
+        'barcode_nutrition', 'barcode_stores', 'weekly_plans', 'recipes',
+        'products', 'stores',
+      ];
       for (const t of tables) {
         await db.runAsync(`DELETE FROM ${t}`);
       }
       await runMigrations(db);
 
+      // Insert in forward-FK order so referenced rows exist when referencing rows insert.
       const inserts: Array<[string, any[]]> = [
-        ...insertRows('recipes', backup.recipes ?? [], ['id','title','meal_type','servings',
-          'calories_per_serve','protein_per_serve_g','cook_method','prep_minutes','cook_minutes',
-          'ingredients_json','method_steps_json','is_favourite','source','notes','created_at']),
-        ...insertRows('weekly_plans', backup.weekly_plans ?? [], ['id','week_starting','is_active',
-          'meta_json','strategy_json','days_json','batch_plan_json','created_at']),
-        ...insertRows('shopping_items', backup.shopping_items ?? [], ['id','plan_id','category',
-          'category_order','item_order','name','qty','estimated_price','is_oneoff','note',
-          'is_checked','actual_price','store']),
-        ...insertRows('price_history', backup.price_history ?? [], ['id','barcode','item_name','store','price','qty','date','plan_id']),
-        ...insertRows('barcode_nutrition', backup.barcode_nutrition ?? [], ['barcode','brand_name','item_name','cal_per_100g','protein_per_100g','carbs_per_100g','fat_per_100g','scanned_at']),
-        ...insertRows('barcode_stores', backup.barcode_stores ?? [], ['barcode','store','first_seen']),
-        ...insertRows('stores', backup.stores ?? [], ['id','chain','branch','created_at']),
-        ...insertRows('store_aisles', backup.store_aisles ?? [], ['id','store_id','aisle_label','sort_order']),
-        ...insertRows('item_aisle_map', backup.item_aisle_map ?? [], ['id','store_id','barcode','item_name','aisle_id','updated_at']),
+        ...insertRows('stores', backup.stores ?? [],
+          ['id','chain','branch','created_at']),
+        ...insertRows('products', backup.products ?? [],
+          ['id','brand','product_name','item_name','basis',
+           'cal_per_basis','protein_per_basis','carbs_per_basis','fat_per_basis','updated_at']),
+        ...insertRows('weekly_plans', backup.weekly_plans ?? [],
+          ['id','week_starting','is_active','meta_json','strategy_json',
+           'days_json','batch_plan_json','created_at']),
+        ...insertRows('recipes', backup.recipes ?? [],
+          ['id','title','meal_type','servings','calories_per_serve','protein_per_serve_g',
+           'cook_method','prep_minutes','cook_minutes','ingredients_json','method_steps_json',
+           'is_favourite','source','notes','created_at']),
+        ...insertRows('shopping_items', backup.shopping_items ?? [],
+          ['id','plan_id','category','category_order','item_order','name','qty',
+           'estimated_price','is_oneoff','note','is_checked']),
+        ...insertRows('purchase_history', backup.purchase_history ?? [],
+          ['id','plan_id','item_name','store_id','product_id',
+           'qty_amount','qty_unit','price','is_sale','barcode','purchased_at','status']),
+        ...insertRows('barcode_nutrition', backup.barcode_nutrition ?? [],
+          ['barcode','brand_name','item_name','cal_per_100g','protein_per_100g',
+           'carbs_per_100g','fat_per_100g','scanned_at']),
+        ...insertRows('barcode_stores', backup.barcode_stores ?? [],
+          ['barcode','store','first_seen']),
+        ...insertRows('store_aisles', backup.store_aisles ?? [],
+          ['id','store_id','aisle_label','sort_order']),
+        ...insertRows('item_aisle_map', backup.item_aisle_map ?? [],
+          ['id','store_id','barcode','item_name','aisle_id','updated_at']),
       ];
 
       for (const [sql, params] of inserts) {
