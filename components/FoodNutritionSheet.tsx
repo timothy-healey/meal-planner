@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { colors, font, radius, spacing } from "../constants/tokens";
+import { colors, font, radius, shadow, spacing } from "../constants/tokens";
 import type { FoodNutritionData } from "../hooks/useFoodNutrition";
 import { parseAmount } from "../lib/parseAmount";
 import type { FoodNutritionRow } from "../types/db";
@@ -280,7 +280,7 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
       size="xs"
       color="textTertiary"
       style={{
-        letterSpacing: 0.8,
+        letterSpacing: font.tracking.caps,
         marginBottom: spacing[1],
         marginTop: top ? spacing[4] : 0,
       }}
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.scrim,
   },
   sheet: {
     backgroundColor: colors.card,
@@ -339,11 +339,7 @@ const styles = StyleSheet.create({
   },
   unitOptActive: {
     backgroundColor: colors.card,
-    shadowColor: colors.green,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
-    elevation: 1,
+    ...shadow.pill,
   },
   fields: { flex: 1 },
   input: {

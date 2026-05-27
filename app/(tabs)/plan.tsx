@@ -2,12 +2,13 @@ import { router } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { DayCard } from "../../components/DayCard";
 import { TodayCard } from "../../components/TodayCard";
 import { AppText } from "../../components/ui/AppText";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { PlanSkeleton } from "../../components/ui/PlanSkeleton";
-import { colors, radius, shadow, spacing } from "../../constants/tokens";
+import { colors, font, radius, shadow, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
 
 const DAY_NAMES = [
@@ -137,8 +138,9 @@ export default function PlanScreen() {
             accessibilityRole="button"
             accessibilityLabel="Import new meal plan"
           >
+            <Ionicons name="folder-open-outline" size={14} color={colors.green} />
             <AppText weight="bold" color="green" size="2xs">
-              📂 Import
+              Import
             </AppText>
           </TouchableOpacity>
         </View>
@@ -176,8 +178,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing[2],
     paddingBottom: spacing[2],
   },
-  weekLabel: { letterSpacing: 0.5, textTransform: "uppercase" },
+  weekLabel: { letterSpacing: font.tracking.category, textTransform: "uppercase" },
   importBtn: {
+    flexDirection: "row",
+    gap: spacing[1] + 2,
     backgroundColor: colors.card,
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],

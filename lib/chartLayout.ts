@@ -1,15 +1,15 @@
+import { storeSeries } from '../constants/tokens';
 import type { PricePoint } from '../types/db';
 
 export type TimeRange = '3M' | '6M' | '1Y' | 'All';
 export type ChartUnit = 'per100' | 'total';
 
-export const STORE_COLORS = ['#2A7A66', '#B8513C', '#7090B8'] as const;
 export const CHART_MARGINS = { left: 34, right: 8, top: 8, bottom: 22 } as const;
 export const DOT_RADIUS = 3.5;
 export const SALE_RING_RADIUS = 6.5;
 
 export function getStoreColor(index: number): string {
-  return STORE_COLORS[index % STORE_COLORS.length];
+  return storeSeries[index % storeSeries.length];
 }
 
 export function filterByTimeRange(

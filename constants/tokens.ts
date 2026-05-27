@@ -22,21 +22,26 @@ export const colors = {
   // Text hierarchy (on cream)
   textPrimary:   '#1C453C', // item names, headings
   textSecondary: '#666658', // protein, secondary stats — 4.7:1 on cream (AA)
-  textTertiary:  '#898970', // time, tertiary stats, inactive labels — 3.0:1 on cream (large-text AA)
-  textNote:      '#7a7a6a', // notes, captions (replaces italic on this font) — 3.6:1 on cream
-  tabInactive:   '#aeae9e', // inactive tab labels — warm undertone consistent with palette
+  textTertiary:  '#6c6c5e', // time, tertiary stats, inactive labels — 4.78:1 on cream (AA normal)
+  textNote:      '#756347', // notes, captions (warm brown undertone) — 5.24:1 on cream (AA normal)
+  tabInactive:   '#aeae9e', // inactive tab labels — muted by convention, not for body text
 
   // Structural
   divider:       '#e9eadc', // list dividers, tab bar border
   checkboxBorder:'#ced0c1', // unchecked checkbox border
   chipSurface:   '#e8f0ee', // macro chip backgrounds in ingredient rows
 
-  // Overlays
-  headerPill: 'rgba(0,0,0,0.25)', // budget/count pill background on header
+  // Overlays — all tinted toward forest green, never pure black
+  scrim:      'rgba(28, 69, 60, 0.45)', // modal/sheet backdrop
+  headerPill: 'rgba(28, 69, 60, 0.25)', // budget/count pill background on green header
+  saleTint:   '#FEF0E6',                // peach wash for "on sale" chart legend pill
 
   // Dark surfaces
   scannerBg: '#111111', // camera viewfinder background (shown briefly before camera loads)
 } as const;
+
+// Series colors for charts (warm-palette siblings — green, terracotta, muted teal-blue)
+export const storeSeries = ['#1C453C', '#744234', '#3B6E8C'] as const;
 
 export type Color = keyof typeof colors;
 
@@ -69,6 +74,7 @@ export const font = {
   tracking: {
     normal:   0,
     label:    0.3,  // general UI labels
+    caps:     0.8,  // small uppercase labels inside sheets and the scanner result row
     category: 1.1,  // all-caps category headers (≈ 0.12em at 9dp)
   },
 } as const;
@@ -103,6 +109,7 @@ export const radius = {
 
 // ─── Elevation (shadow) ───────────────────────────────────────────────────────
 // shadowColor uses the brand green for a warmer shadow than pure black.
+// Four tokens, four purposes — see DESIGN.md > Elevation.
 
 export const shadow = {
   card: {
@@ -118,5 +125,21 @@ export const shadow = {
     shadowOpacity: 0.10,
     shadowRadius:  4,
     elevation:     2,
+  },
+  // Bottom sheets — cast upward from the sheet's top edge.
+  sheet: {
+    shadowColor:   colors.green,
+    shadowOffset:  { width: 0, height: -3 },
+    shadowOpacity: 0.12,
+    shadowRadius:  12,
+    elevation:     16,
+  },
+  // Drag-lift state — items picked up during a sortable drag.
+  lift: {
+    shadowColor:   colors.green,
+    shadowOffset:  { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius:  6,
+    elevation:     4,
   },
 } as const;

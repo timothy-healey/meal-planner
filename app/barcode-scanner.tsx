@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../components/ui/AppText';
-import { colors, spacing, radius } from '../constants/tokens';
+import { colors, font, spacing, radius } from '../constants/tokens';
 import { setPendingScanResult } from '../lib/barcodeScanResult';
 import { usePurchaseHistory } from '../hooks/usePurchaseHistory';
 import { usePlan } from '../hooks/usePlan';
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   result: { flex: 1, backgroundColor: colors.cream, padding: spacing[4] },
   waitingText: { textAlign: 'center' },
-  resultLabel: { letterSpacing: 0.8, marginBottom: spacing[2] },
+  resultLabel: { letterSpacing: font.tracking.caps, marginBottom: spacing[2] },
   matchCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: colors.card, borderRadius: radius.md, padding: spacing[3],

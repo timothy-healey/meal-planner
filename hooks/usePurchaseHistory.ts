@@ -158,5 +158,6 @@ export function usePurchaseHistory(planId: string | null) {
     records, pendingRecords, loading,
     addRecord, deletePending, updatePending, confirmShop,
     getLatestForItem, getLatestForBarcode,
+    reload: load,
   };
 }

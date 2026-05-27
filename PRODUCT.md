@@ -12,11 +12,10 @@ Warm, homey, and fresh. Like a well-worn recipe book meets a good farmers market
 Three words: **earthy · fresh · nourishing**
 
 ### Palette
-- `#1C453C` — deep forest green, hero/primary
-- `#E6CCCC` — soft blush, gentle accent
-- `#744234` — warm terracotta, bold accent
+- `#1C453C` — deep forest green, hero/primary (headers, signature cards, on-cream body text)
+- `#744234` — warm terracotta, taxonomic seasoning (category labels, quantity tags, classification dots — never a fill)
+- `#E87B3A` — persimmon orange, the action color (CTA fills + inline key numbers like prices and calories)
 - `#F4F5EB` — cream offwhite, background
-- Orange (~`#E87B3A`) — warmth accent, user requested "sprinkles"
 
 ### Aesthetic Direction
 Light mode. Cream body surfaces with a deep forest-green header treatment. Warm terracotta and a touch of orange for prices, labels, and interactive moments. Not clinical, not corporate — feels handmade and considered. Think: a Saturday morning, a mug of coffee, chopping vegetables.
@@ -27,5 +26,5 @@ Anti-references: cold fitness-tracker UIs, pure-white sterile health apps, neon 
 1. **Warmth over efficiency** — the interface should feel inviting, not optimising
 2. **Hierarchy through colour, not borders** — no side-stripe cards; use tinted surfaces and type weight
 3. **Cream as the canvas** — off-white backgrounds, not pure white; always slightly warm
-4. **Orange as seasoning** — used sparingly for prices, checked states, key numbers; not wallpaper
-5. **Touch-first** — generous tap targets, no tiny text; used one-handed in a grocery aisle
+4. **Orange as action; terracotta as taxonomy** — orange fills primary CTAs and tints inline key numbers (prices, calories); terracotta labels categories and quantities. Orange is *verbs* and *headline numbers*; terracotta is *labels*. Neither is wallpaper.
+5. **Touch-first** — generous tap targets (44dp minimum), no tiny text; used one-handed in a grocery aisle

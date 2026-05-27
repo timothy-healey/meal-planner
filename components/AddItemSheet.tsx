@@ -14,10 +14,11 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
-import { colors, spacing, radius, font } from '../constants/tokens';
+import { colors, spacing, radius, shadow, font } from '../constants/tokens';
 import type { ShoppingItemRow } from '../types/db';
 
 const SHEET_HEIGHT = Dimensions.get('window').height * 0.72;
@@ -69,14 +70,14 @@ export function AddItemSheet({ visible, categories, onAdd, onSave, onClose, init
         setNote('');
         setNoteExpanded(false);
       }
-      scrimOpacity.value = withTiming(1, { duration: 180 });
-      translateY.value = withTiming(0, { duration: 280 });
+      scrimOpacity.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.exp) });
+      translateY.value = withTiming(0, { duration: 280, easing: Easing.out(Easing.exp) });
     }
   }, [visible]);
 
   const handleClose = () => {
-    scrimOpacity.value = withTiming(0, { duration: 220 });
-    translateY.value = withTiming(SHEET_HEIGHT, { duration: 260 }, () => {
+    scrimOpacity.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.exp) });
+    translateY.value = withTiming(SHEET_HEIGHT, { duration: 220, easing: Easing.out(Easing.exp) }, () => {
       runOnJS(onClose)();
     });
   };
@@ -281,18 +282,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   scrim: {
-    backgroundColor: 'rgba(28, 69, 60, 0.45)',
+    backgroundColor: colors.scrim,
   },
   sheet: {
     height: SHEET_HEIGHT,
     backgroundColor: colors.cream,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
-    shadowColor: colors.green,
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 16,
+    ...shadow.sheet,
   },
   handle: {
     width: 36,
@@ -324,7 +321,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[4],
   },
   label: {
-    letterSpacing: 1.0,
+    letterSpacing: font.tracking.category,
     marginBottom: spacing[1],
   },
   categoryLabel: {
@@ -356,8 +353,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[3] + 2,
     paddingHorizontal: spacing[3],
+    minHeight: 44,
     borderRadius: radius.sm,
     marginBottom: spacing[1],
   },

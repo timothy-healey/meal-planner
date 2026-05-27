@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-25T00:00:00Z",
+  "title": "Design System: Meal Planner",
+  "extensions": {
+    "colorMeta": {
+      "forest-pantry": {
+        "role": "primary",
+        "displayName": "Forest Pantry",
+        "canonical": "oklch(33% 0.04 165)",
+        "tonalRamp": [
+          "#0c1d19",
+          "#13302a",
+          "#1C453C",
+          "#2a5b50",
+          "#3e7367",
+          "#5e9387",
+          "#8eb4ab",
+          "#c4d5d0"
+        ]
+      },
+      "baked-terracotta": {
+        "role": "secondary",
+        "displayName": "Baked Terracotta",
+        "canonical": "oklch(42% 0.09 32)",
+        "tonalRamp": [
+          "#321b14",
+          "#4f2a20",
+          "#744234",
+          "#90584a",
+          "#aa7165",
+          "#c39184",
+          "#dab4a7",
+          "#ecd9cf"
+        ]
+      },
+      "persimmon-sprinkle": {
+        "role": "tertiary",
+        "displayName": "Persimmon Sprinkle",
+        "canonical": "oklch(70% 0.15 50)",
+        "tonalRamp": [
+          "#4a2410",
+          "#7a3e1d",
+          "#b35f2b",
+          "#E87B3A",
+          "#ef9560",
+          "#f5b388",
+          "#fad1b3",
+          "#fde9d8"
+        ]
+      },
+      "cream-linen": {
+        "role": "neutral",
+        "displayName": "Cream Linen",
+        "canonical": "oklch(96% 0.012 105)",
+        "tonalRamp": [
+          "#2a2b22",
+          "#454635",
+          "#62644f",
+          "#828570",
+          "#a5a791",
+          "#c8cab4",
+          "#e0e2cd",
+          "#F4F5EB"
+        ]
+      },
+      "warm-parchment": {
+        "role": "neutral",
+        "displayName": "Warm Parchment",
+        "canonical": "oklch(98% 0.006 100)",
+        "tonalRamp": [
+          "#2a2a21",
+          "#454535",
+          "#62624f",
+          "#828371",
+          "#a5a591",
+          "#c8c8b4",
+          "#e0e0cd",
+          "#FAFAF4"
+        ]
+      },
+      "receipt-paper": {
+        "role": "neutral",
+        "displayName": "Receipt Paper",
+        "canonical": "oklch(98% 0.008 100)",
+        "tonalRamp": [
+          "#2a2a21",
+          "#454534",
+          "#62624e",
+          "#828370",
+          "#a6a691",
+          "#c8c8b4",
+          "#e1e1cc",
+          "#fbfbf2"
+        ]
+      },
+      "receipt-edge": {
+        "role": "neutral",
+        "displayName": "Receipt Edge",
+        "canonical": "oklch(74% 0.012 105)",
+        "tonalRamp": [
+          "#2a2a23",
+          "#444438",
+          "#5f5f50",
+          "#7d7d6b",
+          "#9c9c87",
+          "#b8b8a0",
+          "#d3d3bd",
+          "#ededdb"
+        ]
+      },
+      "stone-edge": {
+        "role": "neutral",
+        "displayName": "Stone Edge",
+        "canonical": "oklch(92% 0.012 105)",
+        "tonalRamp": [
+          "#2c2c23",
+          "#48483a",
+          "#666653",
+          "#86866f",
+          "#a8a890",
+          "#c8c8b4",
+          "#dcdcc8",
+          "#e9eadc"
+        ]
+      },
+      "eucalyptus-pale": {
+        "role": "neutral",
+        "displayName": "Eucalyptus Pale",
+        "canonical": "oklch(94% 0.012 175)",
+        "tonalRamp": [
+          "#1f2b29",
+          "#344643",
+          "#4d635f",
+          "#67817c",
+          "#85a09a",
+          "#a6bdb8",
+          "#c5d6d2",
+          "#e8f0ee"
+        ]
+      },
+      "on-green-mist": {
+        "role": "neutral",
+        "displayName": "On-Green Mist",
+        "canonical": "oklch(83% 0.022 170)",
+        "tonalRamp": [
+          "#21302d",
+          "#384c47",
+          "#506762",
+          "#6c847e",
+          "#8aa19b",
+          "#a8beb9",
+          "#c4d5d0",
+          "#dde9e6"
+        ]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Soft Loam",
+        "canonical": "oklch(45% 0.008 100)",
+        "tonalRamp": [
+          "#22221e",
+          "#3a3a32",
+          "#525248",
+          "#666658",
+          "#828272",
+          "#a0a08e",
+          "#c0c0b0",
+          "#dededb"
+        ]
+      },
+      "text-note": {
+        "role": "neutral",
+        "displayName": "Warm Earth",
+        "canonical": "oklch(49% 0.025 75)",
+        "tonalRamp": [
+          "#241d10",
+          "#3c3220",
+          "#564731",
+          "#756347",
+          "#967e5d",
+          "#b59c7a",
+          "#cfbb9d",
+          "#e3d4bf"
+        ]
+      },
+      "series-teal": {
+        "role": "data",
+        "displayName": "Tide Teal",
+        "canonical": "oklch(52% 0.06 235)",
+        "tonalRamp": [
+          "#0e2231",
+          "#1d3a51",
+          "#2a536f",
+          "#3B6E8C",
+          "#598ba8",
+          "#82a8c0",
+          "#aec6d6",
+          "#d3e0e9"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Primary screen titles only. \"Shopping List\", \"Recipes\", \"Plan\"."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Recipe detail title, StatStrip values, hero card titles (TodayCard day name, BatchPlanBanner)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Secondary screen titles and modal sheet headers."
+      },
+      "body-large": {
+        "displayName": "Body Large",
+        "purpose": "Plan-day cards, shopping list item names, TodayCard meal rows."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default body text — recipe card names, ingredient rows."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "UI labels, back links, item details, recipe stats."
+      },
+      "overline": {
+        "displayName": "Overline",
+        "purpose": "Uppercase category headers (PRODUCE, MEAT), TODAY badge, tab labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 1px 3px rgba(28, 69, 60, 0.07)",
+        "purpose": "Default lift for every card, recipe row, and stat pill. React Native: shadowColor #1C453C, shadowOffset {0,1}, shadowOpacity 0.07, shadowRadius 3, elevation 2."
+      },
+      {
+        "name": "pill",
+        "value": "0 1px 4px rgba(28, 69, 60, 0.10)",
+        "purpose": "Floating CTA pills (Pill primitive + orange CTA fills). React Native: shadowColor #1C453C, shadowOffset {0,1}, shadowOpacity 0.10, shadowRadius 4, elevation 2."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -3px 12px rgba(28, 69, 60, 0.12)",
+        "purpose": "Bottom sheets only — cast upward from the sheet's top edge. React Native: shadowColor #1C453C, shadowOffset {0,-3}, shadowOpacity 0.12, shadowRadius 12, elevation 16."
+      },
+      {
+        "name": "lift",
+        "value": "0 2px 6px rgba(28, 69, 60, 0.12)",
+        "purpose": "Drag-state only — sortable rows while being picked up. React Native: shadowColor #1C453C, shadowOffset {0,2}, shadowOpacity 0.12, shadowRadius 6, elevation 4."
+      }
+    ],
+    "motion": [
+      {
+        "name": "touch-press",
+        "value": "activeOpacity 0.7–0.85",
+        "purpose": "TouchableOpacity press feedback on cards (0.8–0.85) and rows (0.7). No color change, just opacity dip."
+      },
+      {
+        "name": "haptic-light",
+        "value": "Haptics.impactAsync(ImpactFeedbackStyle.Light)",
+        "purpose": "Fired on every checkbox toggle, pill press, and primary CTA. The kitchen-tool feedback."
+      },
+      {
+        "name": "skeleton-pulse",
+        "value": "1000ms ease-in-out, infinite alternating",
+        "purpose": "Skeleton background interpolates Stone Edge → Cream Linen (or white-10% → white-25% on dark). No shimmer gradient."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Pill",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary call-to-action. Forest-green pill with cream text, used for primary actions like \"Import meal plan\" or \"Confirm shopping\".",
+      "html": "<button class=\"ds-pill-primary\"><svg class=\"ds-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"/></svg>Confirm shopping</button>",
+      "css": ".ds-pill-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #1C453C; color: #F4F5EB; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; border: none; border-radius: 20px; padding: 0 12px; min-height: 44px; box-shadow: 0 1px 4px rgba(28,69,60,0.10); cursor: pointer; transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-pill-primary:hover { opacity: 0.92; } .ds-pill-primary:active { opacity: 0.7; } .ds-pill-primary:focus-visible { outline: 2px solid #E87B3A; outline-offset: 2px; } .ds-pill-primary .ds-icon { width: 16px; height: 16px; }"
+    },
+    {
+      "name": "Secondary Pill",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary call-to-action. Cream pill with forest-green text and icon. Used for inline actions inside content surfaces.",
+      "html": "<button class=\"ds-pill-secondary\"><svg class=\"ds-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg>Import meal plan</button>",
+      "css": ".ds-pill-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #FAFAF4; color: #1C453C; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; border: none; border-radius: 20px; padding: 0 12px; min-height: 44px; box-shadow: 0 1px 4px rgba(28,69,60,0.10); cursor: pointer; transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-pill-secondary:hover { opacity: 0.92; } .ds-pill-secondary:active { opacity: 0.7; } .ds-pill-secondary:focus-visible { outline: 2px solid #1C453C; outline-offset: 2px; } .ds-pill-secondary .ds-icon { width: 16px; height: 16px; }"
+    },
+    {
+      "name": "Recipe Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Resting surface for a recipe summary. Warm Parchment background, soft warm shadow, no border.",
+      "html": "<article class=\"ds-card-recipe\"><h3 class=\"ds-card-recipe__title\">Roasted Carrot &amp; Lentil Soup</h3><div class=\"ds-card-recipe__stats\"><span class=\"ds-card-recipe__cal\">420 cal</span><span class=\"ds-card-recipe__sep\">·</span><span class=\"ds-card-recipe__protein\">22g protein</span><span class=\"ds-card-recipe__sep\">·</span><span class=\"ds-card-recipe__time\">35 min</span></div></article>",
+      "css": ".ds-card-recipe { background: #FAFAF4; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(28,69,60,0.07); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; display: flex; flex-direction: column; gap: 8px; } .ds-card-recipe__title { margin: 0; font-size: 15px; font-weight: 700; color: #1C453C; line-height: 20px; } .ds-card-recipe__stats { display: flex; flex-wrap: wrap; align-items: center; font-size: 11px; line-height: 14px; letter-spacing: 0.3px; } .ds-card-recipe__cal { color: #E87B3A; font-weight: 600; } .ds-card-recipe__protein { color: #666658; font-weight: 600; } .ds-card-recipe__time { color: #6c6c5e; font-weight: 400; } .ds-card-recipe__sep { color: #6c6c5e; padding: 0 4px; }"
+    },
+    {
+      "name": "Today Hero Card",
+      "kind": "card",
+      "refersTo": "card-hero",
+      "description": "The signature hero card for today's plan. Forest Pantry surface with a Persimmon Sprinkle TODAY badge — the only place orange touches the green surface.",
+      "html": "<article class=\"ds-card-today\"><header class=\"ds-card-today__hd\"><span class=\"ds-card-today__day\">Sunday</span><span class=\"ds-card-today__badge\">TODAY</span></header><div class=\"ds-card-today__meals\"><div class=\"ds-meal\"><span class=\"ds-meal__letter\">B</span><span class=\"ds-meal__name\">Overnight oats with berries</span></div><div class=\"ds-meal\"><span class=\"ds-meal__letter\">L</span><span class=\"ds-meal__name\">Roasted carrot &amp; lentil soup</span></div><div class=\"ds-meal\"><span class=\"ds-meal__letter\">D</span><span class=\"ds-meal__name\">Sheet pan chicken &amp; veg</span></div></div><footer class=\"ds-card-today__ft\"><span class=\"ds-card-today__cal\">1,820 cal</span><span class=\"ds-card-today__pro\">112g protein</span></footer></article>",
+      "css": ".ds-card-today { background: #1C453C; border-radius: 16px; overflow: hidden; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-card-today__hd { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 12px; } .ds-card-today__day { font-size: 17px; font-weight: 800; line-height: 22px; color: #F4F5EB; } .ds-card-today__badge { background: rgba(28,69,60,0.25); color: #E87B3A; font-size: 9px; font-weight: 700; letter-spacing: 1.1px; padding: 2px 8px; border-radius: 9999px; } .ds-card-today__meals { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 8px; } .ds-meal { display: flex; align-items: flex-start; gap: 8px; } .ds-meal__letter { width: 16px; font-size: 13px; font-weight: 700; color: #F4F5EB; } .ds-meal__name { flex: 1; font-size: 13px; font-weight: 500; color: #c4d5d0; line-height: 18px; } .ds-card-today__ft { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding: 12px 16px; } .ds-card-today__cal { font-size: 13px; font-weight: 700; color: #E87B3A; } .ds-card-today__pro { font-size: 13px; font-weight: 600; color: #c4d5d0; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "Compact stat pill used inside StatStrip. Tiny label above a big extrabold value; highlighted variant uses Persimmon Sprinkle for the value.",
+      "html": "<div class=\"ds-stat-row\"><div class=\"ds-stat\"><span class=\"ds-stat__label\">Spent</span><span class=\"ds-stat__value ds-stat__value--hl\">$47.20</span></div><div class=\"ds-stat\"><span class=\"ds-stat__label\">Items</span><span class=\"ds-stat__value\">23</span></div><div class=\"ds-stat\"><span class=\"ds-stat__label\">Avg / item</span><span class=\"ds-stat__value\">$2.05</span></div></div>",
+      "css": ".ds-stat-row { display: flex; gap: 8px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-stat { flex: 1; background: #FAFAF4; border-radius: 10px; box-shadow: 0 1px 3px rgba(28,69,60,0.07); padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; } .ds-stat__label { font-size: 9px; font-weight: 600; color: #666658; line-height: 12px; letter-spacing: 0.3px; } .ds-stat__value { font-size: 20px; font-weight: 800; color: #1C453C; line-height: 24px; } .ds-stat__value--hl { color: #E87B3A; }"
+    },
+    {
+      "name": "Category Header",
+      "kind": "custom",
+      "description": "The crate-label header that prefixes every category section in the shopping list. A Baked Terracotta dot + uppercase Overline label. No card, no background.",
+      "html": "<header class=\"ds-cat-header\"><span class=\"ds-cat-header__dot\" aria-hidden=\"true\"></span><span class=\"ds-cat-header__label\">PRODUCE</span><span class=\"ds-cat-header__hint\">(check pantry first)</span></header>",
+      "css": ".ds-cat-header { display: inline-flex; align-items: center; gap: 8px; padding: 8px 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-cat-header__dot { width: 7px; height: 7px; border-radius: 7px; background: #744234; flex-shrink: 0; } .ds-cat-header__label { font-size: 13px; font-weight: 600; color: #744234; letter-spacing: 1.1px; text-transform: uppercase; } .ds-cat-header__hint { margin-left: 8px; font-size: 9px; font-weight: 400; color: #756347; }"
+    },
+    {
+      "name": "Checkbox",
+      "kind": "custom",
+      "description": "20×20 checkbox with a 1.5px Checkbox Stroke border at rest, filling to Forest Pantry with an Ionicon checkmark when checked. Wrapped in a row-sized TouchableOpacity that fires a Light haptic.",
+      "html": "<div class=\"ds-checkbox-row\"><div class=\"ds-checkbox ds-checkbox--checked\" role=\"checkbox\" aria-checked=\"true\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#F4F5EB\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"/></svg></div><div class=\"ds-checkbox ds-checkbox--unchecked\" role=\"checkbox\" aria-checked=\"false\"></div></div>",
+      "css": ".ds-checkbox-row { display: flex; gap: 16px; align-items: center; } .ds-checkbox { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), border-color 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-checkbox--unchecked { border: 1.5px solid #ced0c1; background: transparent; } .ds-checkbox--checked { border: 1.5px solid #1C453C; background: #1C453C; } .ds-checkbox--checked svg { width: 13px; height: 13px; }"
+    },
+    {
+      "name": "Macro Chip",
+      "kind": "chip",
+      "refersTo": "chip-macro",
+      "description": "Tiny inline macro chip used inside ingredient rows. Eucalyptus Pale background, Forest Pantry label.",
+      "html": "<div class=\"ds-chip-row\"><span class=\"ds-chip-macro\">22g protein</span><span class=\"ds-chip-macro\">35g carbs</span><span class=\"ds-chip-macro\">8g fat</span></div>",
+      "css": ".ds-chip-row { display: flex; gap: 6px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-chip-macro { background: #e8f0ee; color: #1C453C; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; padding: 2px 6px; border-radius: 5px; line-height: 14px; }"
+    },
+    {
+      "name": "Progress Bar",
+      "kind": "custom",
+      "description": "Two-tone progress bar. The filled portion is On-Green Bright (cream); the remainder is Persimmon Sprinkle. Lives on the green header, communicating shopping/budget progress.",
+      "html": "<div class=\"ds-prog-wrap\"><div class=\"ds-prog\"><div class=\"ds-prog__fill\" style=\"width: 62%\"></div><div class=\"ds-prog__rest\"></div></div></div>",
+      "css": ".ds-prog-wrap { background: #1C453C; padding: 12px; border-radius: 8px; } .ds-prog { height: 4px; border-radius: 2px; overflow: hidden; display: flex; } .ds-prog__fill { height: 100%; background: #F4F5EB; } .ds-prog__rest { flex: 1; height: 100%; background: #E87B3A; }"
+    },
+    {
+      "name": "Green Header",
+      "kind": "nav",
+      "description": "The signature green header surface present at the top of every primary screen. Forest Pantry background, Display title in On-Green Bright, optional Header Pills for budget and count summaries.",
+      "html": "<header class=\"ds-green-header\"><div class=\"ds-green-header__top\"><h1 class=\"ds-green-header__title\">Shopping List</h1><div class=\"ds-green-header__pills\"><span class=\"ds-header-pill\">23 items</span><span class=\"ds-header-pill\">$47</span></div></div><p class=\"ds-green-header__sub\">Week of 25 May</p></header>",
+      "css": ".ds-green-header { background: #1C453C; padding: 20px 16px 12px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-green-header__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; } .ds-green-header__title { margin: 0; font-size: 28px; font-weight: 800; color: #F4F5EB; line-height: 32px; } .ds-green-header__pills { display: flex; gap: 8px; flex-shrink: 0; } .ds-header-pill { background: rgba(28,69,60,0.25); color: #F4F5EB; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; padding: 4px 10px; border-radius: 9999px; } .ds-green-header__sub { margin: 4px 0 0; font-size: 10px; font-weight: 400; color: #c4d5d0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sunday Kitchen",
+    "overview": "Sunday morning. Coffee cooling on a butcher-block counter, a well-worn recipe book open to a dog-eared page, a basket of vegetables waiting to be chopped. The app lives inside that scene — earthy, considered, unhurried. Forest-green deep enough to feel like a pantry wall meets cream linen warm enough to feel like an apron. The interface is a kitchen tool, not a tracker; it does not optimize, it nourishes.\n\nThis system rejects the entire vocabulary of fitness-tracker UI: clinical white, neon macros, dark-mode dashboards lit like a stock-trading terminal. It rejects the SaaS-cream-with-blue-accent aesthetic that has eaten every productivity app since 2020. Color comes from food and earth — never from a Tailwind preset. The cream surface is the canvas; orange is sprinkled, not poured; terracotta marks the categories the way a chalk label marks a market crate.\n\nThe user holds the phone one-handed in a bright supermarket aisle. Density is low. Tap targets are generous. Words are warm. The kitchen on Sunday, not the gym on Monday.",
+    "keyCharacteristics": [
+      "Cream canvas, never pure white. Every neutral tints toward the forest hue.",
+      "Deep forest-green hero treatment on headers and signature cards.",
+      "A single warm sans (Plus Jakarta Sans) carries everything — display through overline.",
+      "Orange as action: filled CTA pills (shape = tap me) and inline key numbers (text = headline).",
+      "Terracotta as seasoning: category dots, UPPERCASE labels, quantity tags — labels only, never fills.",
+      "Hierarchy through color and weight, never through colored side-stripes or heavy borders.",
+      "Shadows tinted forest green, soft and low. No hard drop shadows.",
+      "44dp minimum tap targets. Made for one-handed use in a grocery aisle."
+    ],
+    "rules": [
+      {
+        "name": "The Orange-as-Action Rule",
+        "body": "Persimmon Sprinkle (#E87B3A) is the action color with exactly two registers. (1) Filled shapes — the FAB, primary CTA pills, the Done-shopping bar, swipe-to-reveal action panels. These read as tap me because of the shape, not the color. (2) Inline text — prices, calorie counts, the TODAY badge text, the progress-bar remainder. These read as this is the headline number. Orange is forbidden as a page surface, a heading color, a decorative wash, a card background, or a body text color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Terracotta-as-Seasoning Rule",
+        "body": "Baked Terracotta (#744234) labels and classifies — category headers, the dots that prefix them, quantity tags. It never fills a button, never backs a CTA, never functions as a key number. The 7×7 terracotta dot before PRODUCE is the canonical use; if a new use isn't labeling or classifying, it shouldn't be terracotta.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cream Canvas Rule",
+        "body": "Backgrounds are Cream Linen or Warm Parchment. #FFFFFF is forbidden. If a surface needs to feel \"clean\", warm it; do not bleach it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Warm-Black Rule",
+        "body": "#000000 is forbidden. Shadows, scrims, and dark surfaces all carry the forest hue. The Scanner viewfinder (#111111) is the only allowed near-black, and it exists for a few hundred milliseconds before the camera takes over. Viewfinder exception: inside the camera scanner, the orange scan-line glow is permitted — the glow IS the affordance.",
+        "section": "colors"
+      },
+      {
+        "name": "The One-Family Rule",
+        "body": "Plus Jakarta Sans is the only font. Display fonts, monospace, and serif faces are forbidden, including for prices and quantities. Numerals use the same family as letters.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Italic Rule",
+        "body": "The family ships without italic and we honor that. Captions and notes use the Text Note color (#756347) at regular weight to read as \"soft\" — never an italicized sans approximation.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tracking-On-Overline Rule",
+        "body": "Letter-spacing is reserved. Body and label run at 0; only Overline carries the 1.1px tracking that gives category headers their crate-label feel. Do not add tracking to body text to make it \"feel design-y\".",
+        "section": "typography"
+      },
+      {
+        "name": "The Warm-Shadow Rule",
+        "body": "Every shadow tints from Forest Pantry. shadowColor: '#000' is forbidden. A pure-black shadow on cream looks like a SaaS dashboard; a forest-green shadow on cream looks like a recipe card on a kitchen counter. Viewfinder exception: inside the camera scanner, the orange scan-line glow is permitted.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Four-Shadow Rule",
+        "body": "There are four shadow tokens: card, pill, sheet, lift. Do not add a fifth. If a component needs more lift than pill, it's either a sheet (cast upward, used for bottom sheets) or a lift (drag state) — or the answer is a different background color (Forest Pantry), not a new shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do background every screen with Cream Linen (#F4F5EB) and float cards on Warm Parchment (#FAFAF4). The half-shade between the two is doing most of the visual work.",
+      "Do anchor every screen with the Green Header on Forest Pantry — it is the system's primary visual signature.",
+      "Do fill primary CTAs (FAB, Done-shopping bar, sheet primary buttons) with Persimmon Sprinkle. The orange fill is the verb of the system.",
+      "Do tint inline key numbers with Persimmon Sprinkle — prices, calorie counts, the TODAY badge text, the progress-bar remainder. Orange inline text is the headline number.",
+      "Do mark categories and taxonomy with Baked Terracotta — the dot prefix, the UPPERCASE label, the quantity tag.",
+      "Do color shadows with Forest Pantry at low opacity (0.07 cards, 0.10 pills, 0.12 sheets/lifts). shadowColor: '#000' is forbidden.",
+      "Do maintain a 44dp minimum tap height on every interactive element. The app is used one-handed in a grocery aisle.",
+      "Do fire a Light haptic impact on every toggle (checkbox, pill press). The kitchen-tool feel comes from physical feedback.",
+      "Do import all colors, sizes, weights, and radii from constants/tokens.ts. No raw hex codes in components, ever.",
+      "Do use the AppText component with weight, size, color props — never raw <Text style={{ fontFamily: ... }}> outside of <Svg> and <TextInput> contexts.",
+      "Do lay categories out as a Baked Terracotta dot + UPPERCASE Overline header, never as a colored band or a card.",
+      "Do use Eucalyptus Pale chips for inline macros inside ingredient rows."
+    ],
+    "donts": [
+      "Don't use #FFFFFF or #000000 anywhere. The only allowed near-black is #111 on the camera viewfinder, briefly.",
+      "Don't ship designs that feel like a cold fitness-tracker UI (PRODUCT.md anti-reference). No saturated activity rings, no dark macro dashboards, no neon accents on charcoal.",
+      "Don't ship designs that feel like a pure-white sterile health app (PRODUCT.md anti-reference). No clinical white, no Helvetica Neue Thin, no medical-grade emptiness.",
+      "Don't ship designs that feel like a neon dark-mode macro dashboard (PRODUCT.md anti-reference). The app is light-mode by intention.",
+      "Don't add a colored left-stripe to cards or rows. Use a tinted background, leading icon, or category dot.",
+      "Don't use Persimmon Sprinkle as a page surface, a heading color, a card background, a decorative wash, or body text. Orange is a shape (CTA fill) or a headline number (inline) — and nothing else.",
+      "Don't fill anything with Baked Terracotta. No terracotta buttons, no terracotta backgrounds, no terracotta CTAs. Terracotta labels and classifies, full stop.",
+      "Don't introduce a second font family. No serif display, no monospace for prices, no rounded display face.",
+      "Don't italicize. The family has no italic. Use Text Note color (#756347) for soft captions.",
+      "Don't add a fifth shadow token. The four (card, pill, sheet, lift) cover every legitimate case.",
+      "Don't use a spinner inside content. Skeletons hold the shape until data arrives.",
+      "Don't add gradient text. background-clip: text is forbidden, regardless of color combination.",
+      "Don't use glassmorphism, blurred cards, or backdrop filters as decoration.",
+      "Don't decorate with a hero-metric template (big-number-small-label-supporting-stats). StatStrip is the only place a number sits next to its label, and it's restrained."
+    ]
+  }
+}

@@ -372,7 +372,7 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
       size="xs"
       color="textTertiary"
       style={{
-        letterSpacing: 0.8,
+        letterSpacing: font.tracking.caps,
         marginBottom: spacing[1],
         marginTop: top ? spacing[4] : 0,
       }}
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.scrim,
   },
   sheet: {
     backgroundColor: colors.card,

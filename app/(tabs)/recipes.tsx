@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BatchPlanBanner } from "../../components/BatchPlanBanner";
 import { RecipeCard } from "../../components/RecipeCard";
@@ -11,6 +12,7 @@ import { colors, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
 import { useRecipes } from "../../hooks/useRecipes";
 
+// Dinner first — the batch-plan-led week. Snacks last because they're optional.
 const MEAL_TYPE_ORDER = ["dinner", "lunch", "breakfast", "snack"];
 const KNOWN_MEAL_TYPES = new Set(MEAL_TYPE_ORDER);
 
@@ -72,8 +74,12 @@ export default function RecipesScreen() {
           />
         )}
 
-        {allGroups.map(({ mealType, recipes: groupRecipes }) => (
-          <View key={mealType} style={styles.group}>
+        {allGroups.map(({ mealType, recipes: groupRecipes }, groupIdx) => (
+          <Animated.View
+            key={mealType}
+            entering={FadeIn.duration(180).delay(groupIdx * 40)}
+            style={styles.group}
+          >
             <CategoryHeader label={mealType} isOneoff={false} />
             <View style={styles.cards}>
               {groupRecipes.map((recipe) => (
@@ -84,7 +90,7 @@ export default function RecipesScreen() {
                 />
               ))}
             </View>
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
     </View>
