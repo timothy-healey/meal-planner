@@ -120,15 +120,25 @@ export function ReviewItemSheet({
   useEffect(() => {
     if (!visible) return;
     setUnitPickerOpen(false);
-    const source = pendingRow ?? latestRecord;
-    if (source) {
-      setBrand(source.brand ?? "");
-      setProductName(source.product_name ?? "");
-      setQtyAmount(source.qty_amount != null ? String(source.qty_amount) : "");
-      setQtyUnit(source.qty_unit ?? "g");
-      setPrice(source.price != null ? String(source.price) : "");
-      setIsSale(pendingRow ? source.is_sale === 1 : false);
-      setBarcode(source.barcode ?? "");
+    if (pendingRow) {
+      // Resuming a draft: restore everything as the user left it.
+      setBrand(pendingRow.brand ?? "");
+      setProductName(pendingRow.product_name ?? "");
+      setQtyAmount(pendingRow.qty_amount != null ? String(pendingRow.qty_amount) : "");
+      setQtyUnit(pendingRow.qty_unit ?? "g");
+      setPrice(pendingRow.price != null ? String(pendingRow.price) : "");
+      setIsSale(pendingRow.is_sale === 1);
+      setBarcode(pendingRow.barcode ?? "");
+    } else if (latestRecord) {
+      // First-time review: leave brand/product empty so the user can search
+      // via the suggestion dropdown. Carry forward qty/price hints as a baseline.
+      setBrand("");
+      setProductName("");
+      setQtyAmount(latestRecord.qty_amount != null ? String(latestRecord.qty_amount) : "");
+      setQtyUnit(latestRecord.qty_unit ?? "g");
+      setPrice(latestRecord.price != null ? String(latestRecord.price) : "");
+      setIsSale(false);
+      setBarcode("");
     } else {
       setBrand("");
       setProductName("");
