@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, TextInput, TouchableOpacity, Switch,
-  StyleSheet, Modal, ScrollView, Platform,
+  StyleSheet, Modal, Platform,
 } from 'react-native';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './ui/AppText';
@@ -75,16 +76,17 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={onClose}
-        accessibilityLabel="Dismiss"
-        accessibilityRole="button"
-      />
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
-        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={onClose}
+          accessibilityLabel="Dismiss"
+          accessibilityRole="button"
+        />
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
+          <KeyboardAwareScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <AppText weight="bold" size="xl" color="textPrimary" style={styles.title}>
             Log a price
           </AppText>
@@ -232,8 +234,9 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
           >
             <AppText weight="bold" size="md" color="onGreen">Save price</AppText>
           </TouchableOpacity>
-        </ScrollView>
-      </View>
+        </KeyboardAwareScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
