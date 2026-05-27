@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText } from 'react-native-svg';
-import { colors, font, spacing, radius } from '../constants/tokens';
+import { AppText } from './ui/AppText';
+import { colors, font, spacing, radius, shadow } from '../constants/tokens';
 import { usePriceHistory } from '../hooks/usePriceHistory';
 import {
   filterByTimeRange,
@@ -77,9 +78,11 @@ export function PriceHistoryChart({ brand, productName }: Props) {
       {/* Section header */}
       <View style={styles.sectionHeader}>
         <View style={styles.sectionDot} />
-        <Text style={styles.sectionTitle}>PRICE HISTORY</Text>
-        <TouchableOpacity onPress={() => setAddPriceVisible(true)}>
-          <Text style={styles.addAction}>+ Add price</Text>
+        <AppText weight="bold" size="sm" color="terracotta" style={styles.sectionTitle}>
+          PRICE HISTORY
+        </AppText>
+        <TouchableOpacity onPress={() => setAddPriceVisible(true)} accessibilityRole="button" accessibilityLabel="Add price">
+          <AppText weight="bold" size="sm" color="green">+ Add price</AppText>
         </TouchableOpacity>
       </View>
 
@@ -93,9 +96,13 @@ export function PriceHistoryChart({ brand, productName }: Props) {
                 onPress={() => setTimeRange(r)}
                 style={[styles.timeTab, timeRange === r && styles.timeTabActive]}
               >
-                <Text style={[styles.timeTabText, timeRange === r && styles.timeTabTextActive]}>
+                <AppText
+                  weight={timeRange === r ? 'bold' : 'semibold'}
+                  size="sm"
+                  color={timeRange === r ? 'green' : 'textTertiary'}
+                >
                   {r}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             ))}
           </View>
@@ -106,9 +113,13 @@ export function PriceHistoryChart({ brand, productName }: Props) {
                 onPress={() => setUnit(u)}
                 style={[styles.unitOpt, unit === u && styles.unitOptActive]}
               >
-                <Text style={[styles.unitOptText, unit === u && styles.unitOptTextActive]}>
+                <AppText
+                  weight={unit === u ? 'bold' : 'semibold'}
+                  size="sm"
+                  color={unit === u ? 'green' : 'textTertiary'}
+                >
                   {u === 'per100' ? '/100g' : 'Total'}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             ))}
           </View>
@@ -117,9 +128,9 @@ export function PriceHistoryChart({ brand, productName }: Props) {
         {/* Chart or empty state */}
         {filtered.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>
+            <AppText weight="semibold" size="sm" color="textTertiary" style={styles.emptyText}>
               {'No price data yet.\nPrices are recorded when you log a purchase.'}
-            </Text>
+            </AppText>
           </View>
         ) : (
           <View onLayout={onLayout}>
@@ -258,13 +269,13 @@ export function PriceHistoryChart({ brand, productName }: Props) {
         {/* Best value strip */}
         {bestValue && (
           <View style={styles.bestValue}>
-            <Text style={styles.bestValueLabel}>Best value now</Text>
-            <Text style={styles.bestValueAmount}>
+            <AppText weight="semibold" size="sm" color="textSecondary">Best value now</AppText>
+            <AppText weight="extrabold" size="md" color="orange">
               {bestValue.chain}
-              <Text style={styles.bestValueSub}>
+              <AppText weight="medium" size="sm" color="textTertiary">
                 {` ${(bestValue.value * 100).toFixed(0)}¢/100g`}
-              </Text>
-            </Text>
+              </AppText>
+            </AppText>
           </View>
         )}
 
@@ -273,13 +284,13 @@ export function PriceHistoryChart({ brand, productName }: Props) {
           {chains.map((chain, idx) => (
             <View key={chain} style={styles.legendPill}>
               <View style={[styles.legendDot, { backgroundColor: getStoreColor(idx) }]} />
-              <Text style={styles.legendText}>{chain}</Text>
+              <AppText weight="semibold" size="xs" color="textSecondary">{chain}</AppText>
             </View>
           ))}
           {filtered.some(p => p.isOnSale) && (
             <View style={[styles.legendPill, styles.legendSale]}>
               <View style={styles.legendSaleIcon} />
-              <Text style={styles.legendSaleText}>Sale</Text>
+              <AppText weight="semibold" size="xs" color="orange">Sale</AppText>
             </View>
           )}
         </View>
@@ -313,26 +324,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     flex: 1,
-    fontFamily: font.family.bold,
-    fontSize: font.size.sm,
-    color: colors.terracotta,
     letterSpacing: font.tracking.category,
-  },
-  addAction: {
-    fontFamily: font.family.bold,
-    fontSize: font.size.sm,
-    color: colors.green,
   },
   card: {
     marginHorizontal: spacing[3],
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    shadowColor: colors.green,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 3,
-    elevation: 2,
     padding: spacing[3] + 2,
+    ...shadow.card,
   },
   toolbar: {
     flexDirection: 'row',
@@ -343,8 +342,6 @@ const styles = StyleSheet.create({
   timeTabs: { flexDirection: 'row', gap: 2 },
   timeTab: { paddingVertical: 3, paddingHorizontal: spacing[2] + 2, borderRadius: 9999 },
   timeTabActive: { backgroundColor: colors.chipSurface },
-  timeTabText: { fontFamily: font.family.semibold, fontSize: font.size.sm, color: colors.textTertiary },
-  timeTabTextActive: { color: colors.green },
   unitToggle: {
     flexDirection: 'row',
     backgroundColor: colors.cream,
@@ -355,22 +352,13 @@ const styles = StyleSheet.create({
   unitOpt: { paddingVertical: 3, paddingHorizontal: spacing[2] + 2, borderRadius: 9999 },
   unitOptActive: {
     backgroundColor: colors.card,
-    shadowColor: colors.green,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.10,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadow.pill,
   },
-  unitOptText: { fontFamily: font.family.semibold, fontSize: font.size.sm, color: colors.textTertiary },
-  unitOptTextActive: { fontFamily: font.family.bold, color: colors.green },
   empty: {
     paddingVertical: spacing[10],
     alignItems: 'center',
   },
   emptyText: {
-    fontFamily: font.family.semibold,
-    fontSize: font.size.sm,
-    color: colors.textTertiary,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -384,21 +372,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     paddingHorizontal: spacing[3],
   },
-  bestValueLabel: {
-    fontFamily: font.family.semibold,
-    fontSize: font.size.sm,
-    color: colors.textSecondary,
-  },
-  bestValueAmount: {
-    fontFamily: font.family.extrabold,
-    fontSize: font.size.md,
-    color: colors.orange,
-  },
-  bestValueSub: {
-    fontFamily: font.family.medium,
-    fontSize: font.size.sm,
-    color: colors.textTertiary,
-  },
   legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -410,19 +383,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: colors.cream,
-    borderRadius: 9999,
+    borderRadius: radius.full,
     paddingVertical: 3,
     paddingHorizontal: spacing[2] + 1,
   },
-  legendDot: { width: 7, height: 7, borderRadius: 9999 },
-  legendText: { fontFamily: font.family.semibold, fontSize: font.size.xs, color: colors.textSecondary },
-  legendSale: { backgroundColor: '#FEF0E6' },
+  legendDot: { width: 7, height: 7, borderRadius: radius.full },
+  legendSale: { backgroundColor: colors.saleTint },
   legendSaleIcon: {
     width: 10,
     height: 10,
-    borderRadius: 9999,
+    borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: colors.orange,
   },
-  legendSaleText: { fontFamily: font.family.semibold, fontSize: font.size.xs, color: colors.orange },
 });

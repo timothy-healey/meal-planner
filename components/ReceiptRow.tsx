@@ -122,8 +122,9 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: spacing[2] + 1,
+    paddingVertical: spacing[3] + 1,
     paddingRight: spacing[3],
+    minHeight: 44,
   },
   left: { flex: 1, gap: 2 },
   price: {

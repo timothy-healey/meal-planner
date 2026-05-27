@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -7,12 +7,13 @@ import DraggableFlatList, {
   ScaleDecorator,
 } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../components/ui/AppText';
 import { Divider } from '../components/ui/Divider';
 import { usePlan } from '../hooks/usePlan';
 import { useShoppingItems } from '../hooks/useShoppingItems';
 import { useCategoryOrder } from '../hooks/useCategoryOrder';
-import { colors, spacing, radius } from '../constants/tokens';
+import { colors, spacing, radius, shadow } from '../constants/tokens';
 import * as Haptics from 'expo-haptics';
 
 type CategoryEntry = { name: string; isOneoff: boolean };
@@ -33,7 +34,6 @@ export default function CategoryOrderModal() {
     return [...seen.entries()].map(([name, isOneoff]) => ({ name, isOneoff }));
   }, [items]);
 
-  const regularCats = allCategories.filter((c) => !c.isOneoff);
   const oneoffCats = allCategories.filter((c) => c.isOneoff);
 
   const [draggable, setDraggable] = useState<CategoryEntry[]>([]);
@@ -75,9 +75,9 @@ export default function CategoryOrderModal() {
         accessibilityLabel={item.name}
         accessibilityHint="Hold to drag and reorder"
       >
-        <AppText weight="regular" color="textSecondary" size="xl" style={styles.handle}>
-          ≡
-        </AppText>
+        <View style={styles.handle}>
+          <Ionicons name="reorder-three-outline" size={24} color={colors.textSecondary} />
+        </View>
         <AppText weight="semibold" color="textPrimary" size="md" style={styles.label}>
           {item.name}
         </AppText>
@@ -89,9 +89,9 @@ export default function CategoryOrderModal() {
   const renderLockedItem = (cat: CategoryEntry) => (
     <View key={cat.name}>
       <View style={styles.rowLocked}>
-        <AppText weight="regular" color="textTertiary" size="md" style={styles.handle}>
-          🔒
-        </AppText>
+        <View style={styles.handle}>
+          <Ionicons name="lock-closed-outline" size={18} color={colors.textTertiary} />
+        </View>
         <AppText weight="semibold" color="textTertiary" size="md" style={styles.label}>
           {cat.name}
         </AppText>
@@ -106,9 +106,11 @@ export default function CategoryOrderModal() {
         {/* Header */}
         <View style={styles.header}>
           <AppText weight="extrabold" color="onGreen" size="xl">Reorder Categories</AppText>
-          <AppText weight="semibold" color="onGreenSubtle" size="xs">
-            Hold ≡ to drag
-          </AppText>
+          <View style={styles.subtitleRow}>
+            <AppText weight="semibold" color="onGreenSubtle" size="xs">Hold</AppText>
+            <Ionicons name="reorder-three-outline" size={16} color={colors.onGreenSubtle} />
+            <AppText weight="semibold" color="onGreenSubtle" size="xs">to drag</AppText>
+          </View>
         </View>
 
         {/* Draggable list */}
@@ -171,11 +173,7 @@ const styles = StyleSheet.create({
   },
   rowActive: {
     backgroundColor: colors.cream,
-    shadowColor: colors.green,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
+    ...shadow.lift,
   },
   rowLocked: {
     flexDirection: 'row',
@@ -187,6 +185,13 @@ const styles = StyleSheet.create({
   },
   handle: {
     width: 32,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   label: {
     flex: 1,

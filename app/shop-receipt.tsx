@@ -48,7 +48,7 @@ export default function ShopReceiptScreen() {
   const insets = useSafeAreaInsets();
   const { plan } = usePlan();
   const planId = plan?.row.id ?? null;
-  const { activeStore } = useShoppingMode(planId);
+  const { activeStore, setMode } = useShoppingMode(planId);
   const { items, toggleItem } = useShoppingItems(planId);
   const {
     pendingRecords,
@@ -98,6 +98,7 @@ export default function ShopReceiptScreen() {
   async function handleConfirm() {
     if (!planId || isEmpty) return;
     await confirmShop(planId);
+    await setMode('quick');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
   }

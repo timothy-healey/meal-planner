@@ -33,7 +33,7 @@ describe('ProgressBar', () => {
 describe('EmptyState', () => {
   it('shows default message and import button', () => {
     const { getByText } = render(<EmptyState onImport={() => {}} />);
-    expect(getByText('No meal plan loaded yet.')).toBeTruthy();
-    expect(getByText('📂 Import meal plan')).toBeTruthy();
+    expect(getByText("The pantry's empty. Drop in a meal plan to see your week.")).toBeTruthy();
+    expect(getByText('Import meal plan')).toBeTruthy();
   });
 });

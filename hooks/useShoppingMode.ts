@@ -61,30 +61,34 @@ export function useShoppingMode(planId: string | null) {
   const [savedStores, setSavedStores] = useState<SavedStore[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      const [modeRaw, storesRaw] = await Promise.all([
-        planId ? AsyncStorage.getItem(modeKey(planId)) : null,
-        AsyncStorage.getItem(STORES_KEY),
-      ]);
-      if (modeRaw) {
-        const parsed = migrateModeState(JSON.parse(modeRaw));
-        setModeState(parsed.mode);
-        setActiveStore(parsed.store);
-        // Rewrite migrated shape so subsequent reads are clean.
-        if (planId) {
-          await AsyncStorage.setItem(modeKey(planId), JSON.stringify(parsed));
-        }
+  const load = useCallback(async () => {
+    const [modeRaw, storesRaw] = await Promise.all([
+      planId ? AsyncStorage.getItem(modeKey(planId)) : null,
+      AsyncStorage.getItem(STORES_KEY),
+    ]);
+    if (modeRaw) {
+      const parsed = migrateModeState(JSON.parse(modeRaw));
+      setModeState(parsed.mode);
+      setActiveStore(parsed.store);
+      // Rewrite migrated shape so subsequent reads are clean.
+      if (planId) {
+        await AsyncStorage.setItem(modeKey(planId), JSON.stringify(parsed));
       }
-      if (storesRaw) {
-        const raw: LegacyOrCurrentSavedStore[] = JSON.parse(storesRaw);
-        const migrated = raw.map(migrateStore);
-        setSavedStores(migrated.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed)));
-      }
-      setLoading(false);
+    } else {
+      // No persisted state for this plan — reset to defaults so a stale in-memory
+      // mode (e.g. 'review' from before Confirm cleared persistence) doesn't leak.
+      setModeState('quick');
+      setActiveStore(null);
     }
-    load();
+    if (storesRaw) {
+      const raw: LegacyOrCurrentSavedStore[] = JSON.parse(storesRaw);
+      const migrated = raw.map(migrateStore);
+      setSavedStores(migrated.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed)));
+    }
+    setLoading(false);
   }, [planId]);
+
+  useEffect(() => { load(); }, [load]);
 
   const addStore = useCallback(async (store: StoreLocation) => {
     const now = new Date().toISOString();
@@ -113,5 +117,5 @@ export function useShoppingMode(planId: string | null) {
     }
   }, [planId, addStore]);
 
-  return { mode, activeStore, savedStores, loading, setMode, addStore };
+  return { mode, activeStore, savedStores, loading, setMode, addStore, reload: load };
 }

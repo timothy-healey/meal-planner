@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SwipeableShoppingItem } from './SwipeableShoppingItem';
 import { AppText } from './ui/AppText';
-import { colors, spacing } from '../constants/tokens';
+import { colors, font, spacing } from '../constants/tokens';
 import type { ShoppingItemRow } from '../types/db';
 
 interface Props {
@@ -26,7 +27,7 @@ export function BasketSection({ items, onToggle, onDelete, onEdit }: Props) {
         accessibilityRole="button"
         accessibilityLabel={`In Basket, ${items.length} item${items.length !== 1 ? 's' : ''}, ${isExpanded ? 'tap to collapse' : 'tap to expand'}`}
       >
-        <AppText weight="bold" color="green" size="md">✓</AppText>
+        <Ionicons name="checkmark-circle" size={18} color={colors.green} />
         <AppText weight="semibold" color="green" size="sm" style={styles.headerLabel}>
           IN BASKET ({items.length})
         </AppText>
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cream,
   },
   headerLabel: {
-    letterSpacing: 1.1,
+    letterSpacing: font.tracking.category,
     textTransform: 'uppercase',
   },
   hint: {

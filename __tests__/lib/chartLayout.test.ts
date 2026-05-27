@@ -3,8 +3,8 @@ import {
   buildYScale,
   buildXScale,
   getStoreColor,
-  STORE_COLORS,
 } from '../../lib/chartLayout';
+import { storeSeries as STORE_COLORS } from '../../constants/tokens';
 import type { PricePoint } from '../../types/db';
 
 const makePoint = (chain: string, purchasedAt: string, normalisedPrice: number, isOnSale = false): PricePoint => ({

@@ -23,7 +23,9 @@ export function AppText({
 }: AppTextProps) {
   return (
     <Text
-      maxFontSizeMultiplier={1.5}
+      // Cap Dynamic Type at 2.0× so dense screens (shopping list, recipe rows)
+      // don't reflow into unreadable overlap at extreme system text scaling.
+      maxFontSizeMultiplier={2.0}
       style={[
         {
           fontFamily: font.family[weight],

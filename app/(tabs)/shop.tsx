@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -41,8 +41,8 @@ export default function ShopScreen() {
   const planId = plan?.row.id ?? null;
   const { items, loading: itemsLoading, reload: reloadItems, toggleItem, addItem, updateItem, deleteItem } = useShoppingItems(planId);
   const { applySavedOrder, reload: reloadCategoryOrder } = useCategoryOrder();
-  const { pendingRecords, addRecord, deletePending, getLatestForItem } = usePurchaseHistory(planId);
-  const { mode, activeStore, savedStores, setMode } = useShoppingMode(planId);
+  const { pendingRecords, addRecord, deletePending, getLatestForItem, reload: reloadPending } = usePurchaseHistory(planId);
+  const { mode, activeStore, savedStores, setMode, reload: reloadMode } = useShoppingMode(planId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingItemRow | null>(null);
@@ -62,13 +62,16 @@ export default function ShopScreen() {
     return { opacity, maxHeight, overflow: 'hidden' };
   });
 
-  // Pick up scanner result and refresh items + category order when returning to this screen
+  // Refresh items, category order, pending purchases, and mode on focus so the
+  // "Done shopping" CTA and segmented control reflect the latest state after Confirm.
   useFocusEffect(useCallback(() => {
     reloadItems();
     reloadCategoryOrder();
+    reloadPending();
+    reloadMode();
     const result = takePendingScanResult();
     if (result) setPendingScan(result);
-  }, [reloadItems, reloadCategoryOrder]));
+  }, [reloadItems, reloadCategoryOrder, reloadPending, reloadMode]));
 
   const {
     uncheckedItems,
@@ -169,6 +172,9 @@ export default function ShopScreen() {
                   style={[styles.segOpt, mode === 'quick' && styles.segOptActive]}
                   onPress={() => handleModeToggle('quick')}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quick mode"
+                  accessibilityState={{ selected: mode === 'quick' }}
                 >
                   <AppText weight="bold" size="2xs" color={mode === 'quick' ? 'green' : 'onGreenSubtle'}>
                     Quick
@@ -178,6 +184,9 @@ export default function ShopScreen() {
                   style={[styles.segOpt, mode === 'review' && styles.segOptActive]}
                   onPress={() => handleModeToggle('review')}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Review mode"
+                  accessibilityState={{ selected: mode === 'review' }}
                 >
                   <AppText weight="bold" size="2xs" color={mode === 'review' ? 'green' : 'onGreenSubtle'}>
                     Review
@@ -198,8 +207,15 @@ export default function ShopScreen() {
           <View style={styles.weekStoreRow}>
             <AppText weight="semibold" color="onGreenSubtle" size="xs">
               Week of {formatWeekOf(plan.row.week_starting)}
-              {mode === 'review' && activeStore ? `  ·  📍 ${activeStore.chain}` : ''}
             </AppText>
+            {mode === 'review' && activeStore && (
+              <View style={styles.storeBadge}>
+                <Ionicons name="location-outline" size={12} color={colors.onGreenSubtle} />
+                <AppText weight="semibold" color="onGreenSubtle" size="xs">
+                  {activeStore.chain}
+                </AppText>
+              </View>
+            )}
           </View>
 
           {showCompleteCta && (
@@ -312,13 +328,22 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   titleRowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   modeSeg: {
-    flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.22)',
-    borderRadius: radius.full, padding: 2, gap: 2,
+    flexDirection: 'row', backgroundColor: colors.headerPill,
+    borderRadius: radius.full, padding: 0, gap: 2,
   },
-  segOpt: { borderRadius: radius.full, paddingHorizontal: spacing[2], paddingVertical: spacing[1] },
+  segOpt: {
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    minHeight: 44,
+    minWidth: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   segOptActive: { backgroundColor: colors.onGreen },
   reorderBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  weekStoreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  weekStoreRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], flexWrap: 'wrap' },
+  storeBadge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   completeCta: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: colors.orange,

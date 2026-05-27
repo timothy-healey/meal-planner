@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { AppText } from './AppText';
 import { Pill } from './Pill';
@@ -12,9 +11,9 @@ export function EmptyState({ onImport }: EmptyStateProps) {
   return (
     <View style={styles.container}>
       <AppText color="textSecondary">
-        No meal plan loaded yet.
+        The pantry's empty. Drop in a meal plan to see your week.
       </AppText>
-      <Pill label="📂 Import meal plan" onPress={onImport} />
+      <Pill label="Import meal plan" icon="folder-open-outline" onPress={onImport} />
     </View>
   );
 }

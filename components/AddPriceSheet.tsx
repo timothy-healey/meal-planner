@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, Switch,
+  View, TextInput, TouchableOpacity, Switch,
   StyleSheet, Modal, ScrollView, Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
+import { AppText } from './ui/AppText';
 import { colors, font, spacing, radius } from '../constants/tokens';
 import { useStores } from '../hooks/useStores';
 import { usePurchaseHistory } from '../hooks/usePurchaseHistory';
@@ -32,7 +34,6 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
   const [isOnSale, setIsOnSale] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Default to first store when sheet opens
   useEffect(() => {
     if (visible && stores.length > 0 && !selectedChain) {
       setSelectedChain(stores[0].chain);
@@ -74,27 +75,45 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+        accessibilityLabel="Dismiss"
+        accessibilityRole="button"
+      />
       <View style={styles.sheet}>
         <View style={styles.handle} />
         <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>Log a price</Text>
+          <AppText weight="bold" size="xl" color="textPrimary" style={styles.title}>
+            Log a price
+          </AppText>
 
           {/* Store selection */}
-          <Text style={styles.fieldLabel}>STORE</Text>
+          <AppText weight="bold" size="sm" color="textTertiary" style={styles.fieldLabel}>
+            STORE
+          </AppText>
           <View style={styles.storeList}>
-            {stores.map(store => (
-              <TouchableOpacity
-                key={store.id}
-                style={styles.storeRow}
-                onPress={() => { setSelectedChain(store.chain); setAddingNewStore(false); }}
-              >
-                <View style={[styles.radio, selectedChain === store.chain && !addingNewStore && styles.radioSelected]}>
-                  {selectedChain === store.chain && !addingNewStore && <View style={styles.radioDot} />}
-                </View>
-                <Text style={styles.storeName}>{store.chain}</Text>
-              </TouchableOpacity>
-            ))}
+            {stores.map(store => {
+              const isSelected = selectedChain === store.chain && !addingNewStore;
+              return (
+                <TouchableOpacity
+                  key={store.id}
+                  style={styles.storeRow}
+                  onPress={() => { setSelectedChain(store.chain); setAddingNewStore(false); }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: isSelected }}
+                  accessibilityLabel={store.chain}
+                >
+                  <View style={[styles.radio, isSelected && styles.radioSelected]}>
+                    {isSelected && <View style={styles.radioDot} />}
+                  </View>
+                  <AppText weight="semibold" size="md" color="textPrimary">
+                    {store.chain}
+                  </AppText>
+                </TouchableOpacity>
+              );
+            })}
             {addingNewStore ? (
               <TextInput
                 style={[styles.fieldInput, { marginTop: spacing[1] }]}
@@ -103,16 +122,19 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
                 value={newStoreName}
                 onChangeText={setNewStoreName}
                 autoFocus
+                accessibilityLabel="New store name"
               />
             ) : (
               <TouchableOpacity
                 style={styles.addStoreRow}
                 onPress={() => { setAddingNewStore(true); setSelectedChain(''); }}
+                accessibilityRole="button"
+                accessibilityLabel="Add new store"
               >
-                <View style={styles.addStoreIcon}>
-                  <Text style={styles.addStoreIconText}>+</Text>
-                </View>
-                <Text style={styles.addStoreLabel}>Add new store…</Text>
+                <Ionicons name="add-circle-outline" size={20} color={colors.textTertiary} />
+                <AppText weight="semibold" size="md" color="textTertiary">
+                  Add new store…
+                </AppText>
               </TouchableOpacity>
             )}
           </View>
@@ -120,7 +142,9 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
           {/* Price + Qty */}
           <View style={styles.inlineRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>PRICE</Text>
+              <AppText weight="bold" size="sm" color="textTertiary" style={styles.fieldLabel}>
+                PRICE
+              </AppText>
               <TextInput
                 style={styles.fieldInput}
                 value={price}
@@ -128,16 +152,20 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
                 placeholder="$0.00"
                 placeholderTextColor={colors.textTertiary}
                 keyboardType="decimal-pad"
+                accessibilityLabel="Price"
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>QTY</Text>
+              <AppText weight="bold" size="sm" color="textTertiary" style={styles.fieldLabel}>
+                QTY
+              </AppText>
               <View style={styles.qtyRow}>
                 <TextInput
                   style={[styles.fieldInput, { flex: 1 }]}
                   value={qtyAmount}
                   onChangeText={setQtyAmount}
                   keyboardType="decimal-pad"
+                  accessibilityLabel="Quantity amount"
                 />
                 <TouchableOpacity
                   style={styles.unitBtn}
@@ -146,22 +174,28 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
                     const next = units[(units.indexOf(qtyUnit) + 1) % units.length];
                     setQtyUnit(next);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Unit: ${qtyUnit}, tap to change`}
                 >
-                  <Text style={styles.unitBtnText}>{qtyUnit}</Text>
+                  <AppText weight="bold" size="md" color="green">{qtyUnit}</AppText>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
 
           {/* Date */}
-          <Text style={styles.fieldLabel}>DATE</Text>
+          <AppText weight="bold" size="sm" color="textTertiary" style={styles.fieldLabel}>
+            DATE
+          </AppText>
           <TouchableOpacity
             style={styles.fieldInput}
             onPress={() => setShowDatePicker(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Date: ${formatDate(date)}, tap to change`}
           >
-            <Text style={{ fontFamily: font.family.semibold, fontSize: font.size.md, color: colors.textPrimary }}>
+            <AppText weight="semibold" size="md" color="textPrimary">
               {formatDate(date)}
-            </Text>
+            </AppText>
           </TouchableOpacity>
           {showDatePicker && (
             <DateTimePicker
@@ -177,12 +211,13 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
 
           {/* Sale toggle */}
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Sale price</Text>
+            <AppText weight="semibold" size="md" color="textSecondary">Sale price</AppText>
             <Switch
               value={isOnSale}
               onValueChange={setIsOnSale}
               trackColor={{ false: colors.divider, true: colors.orange }}
-              thumbColor="#fff"
+              thumbColor={colors.cream}
+              accessibilityLabel="Sale price"
             />
           </View>
 
@@ -191,8 +226,11 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
             style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}
             onPress={handleSave}
             disabled={!canSave || saving}
+            accessibilityRole="button"
+            accessibilityLabel="Save price"
+            accessibilityState={{ disabled: !canSave || saving }}
           >
-            <Text style={styles.saveBtnText}>Save price</Text>
+            <AppText weight="bold" size="md" color="onGreen">Save price</AppText>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -203,7 +241,7 @@ export function AddPriceSheet({ visible, brand, productName, onClose, onSaved }:
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.scrim,
   },
   sheet: {
     backgroundColor: colors.card,
@@ -216,28 +254,24 @@ const styles = StyleSheet.create({
   handle: {
     width: 36,
     height: 4,
-    borderRadius: 9999,
+    borderRadius: radius.xs,
     backgroundColor: colors.divider,
     alignSelf: 'center',
     marginVertical: spacing[3],
   },
   title: {
-    fontFamily: font.family.bold,
-    fontSize: font.size.xl,
-    color: colors.textPrimary,
     marginBottom: spacing[4],
   },
   fieldLabel: {
-    fontFamily: font.family.bold,
-    fontSize: font.size.sm,
-    color: colors.textTertiary,
     letterSpacing: font.tracking.label,
     marginBottom: spacing[1],
   },
   fieldInput: {
     backgroundColor: colors.cream,
     borderRadius: radius.sm + 3,
-    padding: spacing[2] + 2,
+    padding: spacing[3],
+    minHeight: 44,
+    justifyContent: 'center',
     fontFamily: font.family.semibold,
     fontSize: font.size.md,
     color: colors.textPrimary,
@@ -248,54 +282,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2] + 2,
-    paddingVertical: spacing[2],
+    paddingVertical: spacing[3],
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
   },
   radio: {
-    width: 16, height: 16, borderRadius: 9999,
-    borderWidth: 2, borderColor: colors.divider,
+    width: 18, height: 18, borderRadius: radius.full,
+    borderWidth: 2, borderColor: colors.checkboxBorder,
     alignItems: 'center', justifyContent: 'center',
   },
   radioSelected: { borderColor: colors.green, backgroundColor: colors.green },
-  radioDot: { width: 6, height: 6, borderRadius: 9999, backgroundColor: '#fff' },
-  storeName: { fontFamily: font.family.semibold, fontSize: font.size.md, color: colors.textPrimary },
+  radioDot: { width: 6, height: 6, borderRadius: radius.full, backgroundColor: colors.cream },
   addStoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2] + 2,
-    paddingVertical: spacing[2],
+    paddingVertical: spacing[3],
+    minHeight: 44,
   },
-  addStoreIcon: {
-    width: 16, height: 16, borderRadius: 9999,
-    borderWidth: 2, borderColor: colors.textTertiary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  addStoreIconText: { fontSize: 11, color: colors.textTertiary, lineHeight: 13 },
-  addStoreLabel: { fontFamily: font.family.semibold, fontSize: font.size.md, color: colors.textTertiary },
   inlineRow: { flexDirection: 'row', gap: spacing[2] },
   qtyRow: { flexDirection: 'row', gap: spacing[1] },
   unitBtn: {
     backgroundColor: colors.cream,
     borderRadius: radius.sm + 3,
-    paddingHorizontal: spacing[2] + 2,
+    paddingHorizontal: spacing[3],
+    minWidth: 56,
+    minHeight: 44,
+    alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
   },
-  unitBtnText: { fontFamily: font.family.bold, fontSize: font.size.md, color: colors.green },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 44,
     marginBottom: spacing[3],
   },
-  toggleLabel: { fontFamily: font.family.semibold, fontSize: font.size.md, color: colors.textSecondary },
   saveBtn: {
     backgroundColor: colors.green,
-    borderRadius: 9999,
-    paddingVertical: spacing[2] + 2,
+    borderRadius: radius.full,
+    paddingVertical: spacing[3],
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { fontFamily: font.family.bold, fontSize: font.size.md, color: colors.onGreen },
 });

@@ -50,7 +50,7 @@ export default function SettingsScreen() {
       <GreenHeader>
         <Row justify="space-between" align="center">
           <AppText weight="extrabold" size="xl" color="onGreen">Settings</AppText>
-          <Pill label="✕ Close" onPress={() => router.back()} variant="green" />
+          <Pill label="Close" icon="close" onPress={() => router.back()} variant="green" />
         </Row>
       </GreenHeader>
 
@@ -62,7 +62,7 @@ export default function SettingsScreen() {
             Replace the active shopping list with a new weekly plan JSON.
             Your recipe library is preserved.
           </AppText>
-          <Pill label="📂 Import weekly plan" onPress={importPlan} />
+          <Pill label="Import weekly plan" icon="folder-open-outline" onPress={importPlan} />
           {importStatus.type === 'success' && (
             <AppText color="green">{importStatus.message}</AppText>
           )}
@@ -83,7 +83,8 @@ export default function SettingsScreen() {
             Copy this week's purchases with nutrition data as JSON to paste into Claude.
           </AppText>
           <Pill
-            label={contextCopied ? '✓ Copied!' : '🤖 Copy context for Claude'}
+            label={contextCopied ? 'Copied!' : 'Copy context for Claude'}
+            icon={contextCopied ? 'checkmark' : 'sparkles-outline'}
             onPress={handleCopyContext}
             style={!plan ? styles.dimmed : undefined}
           />
@@ -100,7 +101,7 @@ export default function SettingsScreen() {
           <AppText color="textSecondary">
             Save all your data — recipes, plans, and shopping history — to a JSON file.
           </AppText>
-          <Pill label="📤 Export backup" onPress={exportBackup} />
+          <Pill label="Export backup" icon="cloud-upload-outline" onPress={exportBackup} />
           {backupStatus.type === 'success' && (
             <AppText color="green">{backupStatus.message}</AppText>
           )}
@@ -115,7 +116,7 @@ export default function SettingsScreen() {
             Replace all data from a backup file. Cannot be undone.
           </AppText>
           {!restorePreview ? (
-            <Pill label="📥 Restore from backup" onPress={handleRestore} />
+            <Pill label="Restore from backup" icon="cloud-download-outline" onPress={handleRestore} />
           ) : (
             <View style={styles.restorePreviewCard}>
               <AppText>
