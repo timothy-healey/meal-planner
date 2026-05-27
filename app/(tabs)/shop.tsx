@@ -165,7 +165,7 @@ export default function ShopScreen() {
       <GreenHeader>
         <View style={styles.headerContent}>
           <Animated.View style={[styles.titleRow, titleRowStyle, { paddingBottom: spacing[2] }]}>
-            <AppText weight="extrabold" color="onGreen" size="3xl">Shopping List</AppText>
+            <AppText weight="extrabold" color="onGreen" size="2xl">Shopping List</AppText>
             <View style={styles.titleRowRight}>
               <View style={styles.modeSeg}>
                 <TouchableOpacity
