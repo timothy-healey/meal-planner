@@ -35,9 +35,12 @@ export function SuggestionDropdown({
             onPress={() => onPick(s)}
           >
             <View style={styles.textCol}>
-              <AppText weight="bold" size="md" color="textPrimary" numberOfLines={1}>
-                {s.kind === 'brand' ? s.brand : s.productName ?? ''}
-              </AppText>
+              <HighlightedText
+                text={s.kind === 'brand' ? s.brand : s.productName ?? ''}
+                indices={
+                  s.matches.find(m => m.field === (s.kind === 'brand' ? 'brand' : 'product'))?.indices ?? []
+                }
+              />
               <Secondary s={s} showBrand={showBrandInSecondary} now={ts} />
             </View>
             <View style={styles.emblemSlot}>
@@ -54,6 +57,45 @@ export function SuggestionDropdown({
         );
       })}
     </View>
+  );
+}
+
+function HighlightedText({ text, indices }: { text: string; indices: [number, number][] }) {
+  if (indices.length === 0) {
+    return (
+      <AppText weight="bold" size="md" color="textPrimary" numberOfLines={1}>
+        {text}
+      </AppText>
+    );
+  }
+  const segments: { text: string; highlight: boolean }[] = [];
+  let cursor = 0;
+  const sorted = [...indices].sort((a, b) => a[0] - b[0]);
+  for (const [start, end] of sorted) {
+    if (start > cursor) segments.push({ text: text.slice(cursor, start), highlight: false });
+    segments.push({ text: text.slice(start, end + 1), highlight: true });
+    cursor = end + 1;
+  }
+  if (cursor < text.length) segments.push({ text: text.slice(cursor), highlight: false });
+
+  return (
+    <AppText weight="bold" size="md" color="textPrimary" numberOfLines={1}>
+      {segments.map((seg, i) =>
+        seg.highlight ? (
+          <AppText
+            key={i}
+            weight="extrabold"
+            size="md"
+            color="orange"
+            style={styles.highlight}
+          >
+            {seg.text}
+          </AppText>
+        ) : (
+          seg.text
+        ),
+      )}
+    </AppText>
   );
 }
 
@@ -117,4 +159,5 @@ const styles = StyleSheet.create({
   rowLast: { borderBottomWidth: 0 },
   textCol: { flex: 1, minWidth: 0 },
   emblemSlot: { width: 16, alignItems: 'center', justifyContent: 'center' },
+  highlight: { backgroundColor: 'rgba(232, 123, 58, 0.18)' },
 });
