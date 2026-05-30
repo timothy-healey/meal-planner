@@ -80,8 +80,7 @@ export function ReviewItemSheet({
   const [unitPickerOpen, setUnitPickerOpen] = useState(false);
 
   const { query: querySuggestions } = useIngredientSuggestions();
-  const { upsert, getByKey } = useProducts();
-  const [resolvedProductId, setResolvedProductId] = useState<string | null>(null);
+  const { upsert } = useProducts();
   const [brandFocused, setBrandFocused] = useState(false);
   const [productFocused, setProductFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -174,18 +173,6 @@ export function ReviewItemSheet({
     onPendingScanConsumed();
   }, [pendingScan]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep `resolvedProductId` in sync with the current brand+product. Powers the
-  // price-history chart preview and seeds handleSave when both fields are filled.
-  useEffect(() => {
-    const b = brand.trim();
-    const p = productName.trim();
-    if (!p) { setResolvedProductId(null); return; }
-    let cancelled = false;
-    getByKey(b, p).then(row => {
-      if (!cancelled) setResolvedProductId(row?.id ?? null);
-    });
-    return () => { cancelled = true; };
-  }, [brand, productName, getByKey]);
 
   async function handleSave() {
     if (!item) return;
@@ -444,9 +431,9 @@ export function ReviewItemSheet({
               </TouchableOpacity>
             </View>
 
-            {resolvedProductId && (
+            {item?.name && (
               <View style={{ marginTop: spacing[4], marginHorizontal: -spacing[4] }}>
-                <PriceHistoryChart productId={resolvedProductId} />
+                <PriceHistoryChart itemName={item.name} />
               </View>
             )}
 

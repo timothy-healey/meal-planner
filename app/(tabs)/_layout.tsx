@@ -52,6 +52,16 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="catalog"
+        options={{
+          title: 'Catalog',
+          tabBarAccessibilityLabel: 'Catalog',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'library' : 'library-outline'} size={22} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
