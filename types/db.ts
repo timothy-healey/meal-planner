@@ -70,6 +70,12 @@ export interface PricePoint {
   isOnSale: boolean;
 }
 
+export interface ProductPricePoint extends PricePoint {
+  productId: string;
+  brand: string;
+  productName: string;
+}
+
 export interface StoreRow {
   id: string;
   chain: string;

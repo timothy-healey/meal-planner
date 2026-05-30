@@ -12,11 +12,11 @@ export function getStoreColor(index: number): string {
   return storeSeries[index % storeSeries.length];
 }
 
-export function filterByTimeRange(
-  points: PricePoint[],
+export function filterByTimeRange<P extends Pick<PricePoint, 'purchasedAt'>>(
+  points: P[],
   range: TimeRange,
   now = new Date(),
-): PricePoint[] {
+): P[] {
   if (range === 'All') return points;
   const months = range === '3M' ? 3 : range === '6M' ? 6 : 12;
   const cutoff = new Date(now);

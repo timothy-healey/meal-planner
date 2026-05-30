@@ -156,3 +156,112 @@ describe('useProducts.getNutritionForIngredients', () => {
     expect(await result.current.getNutritionForIngredients(ingredients)).toEqual({});
   });
 });
+
+describe('useProducts.getAll', () => {
+  it('returns all rows ordered by item_name then product_name', async () => {
+    const rows = [
+      { id: '1', brand: '', product_name: 'banana', item_name: 'banana', basis: 'per_unit',
+        cal_per_basis: 105, protein_per_basis: 1.3, carbs_per_basis: 27, fat_per_basis: 0.4,
+        updated_at: '2026-01-01T00:00:00Z' },
+    ];
+    mockDb.getAllAsync.mockResolvedValueOnce(rows);
+    const { result } = renderHook(() => useProducts());
+    const got = await result.current.getAll();
+    expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining('SELECT * FROM products'),
+    );
+    expect(got).toEqual(rows);
+  });
+});
+
+describe('useProducts.deleteProduct', () => {
+  it('clears recipe references, nulls purchase_history.product_id, then deletes the row', async () => {
+    mockDb.getAllAsync.mockResolvedValueOnce([
+      { id: 'r1', ingredients_json: JSON.stringify([
+        { item: 'chicken', amount: { kind: 'measured', value: 200, unit: 'g' }, product_id: 'p1' },
+        { item: 'rice',    amount: { kind: 'measured', value: 150, unit: 'g' } },
+      ]) },
+    ]);
+    const { result } = renderHook(() => useProducts());
+    await result.current.deleteProduct('p1');
+
+    const calls = mockDb.runAsync.mock.calls.map((c: any[]) => c[0] as string);
+    expect(calls[0]).toBe('BEGIN');
+    expect(calls[calls.length - 1]).toBe('COMMIT');
+
+    const updateRecipe = mockDb.runAsync.mock.calls.find(
+      c => typeof c[0] === 'string' && c[0].startsWith('UPDATE recipes'),
+    );
+    expect(updateRecipe).toBeDefined();
+    const written = JSON.parse(updateRecipe![1][0]);
+    expect(written[0].product_id).toBeUndefined();
+
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.stringMatching(/UPDATE purchase_history SET product_id = NULL WHERE product_id = \?/),
+    ]));
+
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.stringMatching(/DELETE FROM products WHERE id = \?/),
+    ]));
+  });
+});
+
+describe('useProducts.mergeProduct', () => {
+  it('runs the full merge transaction (re-target purchases, rewrite recipes, delete source)', async () => {
+    mockDb.getFirstAsync
+      .mockResolvedValueOnce({ id: 'src', brand: 'Coles', product_name: 'Fillet', item_name: 'chicken breast',
+        basis: 'per_100g', cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
+        updated_at: '2026-02-01T00:00:00Z' })
+      .mockResolvedValueOnce({ id: 'tgt', brand: 'Coles', product_name: 'Fillets', item_name: 'chicken breast',
+        basis: 'per_100g', cal_per_basis: 170, protein_per_basis: 30, carbs_per_basis: 0, fat_per_basis: 4,
+        updated_at: '2026-01-01T00:00:00Z' });
+    mockDb.getAllAsync.mockResolvedValueOnce([
+      { id: 'r1', ingredients_json: JSON.stringify([
+        { item: 'chicken', amount: { kind: 'measured', value: 200, unit: 'g' }, product_id: 'src' },
+      ]) },
+    ]);
+
+    const { result } = renderHook(() => useProducts());
+    await result.current.mergeProduct('src', 'tgt');
+
+    const calls = mockDb.runAsync.mock.calls;
+    const sqls = calls.map(c => c[0] as string);
+
+    expect(sqls[0]).toBe('BEGIN');
+    expect(sqls[sqls.length - 1]).toBe('COMMIT');
+
+    const updateProducts = calls.find(c => typeof c[0] === 'string' && c[0].includes('UPDATE products SET'));
+    expect(updateProducts).toBeDefined();
+    expect(updateProducts![1]).toEqual(expect.arrayContaining([165, 31, 0, 3.6, 'tgt']));
+
+    expect(sqls).toEqual(expect.arrayContaining([
+      expect.stringMatching(/UPDATE purchase_history SET product_id = \? WHERE product_id = \?/),
+    ]));
+
+    const updateRecipe = calls.find(c => typeof c[0] === 'string' && c[0].startsWith('UPDATE recipes'));
+    const written = JSON.parse(updateRecipe![1][0]);
+    expect(written[0].product_id).toBe('tgt');
+
+    expect(sqls).toEqual(expect.arrayContaining([
+      expect.stringMatching(/DELETE FROM products WHERE id = \?/),
+    ]));
+  });
+
+  it('keeps target macros when source has none', async () => {
+    mockDb.getFirstAsync
+      .mockResolvedValueOnce({ id: 'src', brand: 'A', product_name: 'X', item_name: 'foo',
+        basis: 'per_100g', cal_per_basis: null, protein_per_basis: null, carbs_per_basis: null, fat_per_basis: null,
+        updated_at: '2026-02-01T00:00:00Z' })
+      .mockResolvedValueOnce({ id: 'tgt', brand: 'A', product_name: 'Y', item_name: 'foo',
+        basis: 'per_100g', cal_per_basis: 100, protein_per_basis: 10, carbs_per_basis: 20, fat_per_basis: 1,
+        updated_at: '2026-01-01T00:00:00Z' });
+    mockDb.getAllAsync.mockResolvedValueOnce([]);
+
+    const { result } = renderHook(() => useProducts());
+    await result.current.mergeProduct('src', 'tgt');
+
+    const calls = mockDb.runAsync.mock.calls;
+    const updateProducts = calls.find(c => typeof c[0] === 'string' && c[0].includes('UPDATE products SET'));
+    expect(updateProducts).toBeUndefined();
+  });
+});

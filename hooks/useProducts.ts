@@ -89,5 +89,120 @@ export function useProducts() {
     [db],
   );
 
-  return { upsert, getById, getByKey, getNutritionForIngredients };
+  const getAll = useCallback(async (): Promise<ProductRow[]> => {
+    return await db.getAllAsync<ProductRow>(
+      'SELECT * FROM products ORDER BY item_name, product_name',
+    );
+  }, [db]);
+
+  const deleteProduct = useCallback(async (productId: string): Promise<void> => {
+    await db.runAsync('BEGIN');
+    try {
+      const affectedRecipes = await db.getAllAsync<{ id: string; ingredients_json: string }>(
+        `SELECT DISTINCT r.id, r.ingredients_json
+         FROM recipes r, json_each(r.ingredients_json) ing
+         WHERE json_extract(ing.value, '$.product_id') = ?`,
+        [productId],
+      );
+      for (const r of affectedRecipes) {
+        const ingredients = JSON.parse(r.ingredients_json);
+        const next = ingredients.map((ing: any) => {
+          if (ing.product_id === productId) {
+            const { product_id, ...rest } = ing;
+            return rest;
+          }
+          return ing;
+        });
+        await db.runAsync(
+          'UPDATE recipes SET ingredients_json = ? WHERE id = ?',
+          [JSON.stringify(next), r.id],
+        );
+      }
+      await db.runAsync(
+        'UPDATE purchase_history SET product_id = NULL WHERE product_id = ?',
+        [productId],
+      );
+      await db.runAsync('DELETE FROM products WHERE id = ?', [productId]);
+      await db.runAsync('COMMIT');
+    } catch (e) {
+      await db.runAsync('ROLLBACK');
+      throw e;
+    }
+  }, [db]);
+
+  const mergeProduct = useCallback(async (
+    sourceId: string,
+    targetId: string,
+  ): Promise<void> => {
+    if (sourceId === targetId) return;
+
+    const source = await db.getFirstAsync<ProductRow>(
+      'SELECT * FROM products WHERE id = ?',
+      [sourceId],
+    );
+    const target = await db.getFirstAsync<ProductRow>(
+      'SELECT * FROM products WHERE id = ?',
+      [targetId],
+    );
+    if (!source || !target) {
+      throw new Error('Source or target product not found');
+    }
+
+    await db.runAsync('BEGIN');
+    try {
+      const sourceHasMacros =
+        source.cal_per_basis != null || source.protein_per_basis != null ||
+        source.carbs_per_basis != null || source.fat_per_basis != null;
+      const targetHasMacros =
+        target.cal_per_basis != null || target.protein_per_basis != null ||
+        target.carbs_per_basis != null || target.fat_per_basis != null;
+
+      const useSourceMacros =
+        sourceHasMacros &&
+        (!targetHasMacros || source.updated_at >= target.updated_at);
+
+      if (useSourceMacros) {
+        await db.runAsync(
+          'UPDATE products SET basis = ?, cal_per_basis = ?, protein_per_basis = ?, carbs_per_basis = ?, fat_per_basis = ?, updated_at = ? WHERE id = ?',
+          [source.basis,
+           source.cal_per_basis, source.protein_per_basis,
+           source.carbs_per_basis, source.fat_per_basis,
+           new Date().toISOString(), targetId],
+        );
+      }
+
+      await db.runAsync(
+        'UPDATE purchase_history SET product_id = ? WHERE product_id = ?',
+        [targetId, sourceId],
+      );
+
+      const affectedRecipes = await db.getAllAsync<{ id: string; ingredients_json: string }>(
+        `SELECT DISTINCT r.id, r.ingredients_json
+         FROM recipes r, json_each(r.ingredients_json) ing
+         WHERE json_extract(ing.value, '$.product_id') = ?`,
+        [sourceId],
+      );
+      for (const r of affectedRecipes) {
+        const ingredients = JSON.parse(r.ingredients_json);
+        const next = ingredients.map((ing: any) => {
+          if (ing.product_id === sourceId) {
+            return { ...ing, product_id: targetId };
+          }
+          return ing;
+        });
+        await db.runAsync(
+          'UPDATE recipes SET ingredients_json = ? WHERE id = ?',
+          [JSON.stringify(next), r.id],
+        );
+      }
+
+      await db.runAsync('DELETE FROM products WHERE id = ?', [sourceId]);
+      await db.runAsync('COMMIT');
+    } catch (e) {
+      await db.runAsync('ROLLBACK');
+      throw e;
+    }
+  }, [db]);
+
+  return { upsert, getById, getByKey, getNutritionForIngredients, getAll, deleteProduct, mergeProduct };
 }

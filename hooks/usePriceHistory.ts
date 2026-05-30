@@ -1,32 +1,37 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useDb } from '../providers/DatabaseProvider';
 import { normalisePrice } from '../lib/normalisePrice';
-import type { PricePoint, PurchaseHistoryRow, QtyUnit } from '../types/db';
+import type { ProductPricePoint, PurchaseHistoryRow, QtyUnit } from '../types/db';
 
-type PurchaseWithChain = PurchaseHistoryRow & { chain: string };
+type Row = PurchaseHistoryRow & {
+  chain: string;
+  brand: string;
+  product_name: string;
+};
 
 export function usePriceHistory(
-  productId: string | null,
-): { points: PricePoint[]; reload: () => void } {
+  itemName: string | null,
+): { points: ProductPricePoint[]; reload: () => void } {
   const db = useDb();
-  const [points, setPoints] = useState<PricePoint[]>([]);
+  const [points, setPoints] = useState<ProductPricePoint[]>([]);
 
   const load = useCallback(async () => {
-    if (!productId) {
+    if (!itemName) {
       setPoints([]);
       return;
     }
-    const rows = await db.getAllAsync<PurchaseWithChain>(
-      `SELECT ph.*, s.chain
+    const rows = await db.getAllAsync<Row>(
+      `SELECT ph.*, s.chain, p.brand, p.product_name
        FROM purchase_history ph
        JOIN stores s ON ph.store_id = s.id
-       WHERE ph.product_id = ?
+       JOIN products p ON p.id = ph.product_id
+       WHERE LOWER(p.item_name) = LOWER(?)
          AND ph.price IS NOT NULL
          AND ph.qty_amount IS NOT NULL
          AND ph.qty_unit IS NOT NULL
          AND ph.status = 'confirmed'
        ORDER BY ph.purchased_at ASC`,
-      [productId],
+      [itemName],
     );
     setPoints(
       rows.map(row => ({
@@ -38,9 +43,12 @@ export function usePriceHistory(
           row.qty_unit! as QtyUnit,
         ),
         isOnSale: row.is_sale === 1,
+        productId: row.product_id!,
+        brand: row.brand,
+        productName: row.product_name,
       })),
     );
-  }, [productId, db]);
+  }, [itemName, db]);
 
   useEffect(() => { load(); }, [load]);
 

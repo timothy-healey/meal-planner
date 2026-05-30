@@ -15,17 +15,25 @@ import {
   type TimeRange,
   type ChartUnit,
 } from '../lib/chartLayout';
-import type { PricePoint } from '../types/db';
+import type { ProductPricePoint } from '../types/db';
 import { AddPriceSheet } from './AddPriceSheet';
 
 interface Props {
-  productId: string;
+  itemName: string;
 }
 
 const TIME_RANGES: TimeRange[] = ['3M', '6M', '1Y', 'All'];
 
-export function PriceHistoryChart({ productId }: Props) {
-  const { points, reload } = usePriceHistory(productId);
+function groupKey(p: ProductPricePoint): string {
+  return `${p.brand} ${p.productName}`;
+}
+
+function groupLabel(p: ProductPricePoint): string {
+  return p.brand ? `${p.brand} ${p.productName}` : p.productName;
+}
+
+export function PriceHistoryChart({ itemName }: Props) {
+  const { points, reload } = usePriceHistory(itemName);
   const [timeRange, setTimeRange] = useState<TimeRange>('6M');
   const [unit, setUnit] = useState<ChartUnit>('per100');
   const [chartWidth, setChartWidth] = useState(0);
@@ -37,16 +45,13 @@ export function PriceHistoryChart({ productId }: Props) {
 
   const filtered = filterByTimeRange(points, timeRange);
 
-  // Group by chain, assign stable colours by sorted chain name
-  const chains = [...new Set(filtered.map(p => p.chain))].sort();
-  const chainMap = new Map<string, PricePoint[]>();
-  for (const chain of chains) {
-    chainMap.set(chain, filtered.filter(p => p.chain === chain));
+  const groups = [...new Set(filtered.map(groupKey))].sort();
+  const groupMap = new Map<string, ProductPricePoint[]>();
+  for (const k of groups) {
+    groupMap.set(k, filtered.filter(p => groupKey(p) === k));
   }
 
-  // Determine display value based on unit toggle (both same for now;
-  // Total mode would show raw price — wired separately if needed).
-  const displayValue = (p: PricePoint) => p.normalisedPrice;
+  const displayValue = (p: ProductPricePoint) => p.normalisedPrice;
 
   const allValues = filtered.map(displayValue);
   const CHART_H = 130;
@@ -56,15 +61,14 @@ export function PriceHistoryChart({ productId }: Props) {
   const yScale = buildYScale(allValues.length ? allValues : [0.40], areaH);
   const xScale = buildXScale(filtered.map(p => p.purchasedAt), areaW);
 
-  // Best value: lowest most-recent price per chain
-  const bestValue: { chain: string; value: number } | null = (() => {
-    if (!chains.length) return null;
-    let best: { chain: string; value: number } | null = null;
-    for (const chain of chains) {
-      const pts = chainMap.get(chain)!;
+  const bestValue: { label: string; value: number } | null = (() => {
+    if (!groups.length) return null;
+    let best: { label: string; value: number } | null = null;
+    for (const k of groups) {
+      const pts = groupMap.get(k)!;
       const last = pts[pts.length - 1];
       const v = displayValue(last);
-      if (!best || v < best.value) best = { chain, value: v };
+      if (!best || v < best.value) best = { label: groupLabel(last), value: v };
     }
     return best;
   })();
@@ -74,19 +78,24 @@ export function PriceHistoryChart({ productId }: Props) {
 
   return (
     <View>
-      {/* Section header */}
       <View style={styles.sectionHeader}>
         <View style={styles.sectionDot} />
         <AppText weight="bold" size="sm" color="terracotta" style={styles.sectionTitle}>
           PRICE HISTORY
         </AppText>
-        <TouchableOpacity onPress={() => setAddPriceVisible(true)} accessibilityRole="button" accessibilityLabel="Add price">
-          <AppText weight="bold" size="sm" color="green">+ Add price</AppText>
+        <TouchableOpacity
+          onPress={() => setAddPriceVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Add price"
+          disabled={filtered.length === 0}
+        >
+          <AppText weight="bold" size="sm" color={filtered.length === 0 ? 'textTertiary' : 'green'}>
+            + Add price
+          </AppText>
         </TouchableOpacity>
       </View>
 
       <View style={styles.card}>
-        {/* Toolbar */}
         <View style={styles.toolbar}>
           <View style={styles.timeTabs}>
             {TIME_RANGES.map(r => (
@@ -124,7 +133,6 @@ export function PriceHistoryChart({ productId }: Props) {
           </View>
         </View>
 
-        {/* Chart or empty state */}
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <AppText weight="semibold" size="sm" color="textTertiary" style={styles.emptyText}>
@@ -135,19 +143,16 @@ export function PriceHistoryChart({ productId }: Props) {
           <View onLayout={onLayout}>
             {chartWidth > 0 && (
               <Svg width={chartWidth} height={CHART_H}>
-                {/* Y axis line */}
                 <Line
                   x1={CHART_MARGINS.left} y1={CHART_MARGINS.top}
                   x2={CHART_MARGINS.left} y2={CHART_MARGINS.top + areaH}
                   stroke={colors.divider} strokeWidth={1}
                 />
-                {/* X axis line */}
                 <Line
                   x1={CHART_MARGINS.left} y1={CHART_MARGINS.top + areaH}
                   x2={chartWidth - CHART_MARGINS.right} y2={CHART_MARGINS.top + areaH}
                   stroke={colors.divider} strokeWidth={1}
                 />
-                {/* Y grid lines + labels */}
                 {yScale.ticks.map(tick => (
                   <React.Fragment key={tick.value}>
                     <Line
@@ -171,7 +176,6 @@ export function PriceHistoryChart({ productId }: Props) {
                     </SvgText>
                   </React.Fragment>
                 ))}
-                {/* X axis month labels */}
                 {xScale.monthLabels.map(ml => (
                   <SvgText
                     key={ml.label + ml.x}
@@ -186,9 +190,8 @@ export function PriceHistoryChart({ productId }: Props) {
                   </SvgText>
                 ))}
 
-                {/* Chain lines */}
-                {chains.map((chain, idx) => {
-                  const pts = chainMap.get(chain)!;
+                {groups.map((k, idx) => {
+                  const pts = groupMap.get(k)!;
                   const color = getStoreColor(idx);
                   const isSparse = pts.length < 3;
                   const regularPts = pts.filter(p => !p.isOnSale);
@@ -199,7 +202,7 @@ export function PriceHistoryChart({ productId }: Props) {
                     .join(' ');
 
                   return (
-                    <React.Fragment key={chain}>
+                    <React.Fragment key={k}>
                       {regularPts.length > 1 && (
                         <Polyline
                           points={regularCoords}
@@ -265,12 +268,11 @@ export function PriceHistoryChart({ productId }: Props) {
           </View>
         )}
 
-        {/* Best value strip */}
         {bestValue && (
           <View style={styles.bestValue}>
             <AppText weight="semibold" size="sm" color="textSecondary">Best value now</AppText>
             <AppText weight="extrabold" size="md" color="orange">
-              {bestValue.chain}
+              {bestValue.label}
               <AppText weight="medium" size="sm" color="textTertiary">
                 {` ${(bestValue.value * 100).toFixed(0)}¢/100g`}
               </AppText>
@@ -278,14 +280,16 @@ export function PriceHistoryChart({ productId }: Props) {
           </View>
         )}
 
-        {/* Legend */}
         <View style={styles.legend}>
-          {chains.map((chain, idx) => (
-            <View key={chain} style={styles.legendPill}>
-              <View style={[styles.legendDot, { backgroundColor: getStoreColor(idx) }]} />
-              <AppText weight="semibold" size="xs" color="textSecondary">{chain}</AppText>
-            </View>
-          ))}
+          {groups.map((k, idx) => {
+            const sample = groupMap.get(k)![0];
+            return (
+              <View key={k} style={styles.legendPill}>
+                <View style={[styles.legendDot, { backgroundColor: getStoreColor(idx) }]} />
+                <AppText weight="semibold" size="xs" color="textSecondary">{groupLabel(sample)}</AppText>
+              </View>
+            );
+          })}
           {filtered.some(p => p.isOnSale) && (
             <View style={[styles.legendPill, styles.legendSale]}>
               <View style={styles.legendSaleIcon} />
@@ -295,12 +299,14 @@ export function PriceHistoryChart({ productId }: Props) {
         </View>
       </View>
 
-      <AddPriceSheet
-        visible={addPriceVisible}
-        productId={productId}
-        onClose={() => setAddPriceVisible(false)}
-        onSaved={() => { setAddPriceVisible(false); reload(); }}
-      />
+      {filtered.length > 0 && (
+        <AddPriceSheet
+          visible={addPriceVisible}
+          productId={filtered[filtered.length - 1].productId}
+          onClose={() => setAddPriceVisible(false)}
+          onSaved={() => { setAddPriceVisible(false); reload(); }}
+        />
+      )}
     </View>
   );
 }

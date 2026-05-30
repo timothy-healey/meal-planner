@@ -499,8 +499,8 @@ export function IngredientSheet({
 
             <View style={{ height: spacing[3] }} />
 
-            {existingEntry?.id && (
-              <PriceHistoryChart productId={existingEntry.id} />
+            {existingEntry?.item_name && (
+              <PriceHistoryChart itemName={existingEntry.item_name} />
             )}
 
             <View style={{ height: spacing[4] }} />
