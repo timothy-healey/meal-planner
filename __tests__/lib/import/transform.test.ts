@@ -122,4 +122,21 @@ describe('transformPlan', () => {
     const ings = JSON.parse(recipes[0].ingredients_json);
     expect(ings[0].amount).toEqual({ kind: 'measured', value: 800, unit: 'g' });
   });
+
+  it('preserves product_id on ingredients when present in the input', () => {
+    const plan: any = {
+      ...PLAN,
+      recipes: [{
+        ...PLAN.recipes[0],
+        ingredients: [
+          { item: 'beef', amount: { kind: 'measured', value: 800, unit: 'g' }, product_id: 'prod-123' },
+          { item: 'salt', amount: { kind: 'measured', value: 5, unit: 'g' } },
+        ],
+      }],
+    };
+    const { recipes } = transformPlan(plan);
+    const ings = JSON.parse(recipes[0].ingredients_json);
+    expect(ings[0].product_id).toBe('prod-123');
+    expect(ings[1].product_id).toBeUndefined();
+  });
 });

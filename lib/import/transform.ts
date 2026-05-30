@@ -10,7 +10,9 @@ interface TransformResult {
 
 // At the import boundary the incoming JSON may still be v1.1 with a string `amount`.
 // Loosen the type here so callers can pass either shape; we narrow before storing.
-type IngredientInput = { item: string; amount: string | Amount };
+// `product_id` is optional — preserved when present so future plan generators that
+// know about existing product IDs can pre-tag ingredients.
+type IngredientInput = { item: string; amount: string | Amount; product_id?: string };
 type RecipeInput = Omit<Recipe, 'ingredients'> & { ingredients: IngredientInput[] };
 type MealPlanInput = Omit<MealPlan, 'recipes'> & { recipes: RecipeInput[] };
 
@@ -19,7 +21,9 @@ function coerceAmount(amount: string | Amount): Amount {
 }
 
 function coerceIngredient(ing: IngredientInput): Ingredient {
-  return { item: ing.item, amount: coerceAmount(ing.amount) };
+  const out: Ingredient = { item: ing.item, amount: coerceAmount(ing.amount) };
+  if (typeof ing.product_id === 'string') out.product_id = ing.product_id;
+  return out;
 }
 
 export function transformPlan(plan: MealPlanInput): TransformResult {
