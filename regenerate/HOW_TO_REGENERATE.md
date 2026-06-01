@@ -16,6 +16,8 @@ The schema enforces structure. Claude will produce a JSON file that:
 I want to plan next week's meals. Attached:
 - meal_plan.schema.json (the structure your final output MUST follow EXACTLY)
 - meal_plan.json from last week (for reference — don't repeat the same meals)
+- claude_context.json (optional) — a dump of last week's confirmed purchases
+  from my app, with `product_id` for items tagged in my catalog
 
 Before generating anything, interview me. Ask ONE question at a time and wait for
 my answer. Start with these, in order:
@@ -58,9 +60,10 @@ Once the interview is done:
 3. Validate per-day calorie sums match daily_targets (±50 cal tolerance).
 4. Set meta.week_starting to the Sunday of the upcoming week.
 5. Set shopping_list.priced_at to today's date.
-6. Only set `product_id` on an ingredient if you are reusing an exact id you
-   saw in the attached previous-week plan (or in a catalog file I gave you).
-   Never invent, guess, or generate product ids. When in doubt, omit the field.
+6. Only set `product_id` on an ingredient if you are reusing an exact id from
+   one of the attached files (typically `claude_context.json`, matched on
+   brand + product name). Never invent, guess, or generate product ids.
+   When in doubt, omit the field.
 
 Do not add fields not in the schema. Do not skip required fields.
 ```
@@ -72,6 +75,11 @@ Do not add fields not in the schema. Do not skip required fields.
 1. **`meal_plan.schema.json`** — REQUIRED. Forces structure.
 2. **`meal_plan.json`** from the previous week — optional but recommended.
    Lets Claude vary the meals instead of accidentally repeating them.
+3. **`claude_context.json`** — optional. In the app, go to Settings → "Copy
+   Claude Context" and paste the result as a file/attachment in the chat.
+   It lists last week's confirmed purchases with `product_id` for items
+   tagged in your catalog, so Claude can reuse those ids on matching
+   ingredients in the new plan.
 
 ---
 
