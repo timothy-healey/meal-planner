@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.2",
+      "const": "1.3",
       "description": "Schema version. Must match for app compatibility."
     },
     "meta": {
@@ -293,6 +293,11 @@
               "properties": {
                 "item": {
                   "type": "string"
+                },
+                "product_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Optional. Links the ingredient to a row in the app's products catalog. When set and resolvable, the app uses that product's nutrition for macro rollups. Omit when unknown."
                 },
                 "amount": {
                   "description": "Structured amount. Use `measured` for canonical metric units, `custom` for cooking-speak units (cloves, slices, cans), `note` for unmeasured (to taste, a pinch).",

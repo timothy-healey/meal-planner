@@ -13,23 +13,36 @@ The schema enforces structure. Claude will produce a JSON file that:
 ## The Prompt (copy-paste this)
 
 ```
-I need a new weekly meal plan. Attached:
-- meal_plan.schema.json (the structure I need you to follow EXACTLY)
+I want to plan next week's meals. Attached:
+- meal_plan.schema.json (the structure your final output MUST follow EXACTLY)
 - meal_plan.json from last week (for reference — don't repeat the same meals)
 
-Constraints:
-- Protein target: 140g/day
-- Calorie target: 2000 Sun-Thu, 2200 Fri-Sat
-- Cooking style: crockpot batch on Sunday, 6 dinners per week (eating out 1-2x)
-- Overnight oats Mon-Fri breakfast, optional Protein Up&Go alongside
-- Lunches: burritos OR wraps OR similar (no rice or bread-heavy meals)
-- Dislikes: rice-heavy meals, bread-heavy meals (burritos and wraps are fine)
-- Carbs mostly from veg + potato
-- Fruits: kiwi and berries preferred
+Before generating anything, interview me. Ask ONE question at a time and wait for
+my answer. Start with these, in order:
+
+1. Calorie target — total per day, or a per-day breakdown if it should vary
+   (e.g. higher on weekends).
+2. Protein target — grams per day.
+3. Cooking style — batch cooking on Sunday? How many dinners to batch? How
+   many nights eating out or leftover-flex?
+4. Weekly grocery budget in AUD (including any household items for the week).
+5. Anything to vary or repeat from last week — cuisines, proteins, swaps,
+   meals to keep.
+6. Any new dislikes, allergies, or cravings this week.
+7. Shopping list category order — same as last week, or change anything?
+   The app uses exact category-name matching to remember reorder preferences,
+   so names must stay identical week-to-week unless I explicitly rename one.
+   If you need a brand-new category (e.g. "Supplements"), ask where in the
+   walking order it should appear.
+
+Stable preferences (assume these unless I say otherwise during the interview):
+- Breakfast: overnight oats Mon-Fri, optional Protein Up&Go alongside
+- Lunches: burritos / wraps / similar — no rice-heavy or bread-heavy meals
+- Carbs: mostly veg + potato
+- Fruit: kiwi and berries preferred
 - Drinks: include Pepsi Max or Coke No Sugar in the shop
-- Store: Woolworths preferred (compare with Coles; only switch if a half-price
-  special meaningfully changes the math on a high-cost item)
-- Budget: ~$140 AUD/week for groceries including some household items
+- Store: Woolworths preferred; compare with Coles and only switch if a
+  half-price special meaningfully changes the math on a high-cost item
 - Region: Adelaide, South Australia
 - Units: every `ingredients[*].amount` is an object, one of three kinds:
   - `{ "kind": "measured", "value": number, "unit": "g" | "kg" | "mL" | "L" | "unit" }` for canonical metric or count amounts
@@ -37,21 +50,17 @@ Constraints:
   - `{ "kind": "note", "text": string }` for unmeasured items like "to taste" or "a pinch"
   Never use cups, tbsp, tsp, oz, or lb — convert to metric (g or mL) before emitting.
 
-Before you build:
+Once the interview is done:
 1. Search the web for current Woolworths and Coles weekly specials so prices are realistic.
-2. Vary the meals from last week — different cuisines, different proteins,
-   different vegetables. Keep the cooking style (crockpot Sunday) the same.
-3. Ask: "Should I use the same shopping list category order as last week, or would you
-   like to change it?" Wait for a response before generating the JSON. The category
-   names must stay exactly the same week-to-week if the order is unchanged — the app
-   uses exact name matching to preserve Tim's reorder preferences. If a new category
-   is needed (e.g. "Supplements"), ask where in the walking order it should appear.
-4. Output ONE file: meal_plan.json, conforming to the attached schema (v1.1).
+2. Output ONE file: meal_plan.json, conforming to the attached schema.
    Each recipe must have `method_steps: string[]` — an ordered list of concise
    step strings, not a single prose blob. The old `method` string field is gone.
-5. Validate per-day calorie sums match daily_targets (±50 cal tolerance).
-6. Set meta.week_starting to the Sunday of the upcoming week.
-7. Set shopping_list.priced_at to today's date.
+3. Validate per-day calorie sums match daily_targets (±50 cal tolerance).
+4. Set meta.week_starting to the Sunday of the upcoming week.
+5. Set shopping_list.priced_at to today's date.
+6. Only set `product_id` on an ingredient if you are reusing an exact id you
+   saw in the attached previous-week plan (or in a catalog file I gave you).
+   Never invent, guess, or generate product ids. When in doubt, omit the field.
 
 Do not add fields not in the schema. Do not skip required fields.
 ```
@@ -97,7 +106,12 @@ The app lets Tim reorder shopping categories to match his store's aisle layout. 
 
 ## Schema version
 
-The current schema is **v1.2**. Key changes from v1.1:
+The current schema is **v1.3**. Key changes from v1.2:
+- `ingredients[*]` may now carry an optional `product_id: string`. When set, it
+  links the ingredient to a row in the app's `products` catalog and the macro
+  rollup uses that product's nutrition. Omit when unknown — the app skips it.
+
+Key changes from v1.1:
 - `ingredients[*].amount: string` → replaced by a tagged union object (`measured` | `custom` | `note`).
   See the Units bullet above for the three valid shapes and examples below.
 - v1.1 string amounts are still accepted by the app's import path for backward compatibility — they are
@@ -108,6 +122,7 @@ Examples:
 - `{ "item": "Olive oil",         "amount": { "kind": "measured", "value": 60, "unit": "mL" } }`
 - `{ "item": "Garlic",            "amount": { "kind": "custom", "value": 3, "unit": "cloves" } }`
 - `{ "item": "Salt",              "amount": { "kind": "note", "text": "to taste" } }`
+- `{ "item": "Chicken breast",    "amount": { "kind": "measured", "value": 500, "unit": "g" }, "product_id": "prod_abc123" }`
 
 Key changes from v1.0:
 - `method: string` → `method_steps: string[]`. The app renders a numbered list. Always use `method_steps`.
