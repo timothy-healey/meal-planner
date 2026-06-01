@@ -80,6 +80,26 @@ describe('buildClaudeContext', () => {
     expect(parsed.purchases[0].item).toBe('mystery herb');
   });
 
+  it('includes product_id on each purchase entry (string when set, null when not)', async () => {
+    mockDb.getAllAsync.mockResolvedValue([
+      {
+        item_name: 'chicken breast', brand: 'Lilydale', product_name: 'Free Range',
+        product_id: 'prod-123',
+        store: 'Coles', qty_amount: 500, qty_unit: 'g', price: 12.50,
+        is_sale: 0, barcode: null,
+      },
+      {
+        item_name: 'mystery herb', brand: null, product_name: null, product_id: null,
+        store: 'Coles', qty_amount: null, qty_unit: null, price: 1.00,
+        is_sale: 0, barcode: null,
+      },
+    ]);
+    const result = await buildClaudeContext(mockDb as any, 'plan-1');
+    const parsed = JSON.parse(result);
+    expect(parsed.purchases[0].product_id).toBe('prod-123');
+    expect(parsed.purchases[1].product_id).toBeNull();
+  });
+
   it('only exports confirmed purchases', async () => {
     mockDb.getAllAsync.mockResolvedValue([]);
     await buildClaudeContext(mockDb as any, 'plan-1');

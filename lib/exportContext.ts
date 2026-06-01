@@ -11,6 +11,7 @@ interface PurchaseEntry {
   item: string;
   brand: string | null;
   product: string | null;
+  product_id: string | null;
   store: string;
   qty: string | null;
   price: number | null;
@@ -59,6 +60,7 @@ export async function buildClaudeContext(db: SQLiteDatabase, planId: string): Pr
       item: p.item_name,
       brand: p.brand,
       product: p.product_name,
+      product_id: p.product_id,
       store: p.store ?? '',
       qty,
       price: p.price,
