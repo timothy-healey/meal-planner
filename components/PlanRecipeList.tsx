@@ -18,12 +18,13 @@ interface Props {
   onSetServes: (recipeId: string, next: number) => void;
   onRemove: (recipeId: string) => void;
   onAdd: () => void;
+  onOpen: (recipeId: string) => void;
 }
 
 const MIN_SERVES = 1;
 const COMMIT_DELAY_MS = 400;
 
-export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd }: Props) {
+export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd, onOpen }: Props) {
   // Every commit runs a full read-compute-diff-write cycle. A stepper is built
   // to be tapped repeatedly, so hold the value locally and commit once the taps
   // settle — the same shape as ServesSheet, where edits are local until Done.
@@ -61,9 +62,27 @@ export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd }: Props)
         return (
           <View key={entry.recipeId} style={styles.card}>
             <View style={styles.titleRow}>
-              <AppText weight="bold" size="lg" color="textPrimary" style={styles.title}>
-                {entry.title}
-              </AppText>
+              {/* Only the title navigates — the stepper and remove button sit
+                  inside this card and must not be wrapped in a tap target
+                  that would carry you off mid-edit. */}
+              {missing ? (
+                <AppText weight="bold" size="lg" color="textPrimary" style={styles.title}>
+                  {entry.title}
+                </AppText>
+              ) : (
+                <TouchableOpacity
+                  style={styles.titleLink}
+                  onPress={() => onOpen(entry.recipeId)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${entry.title}`}
+                >
+                  <AppText weight="bold" size="lg" color="textPrimary">
+                    {entry.title}
+                  </AppText>
+                  <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 onPress={() => onRemove(entry.recipeId)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -149,6 +168,10 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { flex: 1, paddingRight: spacing[2] },
+  titleLink: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing[1],
+    paddingRight: spacing[2], paddingVertical: spacing[1], minHeight: 44,
+  },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   stepBtn: {
     width: 44, height: 44, borderRadius: radius.full,

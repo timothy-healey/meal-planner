@@ -13,6 +13,7 @@ function renderList(props: Partial<React.ComponentProps<typeof PlanRecipeList>> 
       onSetServes={jest.fn()}
       onRemove={jest.fn()}
       onAdd={jest.fn()}
+      onOpen={jest.fn()}
       {...props}
     />
   );
@@ -107,5 +108,42 @@ describe('PlanRecipeList', () => {
     const { getByLabelText, queryByText } = renderList({ entries: [] });
     expect(getByLabelText('Add a recipe')).toBeTruthy();
     expect(queryByText('Beef Ragu')).toBeNull();
+  });
+});
+
+describe('PlanRecipeList — opening the recipe', () => {
+  it('taps through from the title', () => {
+    const onOpen = jest.fn();
+    const { getByLabelText } = renderList({ onOpen });
+    fireEvent.press(getByLabelText('Open Beef Ragu'));
+    expect(onOpen).toHaveBeenCalledWith('r1');
+  });
+
+  it('leaves the stepper independent of navigation', () => {
+    jest.useFakeTimers();
+    const onOpen = jest.fn();
+    const { getByLabelText } = renderList({ onOpen });
+    fireEvent.press(getByLabelText('Increase serves for Beef Ragu'));
+    act(() => { jest.advanceTimersByTime(400); });
+    expect(onOpen).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it('leaves remove independent of navigation', () => {
+    const onOpen = jest.fn();
+    const onRemove = jest.fn();
+    const { getByLabelText } = renderList({ onOpen, onRemove });
+    fireEvent.press(getByLabelText('Remove Beef Ragu from plan'));
+    expect(onRemove).toHaveBeenCalled();
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('does not offer to open a recipe that no longer exists', () => {
+    const onOpen = jest.fn();
+    const { queryByLabelText } = renderList({
+      onOpen,
+      entries: [{ recipeId: 'gone', title: 'Deleted Recipe', recipeServings: null, targetServes: 4 }],
+    });
+    expect(queryByLabelText('Open Deleted Recipe')).toBeNull();
   });
 });
