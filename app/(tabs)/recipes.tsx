@@ -11,6 +11,7 @@ import { RecipesSkeleton } from "../../components/ui/RecipesSkeleton";
 import { colors, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
 import { useRecipes } from "../../hooks/useRecipes";
+import { useInPlanRecipes } from "../../hooks/useInPlanRecipes";
 
 // Dinner first — the batch-plan-led week. Snacks last because they're optional.
 const MEAL_TYPE_ORDER = ["dinner", "lunch", "breakfast", "snack"];
@@ -20,9 +21,10 @@ export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
   const { plan, loading: planLoading } = usePlan();
   const { recipes, loading: recipesLoading } = useRecipes();
+  const inPlanIds = useInPlanRecipes(plan);
 
   const { batchSteps, allGroups } = useMemo(() => {
-    if (!plan || recipes.length === 0) return { batchSteps: [], allGroups: [] };
+    if (recipes.length === 0) return { batchSteps: [], allGroups: [] };
 
     const groups = MEAL_TYPE_ORDER.flatMap((mealType) => {
       const group = recipes.filter((r) => r.meal_type === mealType);
@@ -38,7 +40,7 @@ export default function RecipesScreen() {
     ).map(([mealType, recs]) => ({ mealType, recipes: recs }));
 
     return {
-      batchSteps: plan.batchSteps,
+      batchSteps: plan?.batchSteps ?? [],
       allGroups: [...groups, ...extraGroups],
     };
   }, [plan, recipes]);
@@ -51,7 +53,9 @@ export default function RecipesScreen() {
     );
   }
 
-  if (!plan || recipes.length === 0) {
+  // The library is worth showing with no active plan — those recipes still
+  // exist. Only a genuinely empty library gets the empty state.
+  if (recipes.length === 0) {
     return (
       <View style={styles.outerContainer}>
         <View style={[styles.emptyContainer, { marginTop: insets.top }]}>
@@ -86,6 +90,7 @@ export default function RecipesScreen() {
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
+                  inPlan={inPlanIds.has(recipe.id)}
                   onPress={() => router.push(`/recipe/${recipe.id}`)}
                 />
               ))}

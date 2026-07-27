@@ -1,6 +1,8 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { RecipeCard } from '../../components/RecipeCard';
+import { colors } from '../../constants/tokens';
 import type { Recipe } from '../../hooks/useRecipes';
 
 const RECIPE: Recipe = {
@@ -51,5 +53,38 @@ describe('RecipeCard', () => {
     const { getByRole } = render(<RecipeCard recipe={RECIPE} onPress={onPress} />);
     fireEvent.press(getByRole('button'));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('RecipeCard — in-plan marker', () => {
+  it('shows no marker by default', () => {
+    const { queryByText } = render(<RecipeCard recipe={RECIPE} onPress={jest.fn()} />);
+    expect(queryByText('THIS WEEK')).toBeNull();
+  });
+
+  it('marks a recipe that is in the active plan', () => {
+    const { getByText } = render(<RecipeCard recipe={RECIPE} onPress={jest.fn()} inPlan />);
+    expect(getByText('THIS WEEK')).toBeTruthy();
+  });
+
+  it('announces in-plan status to screen readers', () => {
+    const { getByLabelText } = render(
+      <RecipeCard recipe={RECIPE} onPress={jest.fn()} inPlan />);
+    expect(getByLabelText(/in this week's plan/i)).toBeTruthy();
+  });
+
+  it('uses terracotta, not orange — the marker is taxonomy, not an action', () => {
+    // DESIGN.md reserves orange for verbs and headline numbers.
+    const { getByText } = render(<RecipeCard recipe={RECIPE} onPress={jest.fn()} inPlan />);
+    const style = StyleSheet.flatten(getByText('THIS WEEK').props.style);
+    expect(style.color).toBe(colors.terracotta);
+  });
+
+  it('still opens the recipe when marked', () => {
+    const onPress = jest.fn();
+    const { getByLabelText } = render(
+      <RecipeCard recipe={RECIPE} onPress={onPress} inPlan />);
+    fireEvent.press(getByLabelText(/in this week's plan/i));
+    expect(onPress).toHaveBeenCalled();
   });
 });
