@@ -1532,9 +1532,6 @@ jest.mock('../../providers/DatabaseProvider', () => ({
   useDb: () => mockDb,
   usePlanVersion: () => ({ planVersion: 0, bumpPlanVersion: mockBump }),
 }));
-jest.mock('../../hooks/useItemCategoryMap', () => ({
-  useItemCategoryMap: () => ({ categoryFor: () => 'Unsorted', learn: jest.fn(), loading: false }),
-}));
 
 describe('usePlanRecipes', () => {
   beforeEach(() => {
@@ -1585,24 +1582,114 @@ describe('usePlanRecipes', () => {
 Run: `npm test -- __tests__/hooks/usePlanRecipes.test.ts`
 Expected: FAIL — `Cannot find module '../../hooks/usePlanRecipes'`
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 3: Write the single derivation implementation**
+
+This is the *only* implementation. `usePlanRecipes` delegates to it, and every
+trigger site in Task 11 calls it. An earlier draft of this plan had two copies —
+they drifted on the category-history tier, so the same item could land in
+different categories depending on which path ran.
+
+```ts
+// lib/plan/reDeriveActivePlan.ts
+import type { SQLiteDatabase } from 'expo-sqlite';
+import type { PlanRecipeRow, RecipeRow, WeeklyPlanRow } from '../../types/db';
+import type { Ingredient } from '../../meal_plan.types';
+import { buildLines, type PlanRecipeEntry } from './derive';
+import { applyDerivation } from './applyDerivation';
+import { ItemKey } from '../catalog/itemKey';
+import { normaliseItemName } from '../catalog/normalise';
+import { UNSORTED, toCategory, type Category } from './categories';
+
+/**
+ * Re-derive the active plan's shopping list, if it is self-built.
+ *
+ * Called from every mutation that can invalidate the projection — including
+ * Catalog's merge, delete and rename, which change what an ItemKey resolves to
+ * (vet F1). A no-op for imported plans.
+ */
+export async function reDeriveActivePlan(db: SQLiteDatabase): Promise<void> {
+  const plan = await db.getFirstAsync<WeeklyPlanRow>(
+    'SELECT * FROM weekly_plans WHERE is_active = 1 LIMIT 1');
+  if (!plan || plan.source !== 'self_built') return;
+
+  const planRecipes = await db.getAllAsync<PlanRecipeRow>(
+    'SELECT * FROM plan_recipes WHERE plan_id = ? ORDER BY sort_order', [plan.id]);
+
+  // One query, not one per recipe. Guard the empty case: `IN ()` is a syntax
+  // error, and an empty plan is normal — you just removed the last recipe.
+  const ids = planRecipes.map((pr) => pr.recipe_id);
+  const recipes = ids.length
+    ? await db.getAllAsync<RecipeRow>(
+        `SELECT * FROM recipes WHERE id IN (${ids.map(() => '?').join(',')})`, ids)
+    : [];
+  const recipeById = new Map(recipes.map((r) => [r.id, r]));
+
+  const entries: PlanRecipeEntry[] = [];
+  for (const pr of planRecipes) {
+    const recipe = recipeById.get(pr.recipe_id);
+    // FKs are not enforced — a deleted recipe leaves the join row behind.
+    if (!recipe) continue;
+    entries.push({
+      sortOrder: pr.sort_order,
+      targetServes: pr.target_serves,
+      recipe: {
+        id: recipe.id,
+        servings: recipe.servings,
+        ingredients: JSON.parse(recipe.ingredients_json) as Ingredient[],
+      },
+    });
+  }
+
+  const learned = await db.getAllAsync<{ item_key: string; category: string }>(
+    'SELECT item_key, category FROM item_category_map');
+  const byKey = new Map<string, Category>();
+  for (const r of learned) {
+    const c = toCategory(r.category);
+    if (c) byKey.set(r.item_key, c);
+  }
+
+  // One row per distinct name, most recent wins. Unbounded otherwise — this
+  // would scan every shopping item from every plan ever, on every derivation.
+  const past = await db.getAllAsync<{ name: string; category: string }>(
+    `SELECT name, category FROM shopping_items
+      WHERE rowid IN (SELECT MAX(rowid) FROM shopping_items GROUP BY name)`);
+  const byName = new Map<string, Category>();
+  for (const r of past) {
+    const c = toCategory(r.category);
+    if (c) byName.set(normaliseItemName(r.name), c);
+  }
+
+  const products = await db.getAllAsync<{ id: string; item_name: string }>(
+    'SELECT id, item_name FROM products');
+  const nameById = new Map(products.map((p) => [p.id, p.item_name]));
+
+  const lines = buildLines(entries, {
+    // Learned, then history, then Unsorted.
+    categoryFor: (key, name) =>
+      byKey.get(key) ?? byName.get(normaliseItemName(name)) ?? UNSORTED,
+    displayNameFor: (key) => {
+      const id = ItemKey.productId(key);
+      return id ? (nameById.get(id) ?? null) : null;
+    },
+  });
+
+  await applyDerivation(db, plan.id, lines);
+}
+```
+
+- [ ] **Step 4: Write the hook**
 
 ```ts
 // hooks/usePlanRecipes.ts
 import { useCallback, useEffect, useState } from 'react';
 import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import { generateId } from '../lib/uuid';
-import type { PlanRecipeRow, RecipeRow } from '../types/db';
-import type { Ingredient } from '../meal_plan.types';
-import { buildLines, type PlanRecipeEntry } from '../lib/plan/derive';
-import { applyDerivation } from '../lib/plan/applyDerivation';
-import { ItemKey } from '../lib/catalog/itemKey';
-import { useItemCategoryMap } from './useItemCategoryMap';
+import type { PlanRecipeRow } from '../types/db';
+import { reDeriveActivePlan } from '../lib/plan/reDeriveActivePlan';
 
 export function usePlanRecipes(planId: string | null) {
   const db = useDb();
   const { bumpPlanVersion } = usePlanVersion();
-  const { categoryFor } = useItemCategoryMap();
   const [rows, setRows] = useState<PlanRecipeRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -1615,45 +1702,11 @@ export function usePlanRecipes(planId: string | null) {
 
   useEffect(() => { load(); }, [load]);
 
-  /** The single entry point every trigger site calls. */
+  /** Delegates — there is one derivation implementation, not two. */
   const derivePlanList = useCallback(async () => {
-    if (!planId) return;
-
-    const planRecipes = await db.getAllAsync<PlanRecipeRow>(
-      'SELECT * FROM plan_recipes WHERE plan_id = ? ORDER BY sort_order', [planId]);
-
-    const entries: PlanRecipeEntry[] = [];
-    for (const pr of planRecipes) {
-      const recipe = await db.getFirstAsync<RecipeRow>(
-        'SELECT * FROM recipes WHERE id = ?', [pr.recipe_id]);
-      // FKs are not enforced — a deleted recipe leaves the join row behind.
-      if (!recipe) continue;
-      entries.push({
-        sortOrder: pr.sort_order,
-        targetServes: pr.target_serves,
-        recipe: {
-          id: recipe.id,
-          servings: recipe.servings,
-          ingredients: JSON.parse(recipe.ingredients_json) as Ingredient[],
-        },
-      });
-    }
-
-    const productNames = await db.getAllAsync<{ id: string; item_name: string }>(
-      'SELECT id, item_name FROM products');
-    const byId = new Map(productNames.map((p) => [p.id, p.item_name]));
-
-    const lines = buildLines(entries, {
-      categoryFor,
-      displayNameFor: (key) => {
-        const id = ItemKey.productId(key);
-        return id ? (byId.get(id) ?? null) : null;
-      },
-    });
-
-    await applyDerivation(db, planId, lines);
+    await reDeriveActivePlan(db);
     bumpPlanVersion();
-  }, [planId, db, categoryFor, bumpPlanVersion]);
+  }, [db, bumpPlanVersion]);
 
   const addRecipe = useCallback(async (recipeId: string, targetServes: number) => {
     if (!planId) return;
@@ -1687,15 +1740,15 @@ export function usePlanRecipes(planId: string | null) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 5: Run test to verify it passes**
 
 Run: `npm test -- __tests__/hooks/usePlanRecipes.test.ts`
 Expected: PASS, 4 tests
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add hooks/usePlanRecipes.ts __tests__/hooks/usePlanRecipes.test.ts
+git add lib/plan/reDeriveActivePlan.ts hooks/usePlanRecipes.ts __tests__/hooks/usePlanRecipes.test.ts
 git commit -m "feat(plan): usePlanRecipes owns the recipe set and derivation entry point"
 ```
 
@@ -1758,7 +1811,12 @@ describe('reDeriveActivePlan', () => {
 Run: `npm test -- __tests__/hooks/derivationTriggers.test.ts`
 Expected: FAIL — `Cannot find module '../../lib/plan/reDeriveActivePlan'`
 
-- [ ] **Step 3: Write the shared helper**
+- [ ] **Step 3: Confirm the helper exists**
+
+`lib/plan/reDeriveActivePlan.ts` was created in Task 10 — it is the single
+derivation implementation. This task only adds call sites. Skip to Step 4.
+
+<details><summary>Reference: the helper written in Task 10</summary>
 
 ```ts
 // lib/plan/reDeriveActivePlan.ts
@@ -1835,6 +1893,8 @@ export async function reDeriveActivePlan(db: SQLiteDatabase): Promise<void> {
 }
 ```
 
+</details>
+
 - [ ] **Step 4: Call it from the five remaining sites**
 
 In `hooks/useRecipes.ts`, inside `updateServings`, after the UPDATE and before `bumpPlanVersion()`:
@@ -1900,7 +1960,7 @@ Expected: PASS
 - [ ] **Step 7: Commit**
 
 ```bash
-git add lib/plan/reDeriveActivePlan.ts hooks/useRecipes.ts hooks/useRecipeIngredients.ts hooks/useProducts.ts __tests__/hooks/derivationTriggers.test.ts
+git add hooks/useRecipes.ts hooks/useRecipeIngredients.ts hooks/useProducts.ts __tests__/hooks/derivationTriggers.test.ts
 git commit -m "feat(plan): re-derive on all seven trigger sites, Catalog included"
 ```
 
@@ -2271,7 +2331,7 @@ The planner's stepper says **"Make N serves"**, never "Serves" — the recipe sc
 ```tsx
 // __tests__/components/PlanRecipeList.test.tsx
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { PlanRecipeList } from '../../components/PlanRecipeList';
 
 const ENTRIES = [
@@ -2297,19 +2357,50 @@ describe('PlanRecipeList', () => {
     expect(getByText(/1\.5/)).toBeTruthy();
   });
 
-  it('increments target serves', () => {
+  it('shows the new value immediately but does not commit yet', () => {
+    jest.useFakeTimers();
     const onSetServes = jest.fn();
     const { getByLabelText } = renderList({ onSetServes });
     fireEvent.press(getByLabelText('Increase serves for Beef Ragu'));
+    expect(getByLabelText('Make 7 serves of Beef Ragu')).toBeTruthy();
+    expect(onSetServes).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it('commits once the taps settle', () => {
+    jest.useFakeTimers();
+    const onSetServes = jest.fn();
+    const { getByLabelText } = renderList({ onSetServes });
+    fireEvent.press(getByLabelText('Increase serves for Beef Ragu'));
+    act(() => { jest.advanceTimersByTime(400); });
     expect(onSetServes).toHaveBeenCalledWith('r1', 7);
+    jest.useRealTimers();
+  });
+
+  it('commits once for a burst of taps, not once per tap', () => {
+    // Each commit is a full read-compute-diff-write cycle; five taps must not
+    // mean five derivations.
+    jest.useFakeTimers();
+    const onSetServes = jest.fn();
+    const { getByLabelText } = renderList({ onSetServes });
+    for (let i = 0; i < 5; i++) {
+      fireEvent.press(getByLabelText('Increase serves for Beef Ragu'));
+    }
+    act(() => { jest.advanceTimersByTime(400); });
+    expect(onSetServes).toHaveBeenCalledTimes(1);
+    expect(onSetServes).toHaveBeenCalledWith('r1', 11);
+    jest.useRealTimers();
   });
 
   it('will not go below one serve', () => {
+    jest.useFakeTimers();
     const onSetServes = jest.fn();
     const { getByLabelText } = renderList({
       entries: [{ ...ENTRIES[0], targetServes: 1 }], onSetServes });
     fireEvent.press(getByLabelText('Decrease serves for Beef Ragu'));
+    act(() => { jest.advanceTimersByTime(400); });
     expect(onSetServes).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 
   it('removes a recipe from the plan', () => {
@@ -2330,7 +2421,7 @@ Expected: FAIL — `Cannot find module '../../components/PlanRecipeList'`
 
 ```tsx
 // components/PlanRecipeList.tsx
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -2352,11 +2443,39 @@ interface Props {
 }
 
 const MIN_SERVES = 1;
+const COMMIT_DELAY_MS = 400;
 
 export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd }: Props) {
+  // Every commit runs a full read-compute-diff-write cycle. A stepper is built
+  // to be tapped repeatedly, so hold the value locally and commit once the taps
+  // settle — the same shape as ServesSheet, where edits are local until Done.
+  const [pending, setPending] = useState<Record<string, number>>({});
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => () => {
+    for (const t of Object.values(timers.current)) clearTimeout(t);
+  }, []);
+
+  function step(recipeId: string, from: number, delta: number) {
+    const next = Math.max(MIN_SERVES, from + delta);
+    if (next === from) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPending((p) => ({ ...p, [recipeId]: next }));
+    clearTimeout(timers.current[recipeId]);
+    timers.current[recipeId] = setTimeout(() => {
+      onSetServes(recipeId, next);
+      setPending((p) => {
+        const { [recipeId]: _drop, ...rest } = p;
+        return rest;
+      });
+    }, COMMIT_DELAY_MS);
+  }
+
   return (
     <View style={styles.wrap}>
-      {entries.map((e) => {
+      {entries.map((entry) => {
+        // Local value wins while taps are settling.
+        const e = { ...entry, targetServes: pending[entry.recipeId] ?? entry.targetServes };
         // Scaling the pot up, not re-dividing it — the opposite of the recipe
         // screen's stepper. Hence "Make N serves", never "Serves".
         const factor = e.recipeServings > 0
@@ -2383,10 +2502,7 @@ export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd }: Props)
               <TouchableOpacity
                 style={styles.stepBtn}
                 disabled={e.targetServes <= MIN_SERVES}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onSetServes(e.recipeId, e.targetServes - 1);
-                }}
+                onPress={() => step(e.recipeId, e.targetServes, -1)}
                 accessibilityRole="button"
                 accessibilityLabel={`Decrease serves for ${e.title}`}
               >
@@ -2402,10 +2518,7 @@ export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd }: Props)
 
               <TouchableOpacity
                 style={styles.stepBtn}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onSetServes(e.recipeId, e.targetServes + 1);
-                }}
+                onPress={() => step(e.recipeId, e.targetServes, 1)}
                 accessibilityRole="button"
                 accessibilityLabel={`Increase serves for ${e.title}`}
               >
