@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,6 +79,7 @@ export function SelfBuiltPlanView({ planId }: Props) {
           onSetServes={setServes}
           onRemove={removeRecipe}
           onAdd={() => setPickerVisible(true)}
+          onOpen={(recipeId) => router.push(`/recipe/${recipeId}`)}
         />
 
         <Row gap={2} justify="center">
