@@ -73,8 +73,9 @@ Frozen · Drinks · Household · Unsorted
 
 ### Sync is eager, at mutation sites
 
-One `derivePlanList(db, planId)`, called from the four places that can invalidate
-the projection. Rejected alternatives:
+One `derivePlanList(db, planId)`, called from every place that can invalidate the
+projection — see *Trigger sites*, which the vet grew from four to seven. Rejected
+alternatives:
 
 - **Lazy on read** — cannot miss a trigger, but reverts hand edits on every
   navigation and writes to the DB on each screen load. "Overwrite unchecked"
@@ -95,8 +96,8 @@ Schema is at v6. Forward-only, keyed on `PRAGMA user_version`.
 
 ```sql
 ALTER TABLE weekly_plans   ADD COLUMN source      TEXT NOT NULL DEFAULT 'imported';
-ALTER TABLE shopping_items ADD COLUMN derived_key TEXT;
-ALTER TABLE shopping_items ADD COLUMN derived_qty TEXT;
+ALTER TABLE shopping_items ADD COLUMN item_key    TEXT;
+ALTER TABLE shopping_items ADD COLUMN planned_qty TEXT;
 
 CREATE TABLE IF NOT EXISTS plan_recipes (
   id            TEXT PRIMARY KEY,
@@ -113,34 +114,39 @@ CREATE TABLE IF NOT EXISTS item_category_map (
   updated_at TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_shopping_derived
-  ON shopping_items(plan_id, derived_key) WHERE derived_key IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_shopping_item_key
+  ON shopping_items(plan_id, item_key) WHERE item_key IS NOT NULL;
 ```
 
 `weekly_plans.source` is `'imported' | 'self_built'`. Note `recipes.source`
 already exists with a *different* vocabulary, `'imported' | 'user'`. The two are
-deliberately different and must not be confused.
+deliberately different — different contexts may use a term differently — but
+`'imported'` means the same in both while the second value differs, so a crossed
+literal would type-check as a bare string. Give each a named union, `PlanSource`
+and `RecipeSource`, so the compiler catches it. *(vet F6)*
 
-`derived_key` is the load-bearing addition: it separates rows the projection owns
-from rows you added by hand (`NULL`). `is_oneoff` cannot serve this purpose — it
-is a category-level flag from Claude's JSON (`cat.is_oneoff`) meaning "check the
-pantry first".
+`item_key` is the load-bearing addition: it separates rows the projection owns
+from rows you added by hand (`NULL`). It holds an **`ItemKey`** (below).
+`is_oneoff` cannot serve this purpose — it is a category-level flag from Claude's
+JSON (`cat.is_oneoff`) meaning "check the pantry first".
 
-`derived_qty` always holds the projection's current answer; `qty` only receives it
-when the row is unchecked. So staleness is:
+`planned_qty` always holds the projection's current answer — what the plan calls
+for; `qty` only receives it when the row is unchecked. So staleness is:
 
 ```sql
-derived_key IS NOT NULL AND qty IS NOT derived_qty
+item_key IS NOT NULL AND qty IS NOT planned_qty
 ```
 
-The `derived_key IS NOT NULL` guard is required, not decorative: manual rows have
-`derived_qty = NULL` and a non-null `qty`, so testing `qty !== derived_qty` alone
+The `item_key IS NOT NULL` guard is required, not decorative: manual rows have
+`planned_qty = NULL` and a non-null `qty`, so testing `qty !== planned_qty` alone
 would flag every hand-added item as stale.
 
-`item_category_map.item_key` uses the same key format as the merge key below. For
-a **manual** row, which has no `derived_key`, the learned key is
-`'name:<normalised(name)>'` — so a category you set on a hand-added item still
-applies when a recipe later produces the same item.
+`item_category_map.item_key` holds the same `ItemKey`. For a **manual** row, which
+has none, the learned key is `ItemKey.fromName(name)` — so a category you set on a
+hand-added item still applies when a recipe later produces the same item.
+
+*(vet F5: `item_key`/`planned_qty` renamed — no expert says "derived", and the
+same value was previously named two different things across two tables.)*
 
 ### Backup compatibility
 
@@ -155,8 +161,8 @@ required, and each is a silent data-loss bug if missed:
   trap: without it, restoring an old backup deletes and replaces every
   `weekly_plans` row while leaving current `plan_recipes` rows untouched —
   dangling references, and FKs are off so nothing catches it.
-- `source` appended to the `weekly_plans` column list; `derived_key` and
-  `derived_qty` to `shopping_items`.
+- `source` appended to the `weekly_plans` column list; `item_key` and
+  `planned_qty` to `shopping_items`.
 - `backup_version` bumped to `2.1`. Files at `2.0` must still restore.
 
 **Rule: every new NOT NULL column must carry a DEFAULT.** Old backups have no key
@@ -202,7 +208,31 @@ derivePlanList(db, planId)
   diff against stored rows, apply
 ```
 
-### Merge key
+### Merge key — `ItemKey`, owned by Catalog
+
+The key is a **named value object, not an ad-hoc string**, and it belongs to
+**Catalog**. *(vet F3)*
+
+```ts
+// lib/catalog/itemKey.ts
+type ItemKey = string & { readonly __brand: 'ItemKey' };
+ItemKey.fromIngredient(ing): ItemKey   // 'product:<id>', else fromName(ing.item)
+ItemKey.fromName(name):      ItemKey   // 'name:<normalised(name)>'
+ItemKey.parse(s):            ItemKey
+```
+
+**Why Catalog owns it.** The concept is *a thing you might buy* — that is Catalog's
+product identity, degraded to a normalised name when the ingredient isn't tagged.
+Planning and Shopping both depend on Catalog for it; Catalog depends on neither.
+Clean dependency direction.
+
+Leaving it as a bare string in `lib/plan/` would make Planning the owner of a
+format that Shopping persists and Catalog can invalidate — an accidental shared
+kernel, and the reason the invalidation problem below was invisible in the first
+draft of this spec.
+
+`lib/plan/normalise.ts` accordingly moves to `lib/catalog/normalise.ts`, used only
+by `ItemKey`.
 
 `product_id` is the real merge key. Name-based merging is close to useless here:
 recipe ingredient names carry prep instructions and recipe-specific asides
@@ -262,36 +292,89 @@ by the user's walking order on top.
 already writes `category`. That is the seam — when `updateItem` changes a row's
 category, write `item_category_map`. No new UI.
 
+**The learned name must be mapped onto the fixed vocabulary before it is stored.**
+*(vet F2)* `updateItem` is plan-agnostic (`hooks/useShoppingItems.ts:107`), so it
+also fires on imported plans. Learning the raw name there would write
+`Pantry (this week)` into the map, and a later self-built plan would apply it —
+reintroducing exactly the week-suffixed drift the fixed vocabulary exists to
+prevent, through the feature meant to fix it.
+
+So: map the assigned name onto the fixed vocabulary; discard what won't map. This
+is chosen over the simpler "only learn on self-built plans" because it still learns
+from the imported plans that make up all existing history, and because the mapping
+table it requires is the same one the out-of-scope *normalise imported plans*
+follow-up would need.
+
 ### The diff
 
 | Stored row | In new projection | Action |
 | --- | --- | --- |
-| derived, unchecked | yes | UPDATE name / qty / derived_qty / category |
-| derived, checked | yes | update `derived_qty` only; leave `qty` (stale if they differ) |
-| derived, unchecked | no | DELETE |
-| derived, checked | no | keep — it was bought |
-| manual (`derived_key IS NULL`) | — | never touched |
+| planned, unchecked | yes | UPDATE name / qty / planned_qty / category |
+| planned, checked | yes | update `planned_qty` only; leave `qty` (stale if they differ) |
+| planned, unchecked | no | DELETE |
+| planned, checked | no | keep — it was bought |
+| manual (`item_key IS NULL`) | — | never touched |
 
 ### Trigger sites
+
+**Planning / Recipes**
 
 1. `usePlanRecipes` — add / remove / setServes
 2. `useRecipeIngredients` — addIngredient / updateIngredient / deleteIngredient
 3. `useRecipes.updateServings` — changes the scale factor's denominator
 4. Plan creation
 
+**Catalog — `ItemKey` is Catalog's, so Catalog mutations invalidate it** *(vet F1)*
+
+5. `useProducts.mergeProduct` — rewrites `product_id` inside
+   `recipes.ingredients_json` (`hooks/useProducts.ts:179–197`), so
+   `product:A` becomes `product:B`
+6. `useProducts.deleteProduct` — strips `product_id` from ingredients
+   (`hooks/useProducts.ts:107–120`), so `product:A` degrades to `name:<…>`
+7. Catalog rename — changes `products.item_name`, the display name for
+   product-keyed buckets (`app/catalog/[id].tsx:83`)
+
+**The failure this prevents.** Merge A→B while a line keyed `product:A` is
+*checked*. The diff keeps checked rows absent from the projection ("it was
+bought"), and the next derivation emits `product:B` — two lines for one item,
+permanently. Merging duplicates is the Catalog tab's core purpose, so this is a
+normal path.
+
+Since `ItemKey` is Catalog's (see *Merge key*), this is Catalog honouring its own
+invariant rather than four call sites Planning must remember. **Add the
+merge-a-checked-line case to the diff test matrix.**
+
+## Prerequisite refactor — Shopping's write surface
+
+*(vet F4 — must land before the feature.)*
+
+`shopping_items` already has two writers with their own column lists and ordering
+rules: `hooks/useImport.ts:98` (inline INSERT) and `hooks/useShoppingItems.ts:65`
+(`addItem`). This spec would make `applyDerivation` the third.
+
+`category_order` and `item_order` must agree across all writers or the list sorts
+differently depending on how a row arrived. Three copies is three chances to
+diverge.
+
+*Refactor before you add:* extract one module owning `shopping_items` inserts and
+the ordering rules, then route Import, Derivation and manual add through it. This is
+existing-code cleanup, so it runs as a separate `remediate` pass **before**
+implementation starts — not as part of this feature.
+
 ## Modules
 
 The hard logic stays pure and DB-free. `derive.ts` takes data, not a database, so
 all the aggregation nastiness is testable without a mock.
 
-| Module | Purity | Responsibility |
-| --- | --- | --- |
-| `lib/plan/normalise.ts` | pure | name → merge key |
-| `lib/plan/aggregate.ts` | pure | scale + sum amounts → `{qty, note}` |
-| `lib/plan/categories.ts` | pure | the fixed vocabulary and its order |
-| `lib/plan/derive.ts` | pure | `(recipes, planRecipes, categoryLookup) → DerivedLine[]` |
-| `lib/plan/applyDerivation.ts` | DB | diff `DerivedLine[]` against stored rows |
-| `hooks/usePlanRecipes.ts` | DB | add / remove / setServes, then trigger |
+| Module | Purity | Owner | Responsibility |
+| --- | --- | --- | --- |
+| `lib/catalog/normalise.ts` | pure | Catalog | name → normalised form |
+| `lib/catalog/itemKey.ts` | pure | Catalog | `ItemKey` value object |
+| `lib/plan/aggregate.ts` | pure | Planning | scale + sum amounts → `{qty, note}` |
+| `lib/plan/categories.ts` | pure | Shopping | the fixed vocabulary and its order |
+| `lib/plan/derive.ts` | pure | Planning | `(recipes, planRecipes, categoryLookup) → PlannedLine[]` |
+| `lib/plan/applyDerivation.ts` | DB | Planning | diff `PlannedLine[]` against stored rows |
+| `hooks/usePlanRecipes.ts` | DB | Planning | add / remove / setServes, then trigger |
 
 ## Surfaces
 
@@ -311,7 +394,7 @@ wanted later.
 - `ShoppingItem.tsx:46` renders `formatPrice(item.estimated_price)`
   unconditionally, so every derived line would read `$0.00`. Guard it to hide at
   zero. This improves imported plans too.
-- A staleness marker where `qty !== derived_qty`.
+- A staleness marker where `qty !== planned_qty`.
 
 **Prices.** Derived rows get `estimated_price = 0`; Review mode captures real
 prices in-store as it already does. There is no budget pill to worry about —
@@ -345,7 +428,9 @@ its shopping list. **Confirm first when the outgoing plan has checked items.**
 - **Pure unit tests** carry the bulk: `normalise`, `scaleAmount`, `aggregate`,
   `buildLines`. No DB.
 - **One hook test per row of the diff table.**
-- **One test per trigger site** — a missed trigger is this approach's stated risk.
+- **One test per trigger site** — all seven, including the three Catalog mutations.
+  A missed trigger is this approach's stated risk (vet F1).
+- **Merge a product behind a checked line** — asserts no duplicate row appears.
 - **Migration test** — v6 → v7, existing rows get `source = 'imported'`.
 - **Backup round-trip** — restore a `2.0` fixture, assert `source = 'imported'`
   and that no stale `plan_recipes` rows survive the delete list.
