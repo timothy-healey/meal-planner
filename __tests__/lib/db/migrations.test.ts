@@ -127,3 +127,54 @@ describe('runMigrations', () => {
     expect(afterCreate).toContain('TEXT');
   });
 });
+
+describe('runMigrations — v7', () => {
+  beforeEach(() => {
+    mockDb.execAsync.mockClear();
+    mockDb.getAllAsync.mockClear();
+    mockDb.runAsync.mockClear();
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 0 }]);
+  });
+
+  it('creates plan_recipes and item_category_map for fresh installs', async () => {
+    await runMigrations(mockDb as any);
+    const sql: string = mockDb.execAsync.mock.calls[0][0];
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS plan_recipes');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS item_category_map');
+  });
+
+  it('gives fresh installs the new shopping_items and weekly_plans columns', async () => {
+    await runMigrations(mockDb as any);
+    const sql: string = mockDb.execAsync.mock.calls[0][0];
+    expect(sql).toContain('item_key');
+    expect(sql).toContain('planned_qty');
+    expect(sql).toMatch(/source\s+TEXT NOT NULL DEFAULT 'imported'/);
+  });
+
+  it('v7 adds the columns to existing installs', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 6 }]);
+    await runMigrations(mockDb as any);
+    const all = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(all).toContain('ALTER TABLE weekly_plans ADD COLUMN source');
+    expect(all).toContain('ALTER TABLE shopping_items ADD COLUMN item_key');
+    expect(all).toContain('ALTER TABLE shopping_items ADD COLUMN planned_qty');
+    expect(all).toContain('PRAGMA user_version = 7');
+  });
+
+  it("defaults weekly_plans.source to 'imported' so existing plans stay imported", async () => {
+    // A NOT NULL column without a DEFAULT would also abort every restore of an
+    // older backup, since insertRows has no value to supply for it.
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 6 }]);
+    await runMigrations(mockDb as any);
+    const all = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(all).toMatch(
+      /ALTER TABLE weekly_plans ADD COLUMN source TEXT NOT NULL DEFAULT 'imported'/);
+  });
+
+  it('does not re-run v7 on an install already at 7', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ user_version: 7 }]);
+    await runMigrations(mockDb as any);
+    const all = mockDb.execAsync.mock.calls.map((c: any[]) => c[0]).join('\n');
+    expect(all).not.toContain('PRAGMA user_version = 7');
+  });
+});

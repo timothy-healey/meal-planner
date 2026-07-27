@@ -17,6 +17,8 @@ const ITEM: ShoppingItemRow = {
   is_oneoff: 0,
   note: null,
   is_checked: 0,
+  item_key: null,
+  planned_qty: null,
 };
 
 const ITEM_WITH_NOTE: ShoppingItemRow = { ...ITEM, id: 'item2', note: 'Buy frozen' };

@@ -140,4 +140,23 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   if (version < 6) {
     await db.execAsync('PRAGMA user_version = 6');
   }
+
+  if (version < 7) {
+    // Fresh installs already get these via SCHEMA_SQL — try/catch makes the
+    // ALTERs no-ops there. `source` MUST carry a DEFAULT: restoring a 2.0
+    // backup supplies no value for it, and a NOT NULL column without a default
+    // aborts the whole restore transaction.
+    try {
+      await db.execAsync(
+        "ALTER TABLE weekly_plans ADD COLUMN source TEXT NOT NULL DEFAULT 'imported'"
+      );
+    } catch {}
+    try {
+      await db.execAsync('ALTER TABLE shopping_items ADD COLUMN item_key TEXT');
+    } catch {}
+    try {
+      await db.execAsync('ALTER TABLE shopping_items ADD COLUMN planned_qty TEXT');
+    } catch {}
+    await db.execAsync('PRAGMA user_version = 7');
+  }
 }
