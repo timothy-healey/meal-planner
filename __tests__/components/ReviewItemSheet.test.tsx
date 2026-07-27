@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { ReviewItemSheet } from '../../components/ReviewItemSheet';
 import { useIngredientSuggestions } from '../../hooks/useIngredientSuggestions';
 import type { ShoppingItemRow } from '../../types/db';
@@ -54,6 +55,20 @@ function baseProps() {
     onPendingScanConsumed: jest.fn(),
   };
 }
+
+describe('ReviewItemSheet × keyboard avoidance', () => {
+  // Same trap as IngredientSheet: behavior="padding" shrinks the parent's
+  // content box by the keyboard height, and an absolute-height child cannot
+  // shrink with it — `justifyContent: 'flex-end'` then spills the overflow off
+  // the top, clipping the handle and heading. A percentage resolves against the
+  // padded box. `fields: { flex: 1 }` and the pinned Done button both need the
+  // height to stay definite, so this is a percentage height, not a maxHeight.
+  it('sizes the sheet as a percentage so the keyboard cannot push its top off screen', () => {
+    const { getByTestId } = render(<ReviewItemSheet {...baseProps()} />);
+    const style = StyleSheet.flatten(getByTestId('review-item-sheet').props.style);
+    expect(style.height).toBe('80%');
+  });
+});
 
 describe('ReviewItemSheet × suggestions', () => {
   it('shows a brand suggestion when the brand field is focused', async () => {
