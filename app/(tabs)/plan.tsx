@@ -10,6 +10,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { PlanSkeleton } from "../../components/ui/PlanSkeleton";
 import { colors, font, radius, shadow, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
+import { SelfBuiltPlanView } from "../../components/SelfBuiltPlanView";
 
 const DAY_NAMES = [
   "Sunday",
@@ -39,7 +40,19 @@ function parseLocalDate(iso: string): Date {
 
 export default function PlanScreen() {
   const insets = useSafeAreaInsets();
-  const { plan, loading } = usePlan();
+  const { plan, loading, createSelfBuiltPlan } = usePlan();
+
+  /** Sunday of the current week, as a local ISO date. */
+  function thisSunday(): string {
+    const n = new Date();
+    const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() - n.getDay());
+    const pad = (v: number) => String(v).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  async function handleBuildPlan() {
+    await createSelfBuiltPlan(thisSunday());
+  }
 
   const days = useMemo<DisplayDay[]>(() => {
     if (!plan) return [];
@@ -70,10 +83,19 @@ export default function PlanScreen() {
     return (
       <View style={styles.outerContainer}>
         <View style={[styles.emptyContainer, { marginTop: insets.top }]}>
-          <EmptyState onImport={() => router.push("/settings")} />
+          <EmptyState
+            onImport={() => router.push("/settings")}
+            onBuild={handleBuildPlan}
+          />
         </View>
       </View>
     );
+  }
+
+  // A self-built plan has no per-day structure — days_json is []. Its home is
+  // the recipe set, not the day grid.
+  if (plan.row.source === "self_built") {
+    return <SelfBuiltPlanView planId={plan.row.id} />;
   }
 
   // plan.days is DayPlan[] — already parsed, access d.meals.breakfast.name etc.

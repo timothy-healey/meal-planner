@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { CategoryHeader } from '../../../components/ui/CategoryHeader';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -33,7 +33,19 @@ describe('ProgressBar', () => {
 describe('EmptyState', () => {
   it('shows default message and import button', () => {
     const { getByText } = render(<EmptyState onImport={() => {}} />);
-    expect(getByText("The pantry's empty. Drop in a meal plan to see your week.")).toBeTruthy();
+    expect(getByText(/The pantry's empty/)).toBeTruthy();
     expect(getByText('Import meal plan')).toBeTruthy();
+  });
+
+  it('omits Build a plan when no handler is supplied', () => {
+    const { queryByText } = render(<EmptyState onImport={() => {}} />);
+    expect(queryByText('Build a plan')).toBeNull();
+  });
+
+  it('offers Build a plan alongside Import when a handler is supplied', () => {
+    const onBuild = jest.fn();
+    const { getByText } = render(<EmptyState onImport={() => {}} onBuild={onBuild} />);
+    fireEvent.press(getByText('Build a plan'));
+    expect(onBuild).toHaveBeenCalled();
   });
 });

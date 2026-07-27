@@ -50,3 +50,50 @@ describe('ShoppingItem', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('ShoppingItem — derived-line affordances', () => {
+  it('hides the price when it is zero rather than showing $0.00', () => {
+    // Derived lines carry no estimate; Review mode captures the real price.
+    const { queryByText } = render(
+      <ShoppingItem item={{ ...ITEM, estimated_price: 0 }} onToggle={jest.fn()} />
+    );
+    expect(queryByText('$0.00')).toBeNull();
+  });
+
+  it('still shows a real price', () => {
+    const { getByText } = render(
+      <ShoppingItem item={{ ...ITEM, estimated_price: 4.5 }} onToggle={jest.fn()} />
+    );
+    expect(getByText('$4.50')).toBeTruthy();
+  });
+
+  it('marks a checked line whose recipe has moved on', () => {
+    const { getByLabelText } = render(
+      <ShoppingItem
+        item={{ ...ITEM, is_checked: 1, item_key: 'name:beef', qty: '500 g', planned_qty: '750 g' }}
+        onToggle={jest.fn()}
+      />
+    );
+    expect(getByLabelText('recipe now calls for 750 g')).toBeTruthy();
+  });
+
+  it('does not mark a line that still matches its recipe', () => {
+    const { queryByLabelText } = render(
+      <ShoppingItem
+        item={{ ...ITEM, item_key: 'name:beef', qty: '750 g', planned_qty: '750 g' }}
+        onToggle={jest.fn()}
+      />
+    );
+    expect(queryByLabelText(/recipe now calls for/i)).toBeNull();
+  });
+
+  it('does not mark a manual row as stale', () => {
+    const { queryByLabelText } = render(
+      <ShoppingItem
+        item={{ ...ITEM, item_key: null, planned_qty: null }}
+        onToggle={jest.fn()}
+      />
+    );
+    expect(queryByLabelText(/recipe now calls for/i)).toBeNull();
+  });
+});
