@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
-import { File as FSFile, Paths } from 'expo-file-system';
+import { useCallback, useEffect, useState } from 'react';
+import { Directory, File as FSFile, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDb } from '../providers/DatabaseProvider';
 import { runMigrations } from '../lib/db/migrations';
 
@@ -11,53 +12,152 @@ export type BackupStatus =
   | { type: 'success'; message: string }
   | { type: 'error'; message: string };
 
+const FOLDER_KEY = 'backup_folder';
+
+/** The folder the user chose to save backups into. */
+interface SavedFolder {
+  uri: string;
+  name: string;
+}
+
+/**
+ * Expo surfaces a dismissed picker as a thrown CodedException rather than a
+ * result flag, and the code differs by platform (`ERR_PICKER_CANCELLED` on
+ * Android, `ERR_FILE_PICKING_CANCELLED` on iOS), so match on the shared word.
+ */
+function isCancellation(e: unknown): boolean {
+  const err = e as { code?: string; message?: string } | null;
+  return `${err?.code ?? ''} ${err?.message ?? ''}`.toLowerCase().includes('cancel');
+}
+
 export function useBackup(onRestore?: () => void) {
   const db = useDb();
   const [status, setStatus] = useState<BackupStatus>({ type: 'idle' });
+  const [folder, setFolder] = useState<SavedFolder | null>(null);
 
-  const exportBackup = useCallback(async () => {
+  useEffect(() => {
+    AsyncStorage.getItem(FOLDER_KEY).then((raw) => {
+      if (raw) setFolder(JSON.parse(raw));
+    });
+  }, []);
+
+  const buildBackup = useCallback(async () => {
+    const [
+      recipes, plans, items, purchases, products,
+      barcodeNutrition, barcodeStores, stores, aisles, aisleMap,
+    ] = await Promise.all([
+      db.getAllAsync('SELECT * FROM recipes'),
+      db.getAllAsync('SELECT * FROM weekly_plans'),
+      db.getAllAsync('SELECT * FROM shopping_items'),
+      db.getAllAsync('SELECT * FROM purchase_history'),
+      db.getAllAsync('SELECT * FROM products'),
+      db.getAllAsync('SELECT * FROM barcode_nutrition'),
+      db.getAllAsync('SELECT * FROM barcode_stores'),
+      db.getAllAsync('SELECT * FROM stores'),
+      db.getAllAsync('SELECT * FROM store_aisles'),
+      db.getAllAsync('SELECT * FROM item_aisle_map'),
+    ]);
+
+    return {
+      backup_version: '2.0',
+      exported_at: new Date().toISOString(),
+      recipes,
+      weekly_plans: plans,
+      shopping_items: items,
+      purchase_history: purchases,
+      products,
+      barcode_nutrition: barcodeNutrition,
+      barcode_stores: barcodeStores,
+      stores,
+      store_aisles: aisles,
+      item_aisle_map: aisleMap,
+    };
+  }, [db]);
+
+  function backupFilename(): string {
+    return `meal-planner-backup-${new Date().toISOString().split('T')[0]}.json`;
+  }
+
+  const rememberFolder = useCallback(async (next: SavedFolder | null) => {
+    if (next) await AsyncStorage.setItem(FOLDER_KEY, JSON.stringify(next));
+    else await AsyncStorage.removeItem(FOLDER_KEY);
+    setFolder(next);
+  }, []);
+
+  /** Opens the system folder picker. Returns null if dismissed or unavailable. */
+  const pickFolder = useCallback(async (): Promise<SavedFolder | null> => {
+    try {
+      const dir = await Directory.pickDirectoryAsync();
+      const next = { uri: dir.uri, name: dir.name };
+      await rememberFolder(next);
+      return next;
+    } catch (e) {
+      setStatus(
+        isCancellation(e)
+          ? { type: 'idle' }
+          : { type: 'error', message: 'Could not open the folder picker' },
+      );
+      return null;
+    }
+  }, [rememberFolder]);
+
+  /** Re-pick the save folder without writing anything. */
+  const chooseFolder = useCallback(async () => {
+    await pickFolder();
+  }, [pickFolder]);
+
+  const saveBackup = useCallback(async () => {
+    setStatus({ type: 'loading' });
+
+    let target = folder ?? (await pickFolder());
+    if (!target) return;
+
+    let json: string;
+    try {
+      json = JSON.stringify(await buildBackup());
+    } catch {
+      setStatus({ type: 'error', message: 'Export failed — please try again' });
+      return;
+    }
+
+    const filename = backupFilename();
+    const writeInto = (dest: SavedFolder) => {
+      new Directory(dest.uri).createFile(filename, 'application/json').write(json);
+    };
+
+    try {
+      writeInto(target);
+    } catch {
+      // The grant is revoked if the folder is deleted or the app reinstalled.
+      // Forget it, ask once for a new one, and don't loop past that.
+      await rememberFolder(null);
+      setStatus({ type: 'loading' });
+      const retry = await pickFolder();
+      if (!retry) return;
+      try {
+        writeInto(retry);
+      } catch {
+        setStatus({ type: 'error', message: 'Could not write to that folder' });
+        return;
+      }
+      target = retry;
+    }
+
+    setStatus({ type: 'success', message: `Saved to ${target.name}/${filename}` });
+  }, [folder, pickFolder, rememberFolder, buildBackup]);
+
+  const shareBackup = useCallback(async () => {
     setStatus({ type: 'loading' });
     try {
-      const [
-        recipes, plans, items, purchases, products,
-        barcodeNutrition, barcodeStores, stores, aisles, aisleMap,
-      ] = await Promise.all([
-        db.getAllAsync('SELECT * FROM recipes'),
-        db.getAllAsync('SELECT * FROM weekly_plans'),
-        db.getAllAsync('SELECT * FROM shopping_items'),
-        db.getAllAsync('SELECT * FROM purchase_history'),
-        db.getAllAsync('SELECT * FROM products'),
-        db.getAllAsync('SELECT * FROM barcode_nutrition'),
-        db.getAllAsync('SELECT * FROM barcode_stores'),
-        db.getAllAsync('SELECT * FROM stores'),
-        db.getAllAsync('SELECT * FROM store_aisles'),
-        db.getAllAsync('SELECT * FROM item_aisle_map'),
-      ]);
-
-      const backup = {
-        backup_version: '2.0',
-        exported_at: new Date().toISOString(),
-        recipes,
-        weekly_plans: plans,
-        shopping_items: items,
-        purchase_history: purchases,
-        products,
-        barcode_nutrition: barcodeNutrition,
-        barcode_stores: barcodeStores,
-        stores,
-        store_aisles: aisles,
-        item_aisle_map: aisleMap,
-      };
-
-      const filename = `meal-planner-backup-${new Date().toISOString().split('T')[0]}.json`;
+      const filename = backupFilename();
       const file = new FSFile(Paths.document, filename);
-      file.write(JSON.stringify(backup));
+      file.write(JSON.stringify(await buildBackup()));
       await Sharing.shareAsync(file.uri);
       setStatus({ type: 'success', message: 'Backup shared successfully' });
     } catch {
       setStatus({ type: 'error', message: 'Export failed — please try again' });
     }
-  }, [db]);
+  }, [buildBackup]);
 
   const restoreBackup = useCallback(async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
@@ -144,7 +244,14 @@ export function useBackup(onRestore?: () => void) {
     }
   }, [db, onRestore]);
 
-  return { exportBackup, restoreBackup, status };
+  return {
+    saveBackup,
+    shareBackup,
+    chooseFolder,
+    folderName: folder?.name ?? null,
+    restoreBackup,
+    status,
+  };
 }
 
 function insertRows(table: string, rows: any[], cols: string[]): Array<[string, any[]]> {
