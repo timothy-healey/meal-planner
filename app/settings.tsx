@@ -16,7 +16,10 @@ import { colors, spacing, radius } from '../constants/tokens';
 
 export default function SettingsScreen() {
   const { importPlan, status: importStatus } = useImport(() => router.back());
-  const { exportBackup, restoreBackup, status: backupStatus } = useBackup(() => router.back());
+  const {
+    saveBackup, shareBackup, chooseFolder, folderName,
+    restoreBackup, status: backupStatus,
+  } = useBackup(() => router.back());
   const { plan } = usePlan();
   const db = useDb();
   const [restorePreview, setRestorePreview] = useState<{
@@ -101,7 +104,20 @@ export default function SettingsScreen() {
           <AppText color="textSecondary">
             Save all your data — recipes, plans, and shopping history — to a JSON file.
           </AppText>
-          <Pill label="Export backup" icon="cloud-upload-outline" onPress={exportBackup} />
+          <Row gap={3}>
+            <Pill label="Save to device" icon="download-outline" onPress={saveBackup} />
+            <Pill label="Share" icon="share-outline" onPress={shareBackup} />
+          </Row>
+          {folderName ? (
+            <Row gap={2} align="center">
+              <AppText size="sm" color="textTertiary">Saving to {folderName}</AppText>
+              <Pill label="Change folder" onPress={chooseFolder} />
+            </Row>
+          ) : (
+            <AppText size="sm" color="textTertiary">
+              You'll be asked where to save the first time.
+            </AppText>
+          )}
           {backupStatus.type === 'success' && (
             <AppText color="green">{backupStatus.message}</AppText>
           )}
