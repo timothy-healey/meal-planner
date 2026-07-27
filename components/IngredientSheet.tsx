@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -52,7 +51,6 @@ export function IngredientSheet({
   onDelete,
   onClose,
 }: Props) {
-  const { height: windowHeight } = useWindowDimensions();
   const [name, setName] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [unit, setUnit] = useState<Unit>('g');
@@ -290,7 +288,7 @@ export function IngredientSheet({
           onPress={onClose}
           activeOpacity={1}
         />
-        <View style={[styles.sheet, { height: windowHeight * 0.8 }]}>
+        <View style={styles.sheet} testID="ingredient-sheet">
           <View style={styles.handle} />
 
           <View style={styles.nameRow}>
@@ -610,6 +608,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.scrim,
   },
   sheet: {
+    // Percentage, not an absolute height. The parent KeyboardAvoidingView uses
+    // behavior="padding", which shrinks its content box by the keyboard height;
+    // a percentage resolves against that shrunk box, so the sheet shrinks too.
+    // An absolute height cannot shrink, and `justifyContent: 'flex-end'` would
+    // spill the overflow off the top — taking the name and amount inputs with
+    // it, where the KeyboardAwareScrollView below cannot scroll them back.
+    height: '80%',
     backgroundColor: colors.card,
     borderTopLeftRadius: radius.lg + 4,
     borderTopRightRadius: radius.lg + 4,

@@ -7,7 +7,6 @@ import {
   Switch,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -69,7 +68,6 @@ export function ReviewItemSheet({
   onClose,
   onPendingScanConsumed,
 }: Props) {
-  const { height: windowHeight } = useWindowDimensions();
   const [brand, setBrand] = useState("");
   const [productName, setProductName] = useState("");
   const [qtyAmount, setQtyAmount] = useState("");
@@ -232,7 +230,7 @@ export function ReviewItemSheet({
           onPress={onClose}
           activeOpacity={1}
         />
-        <View style={[styles.sheet, { height: windowHeight * 0.8 }]}>
+        <View style={styles.sheet} testID="review-item-sheet">
           <View style={styles.handle} />
 
           <AppText
@@ -483,6 +481,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.scrim,
   },
   sheet: {
+    // Percentage, not an absolute height — see IngredientSheet for the full
+    // reasoning. behavior="padding" shrinks the parent's content box by the
+    // keyboard height; an absolute height cannot shrink with it and spills off
+    // the top. `fields: { flex: 1 }` needs the height to stay definite, so this
+    // is a percentage height rather than the maxHeight used by the sheets that
+    // let their content size them.
+    height: '80%',
     backgroundColor: colors.card,
     borderTopLeftRadius: radius.lg + 4,
     borderTopRightRadius: radius.lg + 4,

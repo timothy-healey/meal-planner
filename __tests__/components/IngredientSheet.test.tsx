@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { IngredientSheet } from '../../components/IngredientSheet';
 import { useIngredientSuggestions } from '../../hooks/useIngredientSuggestions';
 import { useProducts } from '../../hooks/useProducts';
@@ -236,6 +237,31 @@ describe('IngredientSheet × selection', () => {
     await waitFor(() => expect(getByDisplayValue('Vitasoy')).toBeTruthy());
     await waitFor(() => expect(getByDisplayValue('Oat Milk Barista')).toBeTruthy());
     await waitFor(() => expect(getByDisplayValue('50')).toBeTruthy());
+  });
+});
+
+describe('IngredientSheet × keyboard avoidance', () => {
+  // The parent KeyboardAvoidingView uses behavior="padding", which shrinks its
+  // content box by the keyboard height. A child sized with an absolute height
+  // cannot shrink with it, so `justifyContent: 'flex-end'` bottom-aligns it and
+  // the overflow spills off the TOP of the screen — carrying the name and
+  // amount inputs, which sit above the KeyboardAwareScrollView and so cannot be
+  // scrolled back into view. A percentage height resolves against the padded
+  // content box instead, so the sheet shrinks and its top stays on screen.
+  it('sizes the sheet as a percentage so the keyboard cannot push its top off screen', () => {
+    const { getByTestId } = render(
+      <IngredientSheet
+        visible={true}
+        mode="edit"
+        initialIngredient={ING}
+        existingEntry={EXISTING}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    );
+    const style = StyleSheet.flatten(getByTestId('ingredient-sheet').props.style);
+    expect(style.height).toBe('80%');
   });
 });
 
