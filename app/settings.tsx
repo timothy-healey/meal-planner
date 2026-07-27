@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { GreenHeader } from '../components/ui/GreenHeader';
@@ -10,6 +10,8 @@ import { Row } from '../components/ui/Row';
 import { useImport } from '../hooks/useImport';
 import { useBackup } from '../hooks/useBackup';
 import { usePlan } from '../hooks/usePlan';
+import { useShoppingItems } from '../hooks/useShoppingItems';
+import { describeOutgoingWork } from '../lib/plan/replaceWarning';
 import { useDb } from '../providers/DatabaseProvider';
 import { buildClaudeContext } from '../lib/exportContext';
 import { colors, spacing, radius } from '../constants/tokens';
@@ -20,7 +22,8 @@ export default function SettingsScreen() {
     saveBackup, shareBackup, chooseFolder, folderName,
     restoreBackup, status: backupStatus,
   } = useBackup(() => router.back());
-  const { plan } = usePlan();
+  const { plan, createSelfBuiltPlan } = usePlan();
+  const { items } = useShoppingItems(plan?.row.id ?? null);
   const db = useDb();
   const [restorePreview, setRestorePreview] = useState<{
     summary: string;
@@ -38,6 +41,30 @@ export default function SettingsScreen() {
     if (!restorePreview) return;
     restorePreview.execute();
     setRestorePreview(null);
+  }
+
+  /** Sunday of the current week, as a local ISO date. */
+  function thisSunday(): string {
+    const n = new Date();
+    const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() - n.getDay());
+    const pad = (v: number) => String(v).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  async function buildPlan() {
+    await createSelfBuiltPlan(thisSunday());
+    router.back();
+  }
+
+  function handleBuildPlan() {
+    // Building deactivates the current plan, and its rows become unreachable.
+    // Only worth interrupting for when there is real work to strand.
+    const warning = plan ? describeOutgoingWork(items) : null;
+    if (!warning) { buildPlan(); return; }
+    Alert.alert('Replace your current plan?', warning, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Replace', style: 'destructive', onPress: buildPlan },
+    ]);
   }
 
   async function handleCopyContext() {
@@ -62,10 +89,16 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <AppText weight="bold" size="lg">Import Plan</AppText>
           <AppText color="textSecondary">
-            Replace the active shopping list with a new weekly plan JSON.
-            Your recipe library is preserved.
+            Replace the active shopping list — either from a weekly plan JSON,
+            or built here from recipes you already have. Your recipe library is
+            preserved either way.
           </AppText>
           <Pill label="Import weekly plan" icon="folder-open-outline" onPress={importPlan} />
+          <Pill
+            label="Build a plan from recipes"
+            icon="restaurant-outline"
+            onPress={handleBuildPlan}
+          />
           {importStatus.type === 'success' && (
             <AppText color="green">{importStatus.message}</AppText>
           )}
