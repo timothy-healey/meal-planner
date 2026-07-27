@@ -144,7 +144,10 @@ export const SCHEMA_SQL = `
     category   TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
-
-  CREATE UNIQUE INDEX IF NOT EXISTS idx_shopping_item_key
-    ON shopping_items(plan_id, item_key) WHERE item_key IS NOT NULL;
 `;
+
+// NOTE: idx_shopping_item_key is created in the v7 migration block, not here.
+// SCHEMA_SQL runs first on every launch, and `CREATE TABLE IF NOT EXISTS`
+// no-ops against an existing table — so on an upgrading install the new
+// columns don't exist yet and an index referencing item_key throws
+// "no such column", before the ALTERs that would have added it.

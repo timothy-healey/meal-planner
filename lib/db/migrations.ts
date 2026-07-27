@@ -157,6 +157,13 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     try {
       await db.execAsync('ALTER TABLE shopping_items ADD COLUMN planned_qty TEXT');
     } catch {}
+    // Must come after the ALTERs, and so cannot live in SCHEMA_SQL: that runs
+    // before any of this, and on an upgrading install item_key would not yet
+    // exist. Fresh installs reach here too — version starts at 0.
+    await db.execAsync(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_shopping_item_key
+         ON shopping_items(plan_id, item_key) WHERE item_key IS NOT NULL`,
+    );
     await db.execAsync('PRAGMA user_version = 7');
   }
 }
