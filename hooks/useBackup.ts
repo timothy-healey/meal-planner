@@ -45,6 +45,7 @@ export function useBackup(onRestore?: () => void) {
     const [
       recipes, plans, items, purchases, products,
       barcodeNutrition, barcodeStores, stores, aisles, aisleMap,
+      planRecipes, itemCategoryMap,
     ] = await Promise.all([
       db.getAllAsync('SELECT * FROM recipes'),
       db.getAllAsync('SELECT * FROM weekly_plans'),
@@ -56,10 +57,12 @@ export function useBackup(onRestore?: () => void) {
       db.getAllAsync('SELECT * FROM stores'),
       db.getAllAsync('SELECT * FROM store_aisles'),
       db.getAllAsync('SELECT * FROM item_aisle_map'),
+      db.getAllAsync('SELECT * FROM plan_recipes'),
+      db.getAllAsync('SELECT * FROM item_category_map'),
     ]);
 
     return {
-      backup_version: '2.0',
+      backup_version: '2.1',
       exported_at: new Date().toISOString(),
       recipes,
       weekly_plans: plans,
@@ -71,6 +74,8 @@ export function useBackup(onRestore?: () => void) {
       stores,
       store_aisles: aisles,
       item_aisle_map: aisleMap,
+      plan_recipes: planRecipes,
+      item_category_map: itemCategoryMap,
     };
   }, [db]);
 
@@ -190,7 +195,12 @@ export function useBackup(onRestore?: () => void) {
     try {
       await db.runAsync('BEGIN');
       // Delete in reverse-FK order so referencing rows go before their targets.
+      // plan_recipes and item_category_map lead: without them here, restoring
+      // an older backup replaces every weekly_plans row while leaving current
+      // plan_recipes rows pointing at plans that no longer exist. FKs are off,
+      // so nothing would catch it.
       const tables = [
+        'plan_recipes', 'item_category_map',
         'item_aisle_map', 'store_aisles', 'shopping_items', 'purchase_history',
         'barcode_nutrition', 'barcode_stores', 'weekly_plans', 'recipes',
         'products', 'stores',
@@ -209,14 +219,18 @@ export function useBackup(onRestore?: () => void) {
            'cal_per_basis','protein_per_basis','carbs_per_basis','fat_per_basis','updated_at']),
         ...insertRows('weekly_plans', backup.weekly_plans ?? [],
           ['id','week_starting','is_active','meta_json','strategy_json',
-           'days_json','batch_plan_json','created_at']),
+           'days_json','batch_plan_json','created_at','source']),
         ...insertRows('recipes', backup.recipes ?? [],
           ['id','title','meal_type','servings','calories_per_serve','protein_per_serve_g',
            'cook_method','prep_minutes','cook_minutes','ingredients_json','method_steps_json',
            'is_favourite','source','notes','created_at']),
+        ...insertRows('plan_recipes', backup.plan_recipes ?? [],
+          ['id','plan_id','recipe_id','target_serves','sort_order']),
+        ...insertRows('item_category_map', backup.item_category_map ?? [],
+          ['item_key','category','updated_at']),
         ...insertRows('shopping_items', backup.shopping_items ?? [],
           ['id','plan_id','category','category_order','item_order','name','qty',
-           'estimated_price','is_oneoff','note','is_checked']),
+           'estimated_price','is_oneoff','note','is_checked','item_key','planned_qty']),
         ...insertRows('purchase_history', backup.purchase_history ?? [],
           ['id','plan_id','item_name','store_id','product_id',
            'qty_amount','qty_unit','price','is_sale','barcode','purchased_at','status']),
@@ -254,8 +268,25 @@ export function useBackup(onRestore?: () => void) {
   };
 }
 
-function insertRows(table: string, rows: any[], cols: string[]): Array<[string, any[]]> {
-  const placeholders = cols.map(() => '?').join(',');
-  const sql = `INSERT OR REPLACE INTO ${table} (${cols.join(',')}) VALUES (${placeholders})`;
-  return rows.map((row) => [sql, cols.map((c) => row[c] ?? null)] as [string, any[]]);
+/**
+ * Build INSERTs, omitting columns the source row doesn't have.
+ *
+ * Older backups predate newer columns. Passing an explicit NULL for a NOT NULL
+ * column only survives because `INSERT OR REPLACE` substitutes the column
+ * DEFAULT — and a NOT NULL column *without* a default aborts the whole restore.
+ * Omitting absent columns lets the schema DEFAULT apply directly, so future
+ * column additions are backwards-compatible by construction rather than by
+ * accident.
+ */
+export function insertRows(
+  table: string,
+  rows: any[],
+  cols: string[],
+): Array<[string, any[]]> {
+  return rows.map((row) => {
+    const present = cols.filter((c) => row[c] !== undefined);
+    const sql = `INSERT OR REPLACE INTO ${table} (${present.join(',')}) ` +
+                `VALUES (${present.map(() => '?').join(',')})`;
+    return [sql, present.map((c) => row[c] ?? null)] as [string, any[]];
+  });
 }
