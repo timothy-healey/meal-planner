@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { GreenHeader } from '../components/ui/GreenHeader';
@@ -10,8 +10,7 @@ import { Row } from '../components/ui/Row';
 import { useImport } from '../hooks/useImport';
 import { useBackup } from '../hooks/useBackup';
 import { usePlan } from '../hooks/usePlan';
-import { useShoppingItems } from '../hooks/useShoppingItems';
-import { describeOutgoingWork } from '../lib/plan/replaceWarning';
+import { useBuildPlan } from '../hooks/useBuildPlan';
 import { useDb } from '../providers/DatabaseProvider';
 import { buildClaudeContext } from '../lib/exportContext';
 import { colors, spacing, radius } from '../constants/tokens';
@@ -22,8 +21,8 @@ export default function SettingsScreen() {
     saveBackup, shareBackup, chooseFolder, folderName,
     restoreBackup, status: backupStatus,
   } = useBackup(() => router.back());
-  const { plan, createSelfBuiltPlan } = usePlan();
-  const { items } = useShoppingItems(plan?.row.id ?? null);
+  const { plan } = usePlan();
+  const { buildPlan } = useBuildPlan(() => router.back());
   const db = useDb();
   const [restorePreview, setRestorePreview] = useState<{
     summary: string;
@@ -41,30 +40,6 @@ export default function SettingsScreen() {
     if (!restorePreview) return;
     restorePreview.execute();
     setRestorePreview(null);
-  }
-
-  /** Sunday of the current week, as a local ISO date. */
-  function thisSunday(): string {
-    const n = new Date();
-    const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() - n.getDay());
-    const pad = (v: number) => String(v).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
-
-  async function buildPlan() {
-    await createSelfBuiltPlan(thisSunday());
-    router.back();
-  }
-
-  function handleBuildPlan() {
-    // Building deactivates the current plan, and its rows become unreachable.
-    // Only worth interrupting for when there is real work to strand.
-    const warning = plan ? describeOutgoingWork(items) : null;
-    if (!warning) { buildPlan(); return; }
-    Alert.alert('Replace your current plan?', warning, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Replace', style: 'destructive', onPress: buildPlan },
-    ]);
   }
 
   async function handleCopyContext() {
@@ -97,7 +72,7 @@ export default function SettingsScreen() {
           <Pill
             label="Build a plan from recipes"
             icon="restaurant-outline"
-            onPress={handleBuildPlan}
+            onPress={buildPlan}
           />
           {importStatus.type === 'success' && (
             <AppText color="green">{importStatus.message}</AppText>

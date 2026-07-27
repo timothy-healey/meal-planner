@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GreenHeader } from './ui/GreenHeader';
 import { AppText } from './ui/AppText';
@@ -7,9 +8,10 @@ import { Row } from './ui/Row';
 import { PlanRecipeList, type PlanRecipeEntryView } from './PlanRecipeList';
 import { RecipePickerSheet, type PickableRecipe } from './RecipePickerSheet';
 import { usePlanRecipes } from '../hooks/usePlanRecipes';
+import { useBuildPlan } from '../hooks/useBuildPlan';
 import { useRecipes } from '../hooks/useRecipes';
 import { useShoppingItems } from '../hooks/useShoppingItems';
-import { colors, spacing } from '../constants/tokens';
+import { colors, radius, spacing } from '../constants/tokens';
 
 interface Props {
   planId: string;
@@ -21,6 +23,7 @@ export function SelfBuiltPlanView({ planId }: Props) {
   const { recipes } = useRecipes();
   const { items } = useShoppingItems(planId);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const { buildPlan } = useBuildPlan();
 
   const entries = useMemo<PlanRecipeEntryView[]>(() => {
     const byId = new Map(recipes.map((r) => [r.id, r]));
@@ -48,10 +51,22 @@ export function SelfBuiltPlanView({ planId }: Props) {
   return (
     <View style={styles.container}>
       <GreenHeader>
-        <View style={{ gap: spacing[1] }}>
-          <AppText weight="bold" size="xs" color="onGreenSubtle">MY PLAN</AppText>
-          <AppText weight="extrabold" size="2xl" color="onGreen">This week</AppText>
-        </View>
+        <Row justify="space-between" align="center">
+          <View style={{ gap: spacing[1] }}>
+            <AppText weight="bold" size="xs" color="onGreenSubtle">MY PLAN</AppText>
+            <AppText weight="extrabold" size="2xl" color="onGreen">This week</AppText>
+          </View>
+          <TouchableOpacity
+            onPress={buildPlan}
+            style={styles.newPlanBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Start a new plan"
+          >
+            <Ionicons name="add" size={14} color={colors.onGreen} />
+            <AppText weight="bold" size="2xs" color="onGreen">New plan</AppText>
+          </TouchableOpacity>
+        </Row>
       </GreenHeader>
 
       <ScrollView
@@ -88,6 +103,12 @@ export function SelfBuiltPlanView({ planId }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.cream },
+  newPlanBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing[1],
+    backgroundColor: colors.headerPill,
+    paddingHorizontal: spacing[3], paddingVertical: spacing[2],
+    borderRadius: radius.full, minHeight: 44, justifyContent: 'center',
+  },
   body: { flex: 1 },
   bodyContent: { paddingTop: spacing[3], gap: spacing[4] },
 });

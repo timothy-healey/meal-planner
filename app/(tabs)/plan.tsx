@@ -10,6 +10,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { PlanSkeleton } from "../../components/ui/PlanSkeleton";
 import { colors, font, radius, shadow, spacing } from "../../constants/tokens";
 import { usePlan } from "../../hooks/usePlan";
+import { useBuildPlan } from "../../hooks/useBuildPlan";
 import { SelfBuiltPlanView } from "../../components/SelfBuiltPlanView";
 
 const DAY_NAMES = [
@@ -40,19 +41,8 @@ function parseLocalDate(iso: string): Date {
 
 export default function PlanScreen() {
   const insets = useSafeAreaInsets();
-  const { plan, loading, createSelfBuiltPlan } = usePlan();
-
-  /** Sunday of the current week, as a local ISO date. */
-  function thisSunday(): string {
-    const n = new Date();
-    const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() - n.getDay());
-    const pad = (v: number) => String(v).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
-
-  async function handleBuildPlan() {
-    await createSelfBuiltPlan(thisSunday());
-  }
+  const { plan, loading } = usePlan();
+  const { buildPlan } = useBuildPlan();
 
   const days = useMemo<DisplayDay[]>(() => {
     if (!plan) return [];
@@ -85,7 +75,7 @@ export default function PlanScreen() {
         <View style={[styles.emptyContainer, { marginTop: insets.top }]}>
           <EmptyState
             onImport={() => router.push("/settings")}
-            onBuild={handleBuildPlan}
+            onBuild={buildPlan}
           />
         </View>
       </View>
@@ -154,17 +144,30 @@ export default function PlanScreen() {
               {calTarget} cal target
             </AppText>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/settings")}
-            style={styles.importBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Import new meal plan"
-          >
-            <Ionicons name="folder-open-outline" size={14} color={colors.green} />
-            <AppText weight="bold" color="green" size="2xs">
-              Import
-            </AppText>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={buildPlan}
+              style={styles.importBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Build a new plan from recipes"
+            >
+              <Ionicons name="add" size={14} color={colors.green} />
+              <AppText weight="bold" color="green" size="2xs">
+                New plan
+              </AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/settings")}
+              style={styles.importBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Import new meal plan"
+            >
+              <Ionicons name="folder-open-outline" size={14} color={colors.green} />
+              <AppText weight="bold" color="green" size="2xs">
+                Import
+              </AppText>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {todayDay && <TodayCard day={todayDay} />}
@@ -201,6 +204,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[2],
   },
   weekLabel: { letterSpacing: font.tracking.category, textTransform: "uppercase" },
+  headerActions: { flexDirection: "row", gap: spacing[2], alignItems: "center" },
   importBtn: {
     flexDirection: "row",
     gap: spacing[1] + 2,
