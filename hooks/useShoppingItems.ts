@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useDb } from '../providers/DatabaseProvider';
 import { generateId } from '../lib/uuid';
 import { nextOrders } from '../lib/shopping/ordering';
+import { ItemKey } from '../lib/catalog/itemKey';
+import { toCategory } from '../lib/plan/categories';
 import type { ShoppingItemRow } from '../types/db';
 
 export interface ShoppingItem extends ShoppingItemRow {
@@ -111,6 +113,22 @@ export function useShoppingItems(planId: string | null) {
           : i
       )
     );
+
+    // Learn the placement. The name is mapped onto the fixed vocabulary and
+    // dropped if it won't map — this fires on imported plans too, and storing
+    // Claude's "Pantry (this week)" would feed that drift into self-built plans.
+    if (data.category !== existing.category) {
+      const key = existing.item_key
+        ? ItemKey.parse(existing.item_key)
+        : ItemKey.fromName(existing.name);
+      const category = toCategory(data.category);
+      if (category) {
+        await db.runAsync(
+          'INSERT OR REPLACE INTO item_category_map (item_key, category, updated_at) VALUES (?, ?, ?)',
+          [key, category, new Date().toISOString()],
+        );
+      }
+    }
   }, [items, db]);
 
   return { items, loading, reload: load, toggleItem, deleteChecked, addItem, updateItem, deleteItem };
