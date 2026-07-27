@@ -208,6 +208,8 @@ export default function ShopReceiptScreen() {
           is_oneoff: 0,
           note: null,
           is_checked: 1,
+          item_key: null,
+          planned_qty: null,
         } : null}
         store={chain}
         branch={branch}

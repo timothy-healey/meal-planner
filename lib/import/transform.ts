@@ -38,6 +38,7 @@ export function transformPlan(plan: MealPlanInput): TransformResult {
     days_json: JSON.stringify(plan.meal_plan),
     batch_plan_json: JSON.stringify(plan.sunday_batch_plan),
     created_at: now,
+    source: 'imported',
   };
 
   const recipes: RecipeRow[] = plan.recipes.map((r) => ({
@@ -74,6 +75,9 @@ export function transformPlan(plan: MealPlanInput): TransformResult {
         is_oneoff: cat.is_oneoff ? 1 : 0,
         note: item.note || null,
         is_checked: 0,
+        // Imported rows are authored by Claude, not projected from recipes.
+        item_key: null,
+        planned_qty: null,
       }))
   );
 

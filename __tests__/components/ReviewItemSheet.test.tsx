@@ -39,6 +39,8 @@ const ITEM: ShoppingItemRow = {
   is_oneoff: 0,
   note: null,
   is_checked: 0,
+  item_key: null,
+  planned_qty: null,
 };
 
 function baseProps() {

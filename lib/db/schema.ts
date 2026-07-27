@@ -25,7 +25,8 @@ export const SCHEMA_SQL = `
     strategy_json    TEXT NOT NULL,
     days_json        TEXT NOT NULL,
     batch_plan_json  TEXT NOT NULL,
-    created_at       TEXT NOT NULL
+    created_at       TEXT NOT NULL,
+    source           TEXT NOT NULL DEFAULT 'imported'
   );
 
   CREATE TABLE IF NOT EXISTS shopping_items (
@@ -39,7 +40,12 @@ export const SCHEMA_SQL = `
     estimated_price  REAL NOT NULL,
     is_oneoff        INTEGER DEFAULT 0,
     note             TEXT,
-    is_checked       INTEGER DEFAULT 0
+    is_checked       INTEGER DEFAULT 0,
+    -- NULL means the row was added by hand and the projection must not touch it.
+    item_key         TEXT,
+    -- What the plan's recipes currently call for. Copied into qty only while
+    -- the row is unchecked, so a difference marks a line that has drifted.
+    planned_qty      TEXT
   );
 
   CREATE TABLE IF NOT EXISTS products (
@@ -121,4 +127,24 @@ export const SCHEMA_SQL = `
     aisle_id    TEXT NOT NULL REFERENCES store_aisles(id),
     updated_at  TEXT NOT NULL
   );
+
+  -- Which recipes a self-built plan is cooking, and how many serves of each.
+  CREATE TABLE IF NOT EXISTS plan_recipes (
+    id            TEXT PRIMARY KEY,
+    plan_id       TEXT NOT NULL REFERENCES weekly_plans(id),
+    recipe_id     TEXT NOT NULL REFERENCES recipes(id),
+    target_serves INTEGER NOT NULL,
+    sort_order    INTEGER NOT NULL,
+    UNIQUE (plan_id, recipe_id)
+  );
+
+  -- Learned item-to-category placements, keyed by ItemKey.
+  CREATE TABLE IF NOT EXISTS item_category_map (
+    item_key   TEXT PRIMARY KEY,
+    category   TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_shopping_item_key
+    ON shopping_items(plan_id, item_key) WHERE item_key IS NOT NULL;
 `;

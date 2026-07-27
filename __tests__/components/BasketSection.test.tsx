@@ -15,6 +15,8 @@ const makeItem = (id: string, name: string): ShoppingItemRow => ({
   is_oneoff: 0,
   note: null,
   is_checked: 1,
+  item_key: null,
+  planned_qty: null,
 });
 
 const DEFAULT_PROPS = {

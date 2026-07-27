@@ -1,3 +1,12 @@
+/**
+ * `weekly_plans.source` and `recipes.source` share a column name but not a
+ * vocabulary — 'imported' means the same in both while the second value
+ * differs. Named unions so a crossed literal is a type error rather than a
+ * string that happens to parse.
+ */
+export type PlanSource = 'imported' | 'self_built';
+export type RecipeSource = 'imported' | 'user';
+
 export interface RecipeRow {
   id: string;
   title: string;
@@ -11,7 +20,7 @@ export interface RecipeRow {
   ingredients_json: string;
   method_steps_json: string;
   is_favourite: 0 | 1;
-  source: 'imported' | 'user';
+  source: RecipeSource;
   notes: string | null;
   created_at: string;
 }
@@ -25,6 +34,7 @@ export interface WeeklyPlanRow {
   days_json: string;
   batch_plan_json: string;
   created_at: string;
+  source: PlanSource;
 }
 
 export interface ShoppingItemRow {
@@ -39,6 +49,24 @@ export interface ShoppingItemRow {
   is_oneoff: 0 | 1;
   note: string | null;
   is_checked: 0 | 1;
+  /** NULL means hand-added — the projection never touches it. */
+  item_key: string | null;
+  /** What the plan's recipes currently call for; see item_key. */
+  planned_qty: string | null;
+}
+
+export interface PlanRecipeRow {
+  id: string;
+  plan_id: string;
+  recipe_id: string;
+  target_serves: number;
+  sort_order: number;
+}
+
+export interface ItemCategoryMapRow {
+  item_key: string;
+  category: string;
+  updated_at: string;
 }
 
 export type QtyUnit = 'g' | 'kg' | 'mL' | 'L' | 'units';
