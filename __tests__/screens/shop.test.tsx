@@ -45,7 +45,6 @@ jest.mock('../../hooks/useShoppingItems', () => ({
     addItem: jest.fn(),
     updateItem: jest.fn(),
     deleteItem: jest.fn(),
-    resetAll: jest.fn(),
     deleteChecked: mockDeleteChecked,
   }),
 }));
