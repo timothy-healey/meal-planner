@@ -62,5 +62,30 @@ export function useRecipes() {
     bumpPlanVersion();
   }
 
-  return { recipes, loading, getById, updateNotes };
+  // Changing serves at cook time re-divides a fixed pot: ingredient amounts stay
+  // put, per-serve numbers move. `rollupMacros` derives per-serve from the tagged
+  // ingredients, but an untagged recipe falls back to the stored per-serve columns —
+  // so those get rescaled here too, or they'd sit stale and wrong.
+  async function updateServings(recipeId: string, servings: number): Promise<void> {
+    const next = Math.max(1, Math.round(servings));
+    const row = await db.getFirstAsync<RecipeRow>(
+      'SELECT servings, calories_per_serve, protein_per_serve_g FROM recipes WHERE id = ?',
+      [recipeId],
+    );
+    if (!row || row.servings === next) return;
+
+    const ratio = row.servings > 0 ? row.servings / next : 1;
+    await db.runAsync(
+      'UPDATE recipes SET servings = ?, calories_per_serve = ?, protein_per_serve_g = ? WHERE id = ?',
+      [
+        next,
+        Math.round(row.calories_per_serve * ratio),
+        Math.round(row.protein_per_serve_g * ratio),
+        recipeId,
+      ],
+    );
+    bumpPlanVersion();
+  }
+
+  return { recipes, loading, getById, updateNotes, updateServings };
 }

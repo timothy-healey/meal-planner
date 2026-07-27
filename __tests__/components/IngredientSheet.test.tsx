@@ -239,6 +239,68 @@ describe('IngredientSheet × selection', () => {
   });
 });
 
+describe('IngredientSheet × calorie recalculation', () => {
+  function renderSheet(props: Partial<React.ComponentProps<typeof IngredientSheet>> = {}) {
+    return render(
+      <IngredientSheet
+        visible={true}
+        mode="add"
+        initialIngredient={null}
+        existingEntry={null}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        {...props}
+      />
+    );
+  }
+
+  it('recalculates calories when a macro is edited on a saved product', () => {
+    const { getByLabelText } = renderSheet({
+      mode: 'edit', initialIngredient: ING, existingEntry: EXISTING, onDelete: jest.fn(),
+    });
+    // EXISTING carries a hand-entered 45 kcal; the old calIsAuto gate froze it.
+    fireEvent.changeText(getByLabelText('Protein'), '10');
+    // 10×4 + 4.5×4 + 1.5×9 = 71.5 → 72
+    expect(getByLabelText('Calories').props.value).toBe('72');
+  });
+
+  it('treats blank carbs and fat as zero when only protein is filled', () => {
+    const { getByLabelText } = renderSheet();
+    fireEvent.changeText(getByLabelText('Protein'), '20');
+    expect(getByLabelText('Calories').props.value).toBe('80');
+  });
+
+  it('leaves calories untouched when all three macros are blank', () => {
+    const { getByLabelText } = renderSheet();
+    fireEvent.changeText(getByLabelText('Protein'), '20');
+    expect(getByLabelText('Calories').props.value).toBe('80');
+    fireEvent.changeText(getByLabelText('Protein'), '');
+    expect(getByLabelText('Calories').props.value).toBe('80');
+  });
+
+  it('does not recalculate on open — only on edit', () => {
+    const { getByLabelText } = renderSheet({
+      mode: 'edit', initialIngredient: ING, existingEntry: EXISTING, onDelete: jest.fn(),
+    });
+    // Atwater over EXISTING's macros would give 36; the stored 45 must survive a plain open.
+    expect(getByLabelText('Calories').props.value).toBe('45');
+  });
+
+  it('overwrites a hand-typed calorie value on a later macro edit', () => {
+    const { getByLabelText } = renderSheet();
+    fireEvent.changeText(getByLabelText('Calories'), '200');
+    fireEvent.changeText(getByLabelText('Protein'), '10');
+    expect(getByLabelText('Calories').props.value).toBe('40');
+  });
+
+  it('ignores an unparseable macro entry rather than treating it as zero', () => {
+    const { getByLabelText } = renderSheet();
+    fireEvent.changeText(getByLabelText('Protein'), '20');
+    fireEvent.changeText(getByLabelText('Carbs'), 'abc');
+    expect(getByLabelText('Calories').props.value).toBe('80');
+  });
+});
+
 describe('IngredientSheet × autofill flow', () => {
   beforeEach(() => {
     (useIngredientSuggestions as jest.Mock).mockReturnValue({
