@@ -77,7 +77,7 @@ describe('useBackup.saveBackup', () => {
     const [filename, mimeType] = mockCreateFile.mock.calls[0] as unknown as [string, string];
     expect(filename).toMatch(/^meal-planner-backup-\d{4}-\d{2}-\d{2}\.json$/);
     expect(mimeType).toBe('application/json');
-    expect(JSON.parse(mockWrite.mock.calls[0][0]).backup_version).toBe('2.0');
+    expect(JSON.parse(mockWrite.mock.calls[0][0]).backup_version).toBe('2.1');
   });
 
   it('reuses the remembered folder without prompting again', async () => {
@@ -201,5 +201,90 @@ describe('useBackup.shareBackup', () => {
 
     expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
     expect(mockPickDirectoryAsync).not.toHaveBeenCalled();
+  });
+});
+
+import { insertRows } from '../../hooks/useBackup';
+
+describe('insertRows hardening', () => {
+  it('omits columns absent from the source row so the schema DEFAULT applies', () => {
+    // A 2.0 backup has no `source`. Relying on OR REPLACE's NULL substitution
+    // works only while the column has a DEFAULT; omitting it is safe regardless.
+    const [[sql, params]] = insertRows(
+      'weekly_plans',
+      [{ id: 'p1', week_starting: '2026-07-20' }],
+      ['id', 'week_starting', 'source'],
+    );
+    expect(sql).not.toContain('source');
+    expect(params).toEqual(['p1', '2026-07-20']);
+  });
+
+  it('keeps an explicit null for a column that is present', () => {
+    const [[sql, params]] = insertRows(
+      'shopping_items', [{ id: 'i1', note: null }], ['id', 'note']);
+    expect(sql).toContain('note');
+    expect(params).toEqual(['i1', null]);
+  });
+
+  it('emits one statement per row', () => {
+    expect(insertRows('stores', [{ id: 'a' }, { id: 'b' }], ['id'])).toHaveLength(2);
+  });
+
+  it('returns nothing for no rows', () => {
+    expect(insertRows('stores', [], ['id'])).toEqual([]);
+  });
+});
+
+describe('useBackup — v7 tables', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockWrite.mockClear();
+    mockPickDirectoryAsync.mockReset().mockResolvedValue({
+      uri: 'content://tree/downloads', name: 'Downloads',
+    });
+    mockDb.getAllAsync.mockClear().mockResolvedValue([]);
+  });
+
+  it('exports plan_recipes and item_category_map at backup_version 2.1', async () => {
+    const result = await mounted();
+    await act(async () => { await result.current.saveBackup(); });
+    const written = JSON.parse(mockWrite.mock.calls[0][0]);
+    expect(written).toHaveProperty('plan_recipes');
+    expect(written).toHaveProperty('item_category_map');
+    expect(written.backup_version).toBe('2.1');
+  });
+});
+
+describe('useBackup — restore clears the v7 tables', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockDb.runAsync.mockClear().mockResolvedValue(undefined);
+    mockDb.getAllAsync.mockClear().mockResolvedValue([]);
+  });
+
+  it('deletes plan_recipes and item_category_map before inserting', async () => {
+    // The dangling-row trap: an old backup carries no plan_recipes, so if the
+    // delete list omits them, rows pointing at replaced plans survive intact.
+    const { File } = require('expo-file-system');
+    (File as jest.Mock).mockImplementationOnce(() => ({
+      uri: 'file:///x.json',
+      text: jest.fn().mockResolvedValue(
+        JSON.stringify({ backup_version: '2.0', recipes: [], weekly_plans: [] })),
+    }));
+    const DocumentPicker = require('expo-document-picker');
+    DocumentPicker.getDocumentAsync.mockResolvedValue({
+      canceled: false, assets: [{ uri: 'file:///x.json' }],
+    });
+
+    const result = await mounted();
+    let preview: any;
+    await act(async () => { preview = await result.current.restoreBackup(); });
+    await act(async () => { await preview.execute(); });
+
+    const deletes = mockDb.runAsync.mock.calls
+      .map((c: any[]) => String(c[0]))
+      .filter((q: string) => q.startsWith('DELETE FROM'));
+    expect(deletes).toContain('DELETE FROM plan_recipes');
+    expect(deletes).toContain('DELETE FROM item_category_map');
   });
 });
