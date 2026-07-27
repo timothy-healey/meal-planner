@@ -42,9 +42,29 @@ export function ShoppingItem({ item, onToggle, showDivider = true }: Props) {
             {item.name}
           </AppText>
           <View style={styles.detail}>
-            <AppText weight="regular" color="textSecondary" size="sm">{item.qty} ·</AppText>
-            <AppText weight="semibold" color="orange" size="sm">{formatPrice(item.estimated_price)}</AppText>
+            <AppText weight="regular" color="textSecondary" size="sm">
+              {item.estimated_price > 0 ? `${item.qty} ·` : item.qty}
+            </AppText>
+            {item.estimated_price > 0 && (
+              <AppText weight="semibold" color="orange" size="sm">
+                {formatPrice(item.estimated_price)}
+              </AppText>
+            )}
           </View>
+          {/* The item_key guard is required, not decorative: manual rows have
+              planned_qty null and a non-null qty, so comparing the two alone
+              would flag every hand-added item as stale. */}
+          {item.item_key !== null && item.planned_qty !== null
+            && item.qty !== item.planned_qty ? (
+            <AppText
+              weight="regular"
+              color="textNote"
+              size="2xs"
+              accessibilityLabel={`recipe now calls for ${item.planned_qty}`}
+            >
+              {`recipe now calls for ${item.planned_qty}`}
+            </AppText>
+          ) : null}
           {item.note ? (
             <AppText weight="regular" color="textNote" size="2xs">{item.note}</AppText>
           ) : null}
