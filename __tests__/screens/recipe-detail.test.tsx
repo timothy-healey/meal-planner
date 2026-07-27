@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 const mockUpdateNotes = jest.fn().mockResolvedValue(undefined);
+const mockUpdateServings = jest.fn().mockResolvedValue(undefined);
 const mockGetNutritionForIngredients = jest.fn().mockResolvedValue({});
 const mockUpsert = jest.fn().mockResolvedValue('new-product-id');
 
@@ -31,6 +32,7 @@ jest.mock('../../hooks/useRecipes', () => ({
     loading: false,
     getById: jest.fn(),
     updateNotes: mockUpdateNotes,
+    updateServings: mockUpdateServings,
   }),
 }));
 
@@ -232,5 +234,115 @@ describe('RecipeDetailScreen — copy recipe', () => {
     await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
     const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
     expect(text).not.toContain('Notes:');
+  });
+
+  it('appends per-ingredient macros to a linked ingredient line', async () => {
+    mockGetNutritionForIngredients.mockResolvedValue({
+      0: {
+        id: 'fn1', brand: '', product_name: 'Chicken', item_name: 'Chicken',
+        basis: 'per_100g',
+        cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
+        updated_at: '2026-05-24',
+      },
+    });
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    // Contributions are whole-recipe, not per-serve: 600g @ 165cal/100g = 990.
+    expect(text).toContain('- 600 g Chicken breast | 990 kcal | P 186g | C 0g | F 22g');
+  });
+
+  it('leaves an unlinked ingredient line in the plain format', async () => {
+    mockRecipesState.current = [{
+      ...mockRecipeBase,
+      ingredients: [
+        { item: 'Chicken', amount: { kind: 'measured', value: 600, unit: 'g' } },
+        { item: 'Broccoli', amount: { kind: 'measured', value: 300, unit: 'g' } },
+      ],
+    }];
+    mockGetNutritionForIngredients.mockResolvedValue({
+      0: {
+        id: 'fn1', brand: '', product_name: 'Chicken', item_name: 'Chicken',
+        basis: 'per_100g',
+        cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
+        updated_at: '2026-05-24',
+      },
+      // broccoli intentionally unlinked
+    });
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    expect(text).toContain('- 600 g Chicken | 990 kcal | P 186g | C 0g | F 22g');
+    expect(text).toContain('\n- 300 g Broccoli\n');
+  });
+
+  it('leaves every ingredient line plain when no nutrition links exist', async () => {
+    mockGetNutritionForIngredients.mockResolvedValue({});
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Copy recipe to clipboard'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const text: string = (Clipboard.setStringAsync as jest.Mock).mock.calls[0][0];
+    expect(text).toContain('\n- 600 g Chicken breast\n');
+  });
+});
+
+describe('RecipeDetailScreen — serves', () => {
+  beforeEach(() => {
+    mockUpdateServings.mockClear();
+    mockGetNutritionForIngredients.mockReset().mockResolvedValue({});
+    setNotes(null);
+  });
+
+  it('renders the serves pill as a button', () => {
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    expect(getByLabelText('Edit serves, currently 3')).toBeTruthy();
+  });
+
+  it('opens the serves stepper when the pill is tapped', () => {
+    const { getByLabelText } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByLabelText('Edit serves, currently 3'));
+    expect(getByLabelText('Increase serves')).toBeTruthy();
+  });
+
+  it('seeds the stepper preview from the stored per-serve calories when untagged', () => {
+    const { getByLabelText, getByText } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByLabelText('Edit serves, currently 3'));
+    expect(getByText('480 kcal per serve')).toBeTruthy();
+  });
+
+  it('seeds the stepper preview from the rollup when ingredients are tagged', async () => {
+    mockGetNutritionForIngredients.mockResolvedValue({
+      0: {
+        id: 'fn1', brand: '', product_name: 'Chicken', item_name: 'Chicken',
+        basis: 'per_100g',
+        cal_per_basis: 165, protein_per_basis: 31, carbs_per_basis: 0, fat_per_basis: 3.6,
+        updated_at: '2026-05-24',
+      },
+    });
+    const { getByLabelText, getByText } = render(<RecipeDetailScreen />);
+    await flushLinks();
+    fireEvent.press(getByLabelText('Edit serves, currently 3'));
+    // 600g @ 165cal/100g = 990 total, over 3 serves = 330.
+    expect(getByText('330 kcal per serve')).toBeTruthy();
+  });
+
+  it('calls updateServings with the chosen count on Done', async () => {
+    const { getByLabelText, getByText } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByLabelText('Edit serves, currently 3'));
+    fireEvent.press(getByLabelText('Increase serves'));
+    fireEvent.press(getByText('Done'));
+    await waitFor(() => expect(mockUpdateServings).toHaveBeenCalledWith('r1', 4));
+  });
+
+  it('closes the stepper after saving', async () => {
+    const { getByLabelText, getByText, queryByLabelText } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByLabelText('Edit serves, currently 3'));
+    fireEvent.press(getByText('Done'));
+    await waitFor(() => expect(queryByLabelText('Increase serves')).toBeNull());
   });
 });

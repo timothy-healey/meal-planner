@@ -68,8 +68,6 @@ export function IngredientSheet({
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
   const [fat, setFat] = useState("");
-  // tracks whether the current cal value was auto-calculated (so macros can update it)
-  const calIsAuto = useRef(false);
 
   const { query: querySuggestions, invalidate: invalidateSuggestions } = useIngredientSuggestions();
   const { getById } = useProducts();
@@ -99,7 +97,6 @@ export function IngredientSheet({
 
   useEffect(() => {
     if (!visible) return;
-    calIsAuto.current = false;
     setName(initialIngredient?.item ?? "");
 
     // Seed amount/unit/customUnit/note from initialIngredient
@@ -171,21 +168,31 @@ export function IngredientSheet({
     }
   }, [visible, existingEntry, initialIngredient]);
 
-  useEffect(() => {
-    const p = parseFloat(protein);
-    const c = parseFloat(carbs);
-    const f = parseFloat(fat);
-    if (
-      !isNaN(p) &&
-      !isNaN(c) &&
-      !isNaN(f) &&
-      (cal === "" || calIsAuto.current)
-    ) {
-      const computed = Math.round(p * 4 + c * 4 + f * 9);
-      calIsAuto.current = true;
-      setCal(String(computed));
-    }
-  }, [protein, carbs, fat]);
+  // Any macro edit overwrites calories with the Atwater figure, unconditionally —
+  // a hand-typed label value loses, because predictability beats per-item accuracy.
+  // Blanks count as zero so a part-filled product still computes, but an all-blank
+  // triple leaves calories alone rather than zeroing a saved value.
+  function recalcCal(next: { protein: string; carbs: string; fat: string }) {
+    if (next.protein === "" && next.carbs === "" && next.fat === "") return;
+    const p = next.protein === "" ? 0 : parseFloat(next.protein);
+    const c = next.carbs === "" ? 0 : parseFloat(next.carbs);
+    const f = next.fat === "" ? 0 : parseFloat(next.fat);
+    if (isNaN(p) || isNaN(c) || isNaN(f)) return;
+    setCal(String(Math.round(p * 4 + c * 4 + f * 9)));
+  }
+
+  function handleProteinChange(v: string) {
+    setProtein(v);
+    recalcCal({ protein: v, carbs, fat });
+  }
+  function handleCarbsChange(v: string) {
+    setCarbs(v);
+    recalcCal({ protein, carbs: v, fat });
+  }
+  function handleFatChange(v: string) {
+    setFat(v);
+    recalcCal({ protein, carbs, fat: v });
+  }
 
   function handleBrandChange(v: string) {
     setBrand(v);
@@ -213,7 +220,6 @@ export function IngredientSheet({
         setProtein(row.protein_per_basis != null ? String(row.protein_per_basis) : '');
         setCarbs(row.carbs_per_basis != null ? String(row.carbs_per_basis) : '');
         setFat(row.fat_per_basis != null ? String(row.fat_per_basis) : '');
-        calIsAuto.current = false;
         autofilledProductId.current = row.id;
       }
     }
@@ -452,13 +458,11 @@ export function IngredientSheet({
             <TextInput
               style={styles.input}
               value={cal}
-              onChangeText={(v) => {
-                calIsAuto.current = false;
-                setCal(v);
-              }}
+              onChangeText={setCal}
               keyboardType="decimal-pad"
               placeholder="0"
               placeholderTextColor={colors.textTertiary}
+              accessibilityLabel="Calories"
             />
 
             <View style={[styles.twoCol, { marginTop: spacing[4] }]}>
@@ -467,10 +471,11 @@ export function IngredientSheet({
                 <TextInput
                   style={styles.input}
                   value={protein}
-                  onChangeText={setProtein}
+                  onChangeText={handleProteinChange}
                   keyboardType="decimal-pad"
                   placeholder="0"
                   placeholderTextColor={colors.textTertiary}
+                  accessibilityLabel="Protein"
                 />
               </View>
               <View style={styles.colFlex}>
@@ -478,10 +483,11 @@ export function IngredientSheet({
                 <TextInput
                   style={styles.input}
                   value={carbs}
-                  onChangeText={setCarbs}
+                  onChangeText={handleCarbsChange}
                   keyboardType="decimal-pad"
                   placeholder="0"
                   placeholderTextColor={colors.textTertiary}
+                  accessibilityLabel="Carbs"
                 />
               </View>
               <View style={styles.colFlex}>
@@ -489,10 +495,11 @@ export function IngredientSheet({
                 <TextInput
                   style={styles.input}
                   value={fat}
-                  onChangeText={setFat}
+                  onChangeText={handleFatChange}
                   keyboardType="decimal-pad"
                   placeholder="0"
                   placeholderTextColor={colors.textTertiary}
+                  accessibilityLabel="Fat"
                 />
               </View>
             </View>

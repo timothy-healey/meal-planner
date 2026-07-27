@@ -10,6 +10,7 @@ import { IngredientRow } from '../../components/IngredientRow';
 import { IngredientSheet } from '../../components/IngredientSheet';
 import { AddIngredientRow } from '../../components/AddIngredientRow';
 import { RecipeNotesSheet } from '../../components/RecipeNotesSheet';
+import { ServesSheet } from '../../components/ServesSheet';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useProducts } from '../../hooks/useProducts';
 import { useRecipeIngredients } from '../../hooks/useRecipeIngredients';
@@ -25,7 +26,7 @@ import type { Ingredient } from '../../meal_plan.types';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { recipes, updateNotes } = useRecipes();
+  const { recipes, updateNotes, updateServings } = useRecipes();
   const recipe = recipes.find((r) => r.id === id) ?? null;
   const { upsert, getNutritionForIngredients } = useProducts();
   const { updateIngredient, addIngredient, deleteIngredient } = useRecipeIngredients();
@@ -39,6 +40,7 @@ export default function RecipeDetailScreen() {
   const [links, setLinks] = useState<Record<number, ProductRow>>({});
   const [sheet, setSheet] = useState<SheetState>(null);
   const [notesSheetVisible, setNotesSheetVisible] = useState(false);
+  const [servesSheetVisible, setServesSheetVisible] = useState(false);
 
   useEffect(() => {
     if (!recipe) { setLinks({}); return; }
@@ -99,6 +101,17 @@ export default function RecipeDetailScreen() {
     setNotesSheetVisible(true);
   }
 
+  function openServesSheet() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setServesSheetVisible(true);
+  }
+
+  async function handleServesSave(nextServings: number) {
+    if (!recipe) return;
+    await updateServings(recipe.id, nextServings);
+    setServesSheetVisible(false);
+  }
+
   const handleCopy = async () => {
     const macroStr = rollup
       ? `Serves ${recipe.servings} | ${prefix}${Math.round(rollup.perServe.cal)} kcal | P ${prefix}${Math.round(rollup.perServe.protein_g)}g | C ${prefix}${Math.round(rollup.perServe.carbs_g)}g | F ${prefix}${Math.round(rollup.perServe.fat_g)}g | ${recipe.cook_method} | ${timeLabel}`
@@ -112,7 +125,14 @@ export default function RecipeDetailScreen() {
       macroStr,
       '',
       'Ingredients:',
-      ...recipe.ingredients.map((i) => `- ${formatAmount(i.amount)} ${i.item}`),
+      ...recipe.ingredients.map((i, idx) => {
+        const line = `- ${formatAmount(i.amount)} ${i.item}`;
+        // Contributions are whole-recipe totals for that ingredient, matching
+        // the chips on IngredientRow. Unlinked ingredients have none.
+        const c = rollup?.contributions[idx];
+        if (!c) return line;
+        return `${line} | ${Math.round(c.cal)} kcal | P ${Math.round(c.protein_g)}g | C ${Math.round(c.carbs_g)}g | F ${Math.round(c.fat_g)}g`;
+      }),
       '',
       'Method:',
       ...recipe.method_steps.map((s, idx) => `${idx + 1}. ${s}`),
@@ -189,9 +209,19 @@ export default function RecipeDetailScreen() {
                 </View>
               </>
             )}
-            <View style={styles.pill}>
+            <TouchableOpacity
+              style={[styles.pill, styles.servesPill]}
+              onPress={openServesSheet}
+              activeOpacity={0.7}
+              // The pill row is deliberately compact; extend the touch target
+              // instead of the box so it stays aligned with its siblings.
+              hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit serves, currently ${recipe.servings}`}
+            >
               <AppText weight="bold" size="2xs" color="onGreen">Serves {recipe.servings}</AppText>
-            </View>
+              <Ionicons name="chevron-down" size={10} color={colors.onGreen} />
+            </TouchableOpacity>
             <View style={styles.pill}>
               <AppText weight="bold" size="2xs" color="onGreen">{timeLabel}</AppText>
             </View>
@@ -269,6 +299,15 @@ export default function RecipeDetailScreen() {
         onClose={() => setSheet(null)}
       />
 
+      <ServesSheet
+        visible={servesSheetVisible}
+        servings={recipe.servings}
+        caloriesPerServe={rollup ? rollup.perServe.cal : recipe.calories_per_serve}
+        isApproximate={rollup?.isPartial ?? false}
+        onSave={handleServesSave}
+        onClose={() => setServesSheetVisible(false)}
+      />
+
       <RecipeNotesSheet
         visible={notesSheetVisible}
         recipeTitle={recipe.title}
@@ -311,6 +350,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[1],
     borderRadius: radius.full,
+  },
+  servesPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    paddingRight: spacing[2],
   },
   body: { flex: 1 },
   bodyContent: { paddingTop: spacing[2], paddingBottom: spacing[10], gap: spacing[4] },
