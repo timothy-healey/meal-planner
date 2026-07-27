@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { PlanRecipeList, type PlanRecipeEntryView } from '../../components/PlanRecipeList';
 
 const ENTRIES: PlanRecipeEntryView[] = [
@@ -145,5 +146,42 @@ describe('PlanRecipeList — opening the recipe', () => {
       entries: [{ recipeId: 'gone', title: 'Deleted Recipe', recipeServings: null, targetServes: 4 }],
     });
     expect(queryByLabelText('Open Deleted Recipe')).toBeNull();
+  });
+});
+
+describe('PlanRecipeList — long titles', () => {
+  const LONG = 'Slow Cooker Beef Chuck Ragu with Pappardelle and Gremolata';
+
+  function renderLong(props: Record<string, unknown> = {}) {
+    return renderList({
+      entries: [{ recipeId: 'r1', title: LONG, recipeServings: 4, targetServes: 6 }],
+      ...props,
+    });
+  }
+
+  it('truncates the title to one line so the chevron cannot drift into the ×', () => {
+    const { getByText } = renderLong();
+    expect(getByText(LONG).props.numberOfLines).toBe(1);
+  });
+
+  it('gives remove a real 44pt box instead of hitSlop that overlaps the link', () => {
+    // hitSlop on × extended its touch area left, over the chevron — a tap
+    // meant for "open" could remove the recipe instead.
+    const { getByLabelText } = renderLong();
+    const remove = getByLabelText(`Remove ${LONG} from plan`);
+    expect(remove.props.hitSlop).toBeUndefined();
+    const style = StyleSheet.flatten(remove.props.style);
+    expect(style.width).toBeGreaterThanOrEqual(44);
+    expect(style.height).toBeGreaterThanOrEqual(44);
+  });
+
+  it('keeps both controls reachable with a long title', () => {
+    const onOpen = jest.fn();
+    const onRemove = jest.fn();
+    const { getByLabelText } = renderLong({ onOpen, onRemove });
+    fireEvent.press(getByLabelText(`Open ${LONG}`));
+    expect(onOpen).toHaveBeenCalledWith('r1');
+    fireEvent.press(getByLabelText(`Remove ${LONG} from plan`));
+    expect(onRemove).toHaveBeenCalledWith('r1');
   });
 });

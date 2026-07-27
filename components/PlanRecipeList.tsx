@@ -66,7 +66,10 @@ export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd, onOpen }
                   inside this card and must not be wrapped in a tap target
                   that would carry you off mid-edit. */}
               {missing ? (
-                <AppText weight="bold" size="lg" color="textPrimary" style={styles.title}>
+                <AppText
+                  weight="bold" size="lg" color="textPrimary"
+                  style={styles.title} numberOfLines={1}
+                >
                   {entry.title}
                 </AppText>
               ) : (
@@ -77,15 +80,23 @@ export function PlanRecipeList({ entries, onSetServes, onRemove, onAdd, onOpen }
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${entry.title}`}
                 >
-                  <AppText weight="bold" size="lg" color="textPrimary">
+                  {/* Truncate rather than wrap: a wrapping title pushes the
+                      chevron along the last line and up against the ×. */}
+                  <AppText
+                    weight="bold" size="lg" color="textPrimary"
+                    style={styles.titleText} numberOfLines={1}
+                  >
                     {entry.title}
                   </AppText>
                   <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
+              {/* A real 44pt box, not hitSlop. hitSlop extended this target
+                  leftwards over the chevron, so a tap meant for "open" could
+                  remove the recipe. */}
               <TouchableOpacity
+                style={styles.removeBtn}
                 onPress={() => onRemove(entry.recipeId)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${entry.title} from plan`}
               >
@@ -167,10 +178,16 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { flex: 1, paddingRight: spacing[2] },
+  title: { flex: 1, marginRight: spacing[3] },
   titleLink: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing[1],
-    paddingRight: spacing[2], paddingVertical: spacing[1], minHeight: 44,
+    marginRight: spacing[3], minHeight: 44,
+  },
+  // flexShrink lets the label give way so the chevron holds its place at the
+  // end of the text rather than being pushed to the card edge.
+  titleText: { flexShrink: 1 },
+  removeBtn: {
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
   },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   stepBtn: {
