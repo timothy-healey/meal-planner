@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { reDeriveActivePlan } from '../lib/plan/reDeriveActivePlan';
 import { useDb } from '../providers/DatabaseProvider';
 import { generateId } from '../lib/uuid';
 import type { ProductRow } from '../types/db';
@@ -34,6 +35,10 @@ export function useProducts() {
          input.cal_per_basis, input.protein_per_basis,
          input.carbs_per_basis, input.fat_per_basis, now, existing.id],
       );
+      // item_name is the display name for product-keyed lines, so a rename
+      // here restates them. The insert branch below cannot: a brand-new
+      // product is referenced by no ingredient yet.
+      await reDeriveActivePlan(db);
       return existing.id;
     }
     const id = generateId();
@@ -124,6 +129,9 @@ export function useProducts() {
       );
       await db.runAsync('DELETE FROM products WHERE id = ?', [productId]);
       await db.runAsync('COMMIT');
+      // product_id was stripped from ingredients, so those keys degrade from
+      // product:<id> back to name:<...>.
+      await reDeriveActivePlan(db);
     } catch (e) {
       await db.runAsync('ROLLBACK');
       throw e;
@@ -198,6 +206,9 @@ export function useProducts() {
 
       await db.runAsync('DELETE FROM products WHERE id = ?', [sourceId]);
       await db.runAsync('COMMIT');
+      // Ingredients moved from product:source to product:target, so every line
+      // keyed on the source is now stale.
+      await reDeriveActivePlan(db);
     } catch (e) {
       await db.runAsync('ROLLBACK');
       throw e;

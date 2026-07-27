@@ -3,6 +3,7 @@ import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import type { RecipeRow } from '../types/db';
 import type { Ingredient } from '../meal_plan.types';
 import { parseAmountString } from '../lib/amount';
+import { reDeriveActivePlan } from '../lib/plan/reDeriveActivePlan';
 
 export interface Recipe {
   id: string;
@@ -84,6 +85,9 @@ export function useRecipes() {
         recipeId,
       ],
     );
+    // Re-dividing a recipe changes what one serve means, so a self-built plan
+    // wanting N serves now needs a different amount of it.
+    await reDeriveActivePlan(db);
     bumpPlanVersion();
   }
 

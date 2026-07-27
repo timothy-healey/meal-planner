@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { reDeriveActivePlan } from '../lib/plan/reDeriveActivePlan';
 import { useDb, usePlanVersion } from '../providers/DatabaseProvider';
 import type { Ingredient } from '../meal_plan.types';
 import type { RecipeRow } from '../types/db';
@@ -42,8 +43,9 @@ export function useRecipeIngredients() {
     const next = [...current];
     next[index] = ingredient;
     await writeIngredients(recipeId, next);
+    await reDeriveActivePlan(db);
     bumpPlanVersion();
-  }, [readIngredients, writeIngredients, bumpPlanVersion]);
+  }, [readIngredients, writeIngredients, bumpPlanVersion, db]);
 
   const addIngredient = useCallback(async (
     recipeId: string,
@@ -52,9 +54,10 @@ export function useRecipeIngredients() {
     const current = await readIngredients(recipeId);
     const next = [...current, ingredient];
     await writeIngredients(recipeId, next);
+    await reDeriveActivePlan(db);
     bumpPlanVersion();
     return next.length - 1;
-  }, [readIngredients, writeIngredients, bumpPlanVersion]);
+  }, [readIngredients, writeIngredients, bumpPlanVersion, db]);
 
   const deleteIngredient = useCallback(async (
     recipeId: string,
@@ -64,8 +67,9 @@ export function useRecipeIngredients() {
     if (index < 0 || index >= current.length) return;
     const next = current.filter((_, i) => i !== index);
     await writeIngredients(recipeId, next);
+    await reDeriveActivePlan(db);
     bumpPlanVersion();
-  }, [readIngredients, writeIngredients, bumpPlanVersion]);
+  }, [readIngredients, writeIngredients, bumpPlanVersion, db]);
 
   return { updateIngredient, addIngredient, deleteIngredient };
 }
