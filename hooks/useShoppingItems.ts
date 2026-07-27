@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useDb } from '../providers/DatabaseProvider';
 import { generateId } from '../lib/uuid';
+import { nextOrders } from '../lib/shopping/ordering';
 import type { ShoppingItemRow } from '../types/db';
 
 export interface ShoppingItem extends ShoppingItemRow {
@@ -51,13 +52,7 @@ export function useShoppingItems(planId: string | null) {
     note?: string | null;
   }) => {
     if (!planId) return;
-    const catItems = items.filter((i) => i.category === data.category);
-    const existingCatItem = items.find((i) => i.category === data.category);
-    const categoryOrder = existingCatItem?.category_order ??
-      (items.length > 0 ? Math.max(...items.map((i) => i.category_order)) + 1 : 0);
-    const itemOrder = catItems.length > 0
-      ? Math.max(...catItems.map((i) => i.item_order)) + 1
-      : 0;
+    const { categoryOrder, itemOrder } = nextOrders(items, data.category);
     const id = generateId();
     await db.runAsync(
       `INSERT INTO shopping_items
@@ -85,24 +80,11 @@ export function useShoppingItems(planId: string | null) {
     const existing = items.find((i) => i.id === itemId);
     if (!existing) return;
 
-    let categoryOrder = existing.category_order;
-    let itemOrder = existing.item_order;
-
-    if (data.category !== existing.category) {
-      const catItems = items.filter((i) => i.category === data.category);
-      const existingCatItem = items.find((i) => i.category === data.category);
-      if (existingCatItem) {
-        categoryOrder = existingCatItem.category_order;
-        itemOrder = catItems.length > 0
-          ? Math.max(...catItems.map((i) => i.item_order)) + 1
-          : 0;
-      } else {
-        categoryOrder = items.length > 0
-          ? Math.max(...items.map((i) => i.category_order)) + 1
-          : 0;
-        itemOrder = 0;
-      }
-    }
+    // Staying in the same category keeps the row where it is; moving category
+    // re-positions it as if newly added there.
+    const { categoryOrder, itemOrder } = data.category === existing.category
+      ? { categoryOrder: existing.category_order, itemOrder: existing.item_order }
+      : nextOrders(items, data.category);
 
     await db.runAsync(
       `UPDATE shopping_items
