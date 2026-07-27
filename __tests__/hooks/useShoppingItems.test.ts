@@ -22,46 +22,6 @@ jest.mock('../../providers/DatabaseProvider', () => ({
   useDb: () => mockDb,
 }));
 
-describe('useShoppingItems.resetAll', () => {
-  beforeEach(() => {
-    mockDb.getAllAsync.mockReset();
-    mockDb.runAsync.mockReset().mockResolvedValue(undefined);
-    mockDb.getAllAsync.mockResolvedValue(rows);
-  });
-
-  it('issues UPDATE setting is_checked = 0 scoped to the active plan_id', async () => {
-    const { result } = renderHook(() => useShoppingItems(planId));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    await act(async () => { await result.current.resetAll(); });
-
-    expect(mockDb.runAsync).toHaveBeenCalledWith(
-      'UPDATE shopping_items SET is_checked = 0 WHERE plan_id = ?',
-      [planId],
-    );
-  });
-
-  it('updates local state so all items become isChecked = false after resetAll', async () => {
-    const { result } = renderHook(() => useShoppingItems(planId));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.items.filter((i) => i.isChecked)).toHaveLength(2);
-
-    await act(async () => { await result.current.resetAll(); });
-
-    expect(result.current.items.every((i) => i.isChecked === false)).toBe(true);
-    expect(result.current.items.every((i) => i.is_checked === 0)).toBe(true);
-  });
-
-  it('is a no-op when planId is null (does not issue SQL)', async () => {
-    const { result } = renderHook(() => useShoppingItems(null));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    await act(async () => { await result.current.resetAll(); });
-
-    expect(mockDb.runAsync).not.toHaveBeenCalled();
-  });
-});
-
 describe('useShoppingItems.deleteChecked', () => {
   beforeEach(() => {
     mockDb.getAllAsync.mockReset();

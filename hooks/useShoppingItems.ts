@@ -34,12 +34,6 @@ export function useShoppingItems(planId: string | null) {
     );
   }, [items, db]);
 
-  const resetAll = useCallback(async () => {
-    if (!planId) return;
-    await db.runAsync('UPDATE shopping_items SET is_checked = 0 WHERE plan_id = ?', [planId]);
-    setItems((prev) => prev.map((i) => ({ ...i, isChecked: false, is_checked: 0 })));
-  }, [planId, db]);
-
   const deleteChecked = useCallback(async () => {
     if (!planId) return;
     await db.runAsync(
@@ -137,5 +131,5 @@ export function useShoppingItems(planId: string | null) {
     );
   }, [items, db]);
 
-  return { items, loading, reload: load, toggleItem, resetAll, deleteChecked, addItem, updateItem, deleteItem };
+  return { items, loading, reload: load, toggleItem, deleteChecked, addItem, updateItem, deleteItem };
 }
