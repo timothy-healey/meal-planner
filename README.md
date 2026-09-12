@@ -7,6 +7,23 @@ cooking, and the occasional glance at what's for dinner.
 Expo / React Native, SQLite on device, no backend and no account. All data
 lives on the phone and leaves only through an explicit backup.
 
+<table>
+  <tr>
+    <td align="center"><img src="docs/assets/screenshots/shop.png" width="240" alt="The Shop tab: the week's list grouped by aisle, three items already in the basket"><br><sub><b>Shop</b> — aisle order, prices, basket</sub></td>
+    <td align="center"><img src="docs/assets/screenshots/plan.png" width="240" alt="The Plan tab: the week day by day with calories and protein"><br><sub><b>Plan</b> — the week at a glance</sub></td>
+    <td align="center"><img src="docs/assets/screenshots/recipes.png" width="240" alt="The Recipes tab: the library grouped by meal, with the Sunday batch plan on top"><br><sub><b>Recipes</b> — the library, this week marked</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/assets/screenshots/price-capture.png" width="240" alt="Capturing a purchase: brand, product name, size, price paid, sale toggle and barcode scan"><br><sub><b>Capture</b> — what you actually bought</sub></td>
+    <td align="center"><img src="docs/assets/screenshots/receipt.png" width="240" alt="The end-of-trip receipt: store, date, three line items and a total"><br><sub><b>Receipt</b> — the trip, before you commit it</sub></td>
+    <td align="center"><img src="docs/assets/screenshots/catalog.png" width="240" alt="The Catalog tab: three products with their last paid price"><br><sub><b>Catalog</b> — the price history behind it</sub></td>
+  </tr>
+</table>
+
+Warm and homey rather than clinical: cream surfaces, a deep forest-green
+header, terracotta for prices. Designed for a bright supermarket aisle, a
+Sunday kitchen, and a couch — in that order.
+
 ## How the weekly loop works
 
 The plan itself is authored by Claude, not by the app:
@@ -26,10 +43,14 @@ The plan itself is authored by Claude, not by the app:
 
 | Tab | What it's for |
 | --- | --- |
-| **Plan** | The week at a glance, plus the Sunday batch-cook schedule |
+| **Plan** | The week at a glance — each day's meals with its calorie and protein total |
 | **Shop** | The list, grouped by category in your own aisle-walking order; check off in-store, capture prices, scan barcodes |
-| **Recipes** | Every recipe ever imported; edit ingredients, tag nutrition, keep notes |
+| **Recipes** | Every recipe ever imported; edit ingredients, tag nutrition, keep notes. The Sunday batch-cook schedule sits on top |
 | **Catalog** | The product database behind it all — audit data quality, merge duplicates, track prices over time |
+
+That batch-cook schedule is the hour-by-hour version of the week's plan:
+
+<img src="docs/assets/screenshots/batch.png" width="240" alt="The Sunday Batch Plan: seven timed steps from 08:00 to 18:30">
 
 ## Running it
 
